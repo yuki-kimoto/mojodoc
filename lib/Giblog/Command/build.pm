@@ -8,7 +8,7 @@ use utf8;
 
 use File::Basename 'basename';
 
-use Pod::Simple::XHTML;
+use Pod::Simple::HTML;
 
 sub _indentation {
   (sort map {/^(\s+)/} @{shift()})[0];
@@ -50,9 +50,8 @@ sub run {
       parse_description($api, $data);
 
       my $pod = $content;
-      my $parser = Pod::Simple::XHTML->new;
+      my $parser = Pod::Simple::HTML->new;
       $parser->parse_characters(1);
-      $parser->$_('') for qw(html_header html_footer);
       $parser->strip_verbatim_indent(\&_indentation);
       $parser->output_string(\(my $output));
       $parser->parse_string_document("$pod");
@@ -76,6 +75,9 @@ sub run {
     else {
       $api->parse_giblog_syntax($data);
     }
+    
+    # 数値文字参照を内部文字列へ変換
+    $data->{content} =~ s/&#([0-9]+);/chr($1)/ge;
 
     # WikiリンクをHTMLのリンクへ
     # \[\[([^\]]+)(|([^\]+))?\]\]
