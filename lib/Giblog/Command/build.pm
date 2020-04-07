@@ -51,6 +51,7 @@ sub run {
 
       my $pod = $content;
       my $parser = Pod::Simple::XHTML->new;
+      $parser->parse_characters(1);
       $parser->$_('') for qw(html_header html_footer);
       $parser->strip_verbatim_indent(\&_indentation);
       $parser->output_string(\(my $output));
