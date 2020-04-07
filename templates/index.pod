@@ -2,10 +2,7 @@
 
 =head1 Mojoliciousドキュメント 日本語訳
 
-Perl製の素晴らしいWebフレームワーク[[Mojolicious|http://mojolicious.org]]のドキュメントの日本語です。どなたでも翻訳に参加することができますので、ぜひご協力お願いします。何かわからないことなどあれば、[[Mojolicious日本ユーザーグループ|https://groups.google.com/group/mojolicious_ja]]のメーリングリスト質問を受け付けています。
-最終のドキュメントの更新は2015年4月11日でMojolicious 6.04の変更を反映しています。
-もし誤字脱字や、翻訳の間違いを見つけた場合は、教えてください。
-またGitHubのアカウントを持っていれば、自由に修正することができます。
+Perl製の素晴らしいWebフレームワーク[[Mojolicious|http://mojolicious.org]]のドキュメントの日本語です。最終のドキュメントの更新は2019年12月6日でMojolicious 8.12の変更を反映しています。
 
 =head1 Mojoliciousとは
 
@@ -151,9 +148,9 @@ Mojoliciousでの料理、あらゆる風味のためのレシピ。
 
 =head2 Mojoliciousの情報など
 
-[[Mojolicious入門 - サンプルコードによるPerl入門|http://d.hatena.ne.jp/perlcodesample/20140319/1395203665]]
+[[Mojolicious入門 - サンプルコードによるPerl入門|https://tutorial.perlzemi.com/blog/20140319139520.html]]
 
-[[Mojoliciousリファレンス - サンプルコードによるPerl入門|http://d.hatena.ne.jp/perlcodesample/20110402/1305602329]]
+[[Mojoliciousスタートアップ - Perlによる新規Web開発|https://web.perlzemi.com/]]
 
 [[mojo-legacy|https://github.com/jamadam/mojo-legacy]] - MojoliciousをPerl5.8で動かすためののバックポート
 
