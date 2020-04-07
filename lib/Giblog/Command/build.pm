@@ -76,6 +76,28 @@ sub run {
       $api->parse_giblog_syntax($data);
     }
 
+    # WikiリンクをHTMLのリンクへ
+    # \[\[([^\]]+)(|([^\]+))?\]\]
+    # $3 ? qq(<a href="$3">$1</a>) : qq(<a href="/$1">$1</a>)
+    my $wiki_to_html_link_cb = sub {
+      my ($text, $path) = @_;
+      
+      if (defined $path) {
+        if ($path !~ /^http/) {
+          $path = "/$path.html";
+        }
+      }
+      else {
+        $path = "/$text.html";
+      }
+      
+      my $html_link = qq(<a href="$path">$text</a>);
+      
+      return $html_link;
+    };
+    
+    $data->{content} =~ s#\[\[([^\]\|]+)(?:\|([^\]]+))?\]\]#$wiki_to_html_link_cb->($1, $2);#ge;
+
     # Parse title
     $api->parse_title_from_first_h_tag($data);
 
