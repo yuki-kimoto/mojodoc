@@ -1,0 +1,53 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Plugin::Charset - 文字セットプラグイン
+
+=head1 使い方
+
+  # Mojolicious
+  $self->plugin(Charset => {charset => 'Shift_JIS'});
+
+  # Mojolicious::Lite
+  plugin Charset => {charset => 'Shift_JIS'};
+
+=head1 説明
+
+[[Mojolicious::Plugin::Charset]]はデフォルトの
+文字セットを簡単に設定する
+[[Mojolicious]]のすべての層のためのエンコーディングを
+行うためのプラグインです。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 オプション
+
+=head2 charset
+
+  # Mojolicious::Lite
+  plugin Charset => {charset => 'Shift_JIS'};
+
+アプリケーションの文字セット。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::Charset]]は
+[[Mojolicious::Plugin]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 register
+
+  $plugin->register;
+
+[[Mojolicious]]アプリケーションの中のC<before_dispatch>フックで登録され、いくつかのデフォルト値を変更します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 6.05を反映)
+
+=cut

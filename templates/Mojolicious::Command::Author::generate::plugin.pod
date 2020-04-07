@@ -1,0 +1,62 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::Author::generate::plugin - プラグイン生成コマンド
+
+=head1 使い方
+
+  Usage: APPLICATION generate plugin [OPTIONS] [NAME]
+
+    mojo generate plugin
+    mojo generate plugin TestPlugin
+
+  Options:
+    -h, --help   Show this summary of available options
+
+=head1 説明
+
+[[Mojolicious::Command::Author::generate::plugin]]は完全に機能する[[Mojolicious]]
+プラグインのディレクトリ構造を生成します。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::Author::generate::plugin]]はすべての属性を
+[[Mojo::Command]]から継承しており次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $plugin->description;
+  $plugin         = $plugin->description('Foo');
+
+このコマンドの短い説明です。コマンドリストで利用されます。
+
+=head2 usage
+
+  my $usage = $plugin->usage;
+  $plugin   = $plugin->usage('Foo');
+
+このコマンドの使い方の情報です。ヘルプ画面で利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::Author::generate::plugin]]はすべてのメソッドを
+[[Mojo::Command]]から継承しており、次の新しいメソッドを継承しています。
+
+=head2 run
+
+  $plugin->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

@@ -1,0 +1,133 @@
+=encoding utf8
+
+[[Mojoliciousガイド|Home]]
+
+=head1 名前
+
+Mojolicious::Guides - 銀河 Mojolicious ガイド
+
+=head1 あわてるな
+
+我々は常に新しい文書化に取り組んでいます。全ての最新の更新を得るには、
+L<http://twitter.com/kraih> や L<http://github.com/kraih/mojo> 
+をフォローするか、C<irc.perl.org> 内の公式 IRC チャンネル C<#mojo> 
+に参加してください。
+
+=head1 Perlを学ぶ
+
+もしあなたがPerlが初めてならば、すばやい学習のために
+L<Learn Perl in 2 hours 30 minutes|http://qntm.org/files/perl/perl.html> for
+を見るか、
+多くのフォーマットで自由に利用できるL<Modern Perl|http://onyxneon.com/books/modern_perl/>という本
+をおすすめします。
+両方は素晴らしい言語の入門になっています。
+さらなる本やドキュメントについては、
+L<learn.perl.org|http://learn.perl.org/>
+を見てください。
+
+=head1 チュートリアル
+
+Mojolicious でウェブアプリケーションの開発を始める本当に早く楽しい方法は
+[[Mojolicious::Lite]] のチュートリアルにあります。
+このチュートリアルで学ぶほとんどすべてのことは、普通の[[Mojolicious]]アプリケーション
+で利用することができ、ガイドを読む前に学習するためのものになっています。
+絶対に見るべきです。
+
+=head1 ガイド
+
+=over 2
+
+=item * [[Mojolicious::Guides::Routing]]
+
+簡単で楽しい [[Mojolicious]] ルータへの入門。
+
+=item * [[Mojolicious::Guides::Rendering]]
+
+[[Mojolicious]] レンダラでの内容生成。
+
+=item * [[Mojolicious::Guides::Growing]]
+
+ゼロからの [[Mojolicious::Lite]] の原型の開始、そしてそれを
+良く構造化された L<Mojolicious> アプリケーションへ育てること。
+
+=item * [[Mojolicious::Guides::Cookbook]]
+
+[[Mojolicious]] での料理、あらゆる風味のためのレシピ。
+
+=item * [[Mojolicious::Guides::CodingGuidelines]]
+
+進行中の[[Mojolicious]]開発に参加しよう。
+
+=item * [[Mojolicious::Guides::FAQ]]
+
+よくある質問と正しい回答。
+
+=back
+
+=head1 ハイライト
+
+[[Mojolicious]] と [[Mojolicious::Lite]] は多くの部品、
+つまり独立に使用可能である小さな構成ブロックが集約されたものです。
+これらは最も顕著なものです。
+
+=over 2
+
+=item * [[Mojo::UserAgent]]
+
+完全な機能を備えた非同期 I/O HTTP 1.1 および WebSocket ユーザエージェント。
+
+=item * [[Mojo::DOM]]
+
+とても楽しい、CSS3 セレクタをサポートした最小限の XML/HTML5 DOM パーサ。
+
+=item * [[Mojo::JSON]]
+
+正しく動作する最小限の JSON 実装。
+
+=item * [[Mojo::Server::Daemon]]
+
+高度にポータブルな非同期 I/O HTTP 1.1 および WebSocket サーバ。
+開発とテストには申し分ありません。
+
+=item * [[Mojo::Server::Prefork]]
+
+完全な機能を備え、UNIXに最適化された、
+プレフォーキング非同期 I/O HTTP 1.1 および WebSocket サーバ。
+[[Mojo::Server::Hypnotoad]]を通して、
+停止時間なしでのソフトウェア更新(ホットデプロイメント)をサポートします。
+
+=item * [[Mojo::Server::CGI]], [[Mojo::Server::PSGI]]
+
+そのままで CGI, FastCGI, PSGI を透過的にサポート。
+
+=item * [[Mojo::IOLoop]]
+
+複数のリアクターバックエンドをサポートした最小限のイベントループ。
+
+=item * [[Mojo::Template]]
+
+とても Perl 的、かつ最小限のテンプレートシステム。
+
+=item * [[Test::Mojo]]
+
+ウェブアプリケーションのためのテスト駆動開発ツールキット。
+
+=item * [[ojo]]
+
+上記全ての利用をワンライナーでお楽しみ下さい。
+
+=back
+
+=head2 より学ぶには
+
+[[Mojolicious::Guides]]を学び続けてください。またL<Mojolicious wiki|http://github.com/kraih/mojo/wiki>を見ることもできます。wikiには多くのユーザーによる多くのドキュメントやサンプルがあります。
+
+=head1 サポート
+
+ドキュメントに答えが見つからなくって質問があるときは、
+L<メーリングリスト|http://groups.google.com/group/mojolicious>か
+公式のIRCチャンネルであるirc.perl.orgの#mojoでためらわずに質問してください。
+
+(2013/6/26更新)
+
+=cut

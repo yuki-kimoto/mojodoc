@@ -1,0 +1,156 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Routes - いつでもルーティングで行き先を発見する
+
+=head1 使い方
+
+  use Mojolicious::Routes;
+
+  # 簡単なルーティング
+  my $r = Mojolicious::Routes->new;
+  $r->route('/')->to(controller => 'blog', action => 'welcome');
+
+  # 高度なルーティング
+  my $blog = $r->under('/blog');
+  $blog->get('/list')->to('blog#list');
+  $blog->get('/:id' => [id => qr/\d+/])->to('blog#show', id => 23);
+  $blog->patch(sub { shift->render(text => 'Go away!', status => 405) });
+
+=head1 説明
+
+[[Mojolicious::Routes]]は有名なルーティングパターンのとても強力な実装で、
+[[Mojolicious]] Webフレームワークの中心です。
+より多くのことを知りたいなら、[[Mojolicious::Guides::Routing]]を見てください。
+
+=head1 属性
+
+[[Mojolicious::Routes]]は次の属性を実装しています。
+
+=head2 base_classes
+
+  my $classes = $r->base_classes;
+  $r          = $r->base_classes(['MyApp::Controller']);
+
+コントローラーを識別するために利用されるベースクラス。
+デフォルトは[[Mojolicious::Controller]]と[[Mojo]]です。
+
+=head2 cache
+
+  my $cache = $r->cache;
+  $r        = $r->cache(Mojo::Cache->new);
+
+ルーティングのキャッシュ。
+デフォルトは[[Mojo::Cache]]オブジェクト。
+
+=head2 conditions
+
+  my $conditions = $r->conditions;
+  $r             = $r->conditions({foo => sub {...}});
+
+すべての利用可能な条件を格納しています。
+
+=head2 hidden
+
+  my $hidden = $r->hidden;
+  $r         = $r->hidden([qw(attr has new)]);
+
+ルーティングで隠されるコントローラーのメソッドと属性。
+
+=head2 namespaces
+
+  my $namespaces = $r->namespaces;
+  $r             = $r->namespaces(['Foo::Bar::Controller']);
+
+コントローラーを探すための名前空間。
+
+  # コントローラーを読み込むために他の名前空間を追加
+  push @{$r->namespaces}, 'MyApp::MyController';
+
+=head2 shortcuts
+
+  my $shortcuts = $r->shortcuts;
+  $r            = $r->shortcuts({foo => sub { ... }});
+
+このルーティングのためにすべての追加的なルーティングのショートカットを格納します。
+
+=head2 types
+
+  my $types = $r->types;
+  $r        = $r->types({lower => qr/[a-z]+/});
+
+プレースホルダーのタイプを登録します。デフォルトは、「num」だけでデフォルトで定義されています。
+
+=head1 メソッド
+
+[[Mojolicious::Routes]]は[[Mojo::Base]]のすべてのメソッドを
+継承しており、次のメソッドを実装しています。
+
+=head2 add_condition
+
+  $r = $r->add_condition(foo => sub { ... });
+
+新しい条件をこのルーティングのために追加します。
+
+=head2 add_shortcut
+
+  $r = $r->add_shortcut(foo => sub { ... });
+
+新しいショートカットをこのルーティングのために追加します。
+
+=head2 add_type
+
+  $r = $r->add_type(foo => qr/\w+/);
+  $r = $r->add_type(foo => ['bar', 'baz']);
+
+プレースホルダーのタイプを登録します。
+
+  $r->add_type(lower => qr/[a-z]+/);
+
+=head2 continue
+
+  $r->continue(Mojolicious::Controller->new);
+
+ディスパッチチェーンを継続して、すべてのアクションのために[[Mojolicious]]のC<around_action>フックを発行します。
+
+=head2 dispatch
+
+   my $bool = $r->dispatch(Mojolicious::Controller->new);
+
+C<match>でルーティングをマッチし、C<continue>ディスパッチします。
+
+=head2 hide
+
+  $r = $r->hide('new');
+
+コントローラーのメソッドあるいは属性をルーティングから隠します。
+
+=head2 is_hidden
+
+  my $bool = $r->is_hidden('foo');
+
+コントローラーメソッドあるいは属性がルーターから隠されているかどうかをチェックします。
+
+=head2 lookup
+
+  my $route = $r->lookup('foo');
+
+[[Mojolicious::Routes::Route]]のC<find>を使って名前によってルーティングを見つけ、
+次の参照のために、すべての結果をキャッシュします。
+
+=head2 match
+
+  $r->match(Mojolicious::Controller->new);
+
+[[Mojolicious::Routes::Match]]を使ってルートをマッチします。
+
+=head1 参照
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月13日更新)
+
+=cut

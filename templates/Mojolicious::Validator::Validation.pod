@@ -1,0 +1,193 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 NAME
+
+Mojolicious::Validator::Validation - 検証の実行
+
+=head1 使い方
+
+  use Mojolicious::Validator;
+  use Mojolicious::Validator::Validation;
+
+  my $validator = Mojolicious::Validator->new;
+  my $v = Mojolicious::Validator::Validation->new(validator => $validator);
+  $v->input({foo => 'bar'});
+  $v->required('foo')->in('bar', 'baz');
+  say $v->param('foo');
+
+=head1 説明
+
+[[Mojolicious::Validator::Validation]]は[[Mojolicious::Validator]]による検証チェック
+を実行します。
+
+=head1 属性
+
+[[Mojolicious::Validator::Validation]]は次の属性を実装しています。
+
+=head2 csrf_token
+
+  my $token   = $v->csrf_token;
+  $v = $v->csrf_token('fa6a08...');
+
+CSRFトークン.
+
+=head2 input
+
+  my $input   = $v->input;
+  $v = $v->input({foo => 'bar', baz => [123, 'yada']});
+
+検証されるデータ
+
+=head2 output
+
+  my $output  = $v->output;
+  $v = $v->output({});
+
+検証されたデータ。
+
+=head2 topic
+
+  my $topic   = $v->topic;
+  $v = $v->topic('foo');
+
+現在検証されているフィールドの名前
+
+=head2 validator
+
+  my $validator = $v->validator;
+  $v   = $v->validator(Mojolicious::Validator->new);
+
+この検証が属する[[Mojolicious::Validator]]オブジェクト
+
+=head1 メソッド
+
+[[Mojolicious::Validator::Validation]]は[[Mojo::Base]]から
+すべてのメソッドを継承しており、次の新しいメソッドを実装しています。
+
+=head2 check
+
+  $v = $v->check('size', 2, 7);
+
+現在のトピック(C<topic>)のすべての値に対して、検証チェックを実行します。
+最初のひとつが失敗すれば、残りの検証は行われません。
+
+=head2 csrf_protect
+
+  $v = $v->csrf_protect;
+
+C<csrf_token>を検証し、クロスサイトリクエストフォージェリーから保護します。
+
+=head2 error
+
+  my $err = $v->error('foo');
+  $v      = $v->error(foo => ['custom_check']);
+  $v      = $v->error(foo => [$check, $result, @args]);
+
+失敗した検証のために詳細を設定します。
+フィールドあたりひとつだけ設定できます。
+
+  # 失敗したバリデーションについての詳細
+  my ($check, $result, @args) = @{$v->error('foo')};
+
+  # チェックを実行することなしに、フィールドのバリデーションの失敗を強制する
+  $v->error(foo => ['some_made_up_check_name']);
+
+=head2 every_param
+
+  my $values = $v->every_param('foo');
+
+C<param>と似ていますが、同じ名前で共有されるすべての値を
+配列のリファレンスとして、返却します。
+
+  # 最初の値を取得
+  my $first = $v->every_param('foo')->[0];
+
+=head2 failed
+
+  my $names = $v->failed;
+
+失敗したバリデーションのすべてのパラメーター名をリストで返却します。
+
+  # 失敗したすべてのパラメーター名
+  say for @{$v->failed};
+
+=head2 has_data
+
+  my $bool = $v->has_data;
+
+C<input>が検証のために利用できるデータを持っているかチェックします。
+
+=head2 has_error
+
+  my $bool = $v->has_error;
+  my $bool = $v->has_error('foo');
+
+検証結果にエラーがあるかをチェックします。
+デフォルトですべてのフィールドをチェックします。
+
+=head2 is_valid
+
+  my $bool = $v->is_valid;
+  my $bool = $v->is_valid('foo');
+
+検証が成功し、フィールドが値を持っているかをチェックします。
+デフォルトで現在のC<topic>をチェックします。
+
+=head2 optional
+
+  $v = $v->optional('foo');
+  $v = $v->optional('foo', 'filter1', 'filter2');
+
+検証トピック(C<topic>)を変更し、フィルタを適用します。[[Mojolicious::Validator]]のフィルタのすべてのフィルタがサポートされています。
+
+=head2 param
+
+  my $value = $v->param;
+  my $value = $v->param('foo');
+
+検証パラメーターにアクセスします。
+同じ名前で共有される複数の値があり、
+ひとつ以上の値にアクセスしたい場合は、
+C<every_param>を使用することができます。
+
+  # すぐに値を取得
+  my $user = $v->optional('user')->size(1, 15)->param;
+
+=head2 passed
+
+  my $names = $v->passed;
+
+成功したバリデーションのすべてのパラメーター名をリストで返却します。
+
+  # 成功したすべてのパラメーターの名前
+  say for @{$v->passed};
+
+=head2 required
+
+  $v = $v->required('foo');
+  $v = $v->required('foo', 'filter1', 'filter2');
+
+検証のトピック(C<topic>)を変更し、フィルタを適用し、値が存在する、空の文字列ではないことを確実にします。
+[[Mojolicious::Validator]]のフィルタのすべてのフィルタがサポートされています。
+
+=head1 チェック
+
+属性とメソッドに加えて、C<validator>で提供される[[Mojolicious::Validator::Validation]]上のすべてのチェックを利用できます。C<check>に似ています。
+
+  # バリデーションチェックを呼ぶ
+  $v->required('foo')->size(2, 5)->like(qr/^[A-Z]/);
+  $v->optional('bar')->equal_to('foo');
+  $v->optional('baz')->in(qw(test 123));
+
+  # 長いバージョン
+  $v->required('foo')->check('size', 2,5)->check('like', qr/^[A-Z]/);
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月14日更新)
+
+=cut

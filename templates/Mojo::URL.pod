@@ -1,0 +1,351 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::URL
+
+=head1 名前
+
+Mojo::URL - Uniform Resource Locator (統一資源位置指定子)
+
+=head1 使い方
+
+  use Mojo::URL;
+
+  # 解析
+  my $url
+    = Mojo::URL->new('http://sri:foobar@kraih.com:3000/foo/bar?foo=bar#23');
+  say $url->scheme;
+  say $url->userinfo;
+  say $url->host;
+  say $url->port;
+  say $url->path;
+  say $url->query;
+  say $url->fragment;
+
+  # 構築
+  my $url = Mojo::URL->new;
+  $url->scheme('http');
+  $url->userinfo('sri:foobar');
+  $url->host('example.com');
+  $url->port(3000);
+  $url->path('/foo/bar');
+  $url->path('baz');
+  $url->query(foo => 'bar');
+  $url->fragment(23);
+  say "$url";
+
+=head1 説明
+
+[[Mojo::URL]] は、IDNA と IRI をサポートした Uniform Resource Locator (URL) 
+のための
+L<RFC 3986|http://tools.ietf.org/html/rfc3986>、
+L<RFC 3987|http://tools.ietf.org/html/rfc3987>、
+L<URL Living Standard|https://url.spec.whatwg.org>
+のサブセットを実装しています。
+
+=head1 属性
+
+[[Mojo::URL]] は次の属性を実装しています。
+
+=head2 base
+
+  my $base = $url->base;
+  $url     = $url->base(Mojo::URL->new);
+
+このURLのベース。
+
+  "http://example.com/a/b?c"
+  Mojo::URL->new("/a/b?c")->base(Mojo::URL->new("http://example.com"))->to_abs;
+
+=head2 fragment
+
+  my $fragment = $url->fragment;
+  $url         = $url->fragment('♥mojolicious♥');
+
+このURLのフラグメントの部分。
+
+  # "yada"
+  Mojo::URL->new('http://example.com/foo?bar=baz#yada')->fragment;
+
+=head2 host
+
+  my $host = $url->host;
+  $url     = $url->host('127.0.0.1');
+
+このURLのホストの部分。
+
+  # "yada"
+  Mojo::URL->new('http://example.com/foo?bar=baz#yada')->fragment;
+
+=head2 port
+
+  my $port = $url->port;
+  $url     = $url->port(8080);
+
+このURLのポートの部分。
+
+  # "8080"
+  Mojo::URL->new('http://sri:t3st@example.com:8080/foo')->port;
+
+=head2 scheme
+
+  my $scheme = $url->scheme;
+  $url       = $url->scheme('http');
+
+このURLのスキームの部分。
+
+  # "http"
+  Mojo::URL->new('http://example.com/foo')->scheme;
+
+=head2 userinfo
+
+  my $info = $url->userinfo;
+  $url     = $url->userinfo('root:♥');
+
+このURLのユーザー情報の部分。
+
+  # "sri:t3st"
+  Mojo::URL->new('https://sri:t3st@example.com/foo')->userinfo;
+
+=head1 メソッド
+
+[[Mojo::URL]]は[[Mojo::Base]]のすべてのメソッドを継承し、
+次の新しいメソッドを実装しています。
+
+=head2 clone
+
+  my $url2 = $url->clone;
+
+URLを複製します。
+
+=head2 host_port
+
+  my $host_port = $url->host_port;
+
+C<host>とC<port>の正規化されたバージョンです。
+
+  # "xn--n3h.net:8080"
+  Mojo::URL->new('http://☃.net:8080/test')->host_port;
+
+  # "example.com"
+  Mojo::URL->new('http://example.com/test')->host_port;
+
+=head2 ihost
+
+  my $ihost = $url->ihost;
+  $url      = $url->ihost('xn--bcher-kva.ch');
+
+punycode形式のこのURLのホストの部分。
+
+  # "xn--n3h.net"
+  say Mojo::URL->new('http://☃.net')->ihost;
+
+  # "example.com"
+  Mojo::URL->new('http://example.com')->ihost;
+
+=head2 is_abs
+
+  my $bool = $url->is_abs;
+
+絶対 URL であるかどうかのチェック。
+
+  # 真
+  Mojo::URL->new('http://example.com')->is_abs;
+  Mojo::URL->new('http://example.com/test/index.html')->is_abs;
+
+  # 偽
+  Mojo::URL->new('test/index.html')->is_abs;
+  Mojo::URL->new('/test/index.html')->is_abs;
+  Mojo::URL->new('//example.com/test/index.html')->is_abs;
+
+=head2 new
+
+  my $url = Mojo::URL->new;
+  my $url = Mojo::URL->new('http://127.0.0.1:3000/foo?f=b&baz=2#foo');
+
+新しい[[Mojo::URL]]オブジェクトを構築し、必要であれば"parse"でURLを解析します。
+
+=head2 parse
+
+  $url = $url->parse('http://127.0.0.1:3000/foo/bar?fo=o&baz=23#foo');
+
+URLの解析。
+
+  # "/test/123"
+  $url->parse('/test/123?foo=bar')->path;
+
+  # "example.com"
+  $url->parse('http://example.com/test/123?foo=bar')->host;
+
+  # "sri@example.com"
+  $url->parse('mailto:sri@example.com')->path;
+
+=head2 password
+
+  my $password = $url->password;
+
+"userinfo"のパスワードの部分。
+
+  # "s3cret"
+  Mojo::URL->new('http://isabel:s3cret@mojolicious.org')->password;
+
+  # "s:3:c:r:e:t"
+  Mojo::URL->new('http://isabel:s:3:c:r:e:t@mojolicious.org')->password;
+
+=head2 path
+
+  my $path = $url->path;
+  $url     = $url->path('foo/bar');
+  $url     = $url->path('/foo/bar');
+  $url     = $url->path(Mojo::Path->new);
+
+このURLのパスの部分。相対パスを渡すと、既存のパスに追加されるでしょう。
+デフォルトは、[[Mojo::Path]]オブジェクトです。
+
+このURLのパスの部分。
+相対パスは、[[Mojo::Path]]のC<merge>によってマージされます。
+デフォルトは[[Mojo::Path]]オブジェクトです。
+
+  # "perldoc"
+  Mojo::URL->new('http://example.com/perldoc/Mojo')->path->parts->[0];
+
+  # "/perldoc/DOM/HTML"
+  Mojo::URL->new('http://example.com/perldoc/Mojo')->path->merge('DOM/HTML');
+
+  # "http://example.com/DOM/HTML"
+  Mojo::URL->new('http://example.com/perldoc/Mojo')->path('/DOM/HTML');
+
+  # "http://example.com/perldoc/DOM/HTML"
+  Mojo::URL->new('http://example.com/perldoc/Mojo')->path('DOM/HTML');
+
+  # "http://example.com/perldoc/Mojo/DOM/HTML"
+  Mojo::URL->new('http://example.com/perldoc/Mojo/')->path('DOM/HTML');
+
+=head2 path_query
+
+  my $path_query = $url->path_query;
+  $url           = $url->path_query('/foo/bar?a=1&b=2');
+
+C<path">とC<query>の正規化されたバージョンです。
+
+  # "/test?a=1&b=2"
+  Mojo::URL->new('http://example.com/test?a=1&b=2')->path_query;
+
+  # "/"
+  Mojo::URL->new('http://example.com/')->path_query;
+
+=head2 protocol
+
+  my $proto = $url->protocol;
+
+スキームの正規化されたバージョンです。
+
+  # "http"
+  Mojo::URL->new('HtTp://example.com')->protocol;
+
+=head2 query
+
+  my $query = $url->query;
+  $url      = $url->query({merge => 'to'});
+  $url      = $url->query([append => 'with']);
+  $url      = $url->query(replace => 'with');
+  $url      = $url->query('a=1&b=2');
+  $url      = $url->query(Mojo::Parameters->new);
+
+このURLのクエリの部分。
+デフォルトは[[Mojo::Parameters]]オブジェクトです。
+
+  # "2"
+  Mojo::URL->new('http://example.com?a=1&b=2')->query->param('b');
+
+  # "a=2&b=2&c=3"
+  Mojo::URL->new('http://example.com?a=1&b=2')->query->merge(a => 2, c => 3);
+
+  # "http://example.com?a=2&c=3"
+  Mojo::URL->new('http://example.com?a=1&b=2')->query(a => 2, c => 3);
+
+  # "http://example.com?a=2&a=3"
+  Mojo::URL->new('http://example.com?a=1&b=2')->query(a => [2, 3]);
+
+  # "http://example.com?a=2&b=2&c=3"
+  Mojo::URL->new('http://example.com?a=1&b=2')->query({a => 2, c => 3});
+
+  # "http://example.com?b=2"
+  Mojo::URL->new('http://example.com?a=1&b=2')->query({a => undef});
+
+  # "http://example.com?a=1&b=2&a=2&c=3"
+  Mojo::URL->new('http://example.com?a=1&b=2')->query([a => 2, c => 3]);
+
+=head2 to_abs
+
+  my $abs = $url->to_abs;
+  my $abs = $url->to_abs(Mojo::URL->new('http://kraih.com/foo'));
+
+相対URLを絶対URLに変換します。
+
+  # "http://example.com/foo/baz.xml?test=123"
+  Mojo::URL->new('baz.xml?test=123')
+    ->to_abs(Mojo::URL->new('http://example.com/foo/bar.html'));
+
+  # "http://example.com/baz.xml?test=123"
+  Mojo::URL->new('/baz.xml?test=123')
+    ->to_abs(Mojo::URL->new('http://example.com/foo/bar.html'));
+
+  # "http://example.com/foo/baz.xml?test=123"
+  Mojo::URL->new('//example.com/foo/baz.xml?test=123')
+    ->to_abs(Mojo::URL->new('http://example.com/foo/bar.html'));
+
+=head2 to_string
+
+  my $str = $url->to_string;
+
+URLを文字列に変換します。
+
+  # "http://mojolicious.org"
+  Mojo::URL->new->scheme('http')->host('mojolicious.org')->to_string;
+
+  # "http://mojolicious.org"
+  Mojo::URL->new('http://daniel:s3cret@mojolicious.org')->to_string;
+
+=head2 to_unsafe_string
+
+  my $str = $url->to_unsafe_string;
+
+"to_string"と同じですが、"userinfo"を含みます
+
+  # "http://daniel:s3cret@mojolicious.org"
+  Mojo::URL->new('http://daniel:s3cret@mojolicious.org')->to_unsafe_string;
+
+=head2 username
+
+  my $username = $url->username;
+
+"userinfo"のユーザー名の部分。
+
+  # "isabel"
+  Mojo::URL->new('http://isabel:s3cret@mojolicious.org')->username;
+
+=head1 演算子
+
+[[Mojo::URL]]は次の演算子をオーバーロードしています。
+
+=head2 真偽値
+
+  my $bool = !!$url;
+
+いつでも真。
+
+=head2 文字列化
+
+  my $str = "$url";
+
+C<to_string>のエイリアス。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月29日更新)
+
+=cut

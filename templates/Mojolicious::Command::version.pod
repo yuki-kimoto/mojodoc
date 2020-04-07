@@ -1,0 +1,65 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::version - バージョンコマンド
+
+=head1 使い方
+
+  Usage: APPLICATION version [OPTIONS]
+
+    mojo version
+
+  Options:
+    -h, --help   Show this summary of available options
+
+=head1 説明
+
+[[Mojolicious::Command::version]]はインスールされているモジュールのバージョンを
+表示します。
+
+これはコアのコマンドです。いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::version]]は[[Mojo::Command]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $v->description;
+  $v              = $v->description('Foo!');
+
+このコマンドの短い説明。コマンドの一覧表示に利用されます。
+
+=head2 usage
+
+  my $usage = $v->usage;
+  $v        = $v->usage('Foo!');
+
+このコマンドの使用方法の情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::version]]は[[Mojo::Command]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $get = $v->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日)
+
+=cut

@@ -1,0 +1,56 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::Fastcgi - FastCGIコマンド
+
+=head1 使い方
+
+  use Mojolicious::Command::Fastcgi;
+
+  my $fastcgi = Mojolicious::Command::Fastcgi->new;
+  $fastcgi->run;
+
+=head1 説明
+
+[[Mojolicious::Command::Fastcgi]]は
+[[Mojo::Server::FastCGI]]のコマンドインターフェースです。
+
+=head1 属性
+
+[[Mojolicious::Command::FastCGI]]は
+[[Mojo::Command]]からすべての属性を
+継承しており、次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $fastcgi->description;
+  $fastcgi        = $fastcgi->description('Foo!');
+
+このコマンドの短い説明。コマンド一覧のために利用されます。
+
+=head2 usage
+
+  my $usage = $fastcgi->usage;
+  $fastcgi  = $fastcgi->usage('Foo!');
+
+このコマンドの使用情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::Fastcgi]]は[[Mojo::Command]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $fastcgi = $fastcgi->run;
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+=cut

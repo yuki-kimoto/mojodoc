@@ -1,0 +1,222 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Transaction - トランザクションの基底クラス
+
+=head1 使用方法
+
+  package Mojo::Transaction::MyTransaction;
+  use Mojo::Base 'Mojo::Transaction';
+
+  sub client_read  {...}
+  sub client_write {...}
+  sub server_read  {...}
+  sub server_write {...}
+
+=head1 説明
+
+[[Mojo::Transaction]]は、
+[[Mojo::Transaction::HTTP]]や[[Mojo::Transaction::WebSocket]]のような
+トランザクションのための抽象基底クラスです。
+
+=head1 イベント 
+
+[[Mojo::Transaction]]は[[Mojo::EventEmitter]]のすべてのイベントを継承しており、
+次の新しいイベントを発行します。
+
+=head2 connection
+
+  $tx->on(connection => sub {
+    my ($tx, $connection) = @_;
+    ...
+  });
+
+接続がトランザクションに割り当てられたときに発行されます。
+
+=head2 finish
+
+  $tx->on(finish => sub {
+    my $tx = shift;
+    ...
+  });
+
+トランザクションが終了したときに発行されます。
+
+=head1 属性
+
+[[Mojo::Transaction]]は次の属性を実装しています。
+
+=head2 kept_alive
+
+  my $kept_alive = $tx->kept_alive;
+  $tx            = $tx->kept_alive(1);
+
+接続がケプトアライブ(kept alive)になっている。
+
+=head2 local_address
+
+  my $local_address = $tx->local_address;
+  $tx               = $tx->local_address($address);
+
+ローカルインターフェースのアドレス。
+
+=head2 local_port
+
+  my $local_port = $tx->local_port;
+  $tx            = $tx->local_port($port);
+
+ローカルインターフェースのポート。
+
+=head2 original_remote_address
+
+  my $address = $tx->original_remote_address;
+  $tx         = $tx->original_remote_address('127.0.0.1');
+
+リモートインターフェースアドレス。
+
+=head2 remote_port
+
+  my $remote_port = $tx->remote_port;
+  $tx             = $tx->remote_port($port);
+
+リモートインターフェースのポート。
+
+=head2 req
+
+  my $req = $tx->req;
+
+トランザクションのリクエスト。デフォルトは[[Mojo::Message::Request]]オブジェクト。
+
+=head2 res
+
+  my $res = $tx->res;
+  $tx     = $tx->res(Mojo::Message::Response->new);
+
+トランザクションのレスポンス。デフォルトは[[Mojo::Message::Response]]オブジェクト。
+
+  # レスポンスの情報にアクセスする
+  my $code    = $tx->res->code;
+  my $message = $tx->res->message;
+  my $server  = $tx->res->headers->server;
+  my $custom  = $tx->res->headers->header('Custom-Header');
+  my $bytes   = $tx->res->body;
+  my $str     = $tx->res->text;
+  my $value   = $tx->res->json;
+  my $foo     = $tx->res->json('/23/foo');
+  my $dom     = $tx->res->dom;
+  my $bar     = $tx->res->dom('div.bar')->first->text;
+
+=head1 メソッド
+
+[[Mojo::Transaction]]は[[Mojo::EventEmitter]]からすべてのメソッドを実装しており、
+次の新しいメソッドを実装しています。
+
+=head2 client_read
+
+  $tx = $tx->client_read($chunk);
+
+クライアントのデータを読み込み、処理します。
+
+=head2 client_write
+
+  my $chunk = $tx->client_write;
+
+クライアントのデータを書き込みます。
+
+=head2 closed
+
+  $tx = $tx->closed;
+
+"completed"と同じですが、すべてのトランザクションのデータが送信されたことを示します。
+
+=head2 completed
+
+  $tx = $tx->completed;
+
+トランザクションをファイナライズするための低レベルメソッド。
+
+=head2 connection
+
+  my $id = $tx->connection;
+  $tx    = $tx->connection($id);
+
+コネクションの識別子。
+
+=head2 error
+
+  my $err = $tx->error;
+
+リクエストとレスポンスのエラーを取得します。
+エラーがなければC<undef>を返します。
+通常はC<success>と共に利用されます。
+
+  # 長いバージョン
+  my $err = $tx->req->error || $tx->res->error;
+
+  # 4xx/5xxレスポンスと接続エラーをチェックする
+  if (my $err = $tx->error) {
+    die "$err->{code} response: $err->{message}" if $err->{code};
+    die "Connection error: $err->{message}";
+  }
+
+=head2 is_finished
+
+  my $bool = $tx->is_finished;
+
+トランザクションが終了したかどうかをチェックします。
+
+=head2 is_websocket
+
+  my $bool = $tx->is_writing;
+
+トランザクションがWebSocketかどうかをチェックします。
+
+=head2 remote_address
+
+  my $remote_address = $tx->remote_address;
+  $tx                = $tx->remote_address($address);
+
+リモートインターフェースのアドレス。
+
+C<original_remote_address>と同じか、
+もし、リクエスト(C<req>)がリバースプロキシによって実行されていれば、
+C<X-Forwarded-For>の値です。
+
+=head2 result
+
+  my $res = $tx->result;
+
+"res"から[[Mojo::Message::Response]]オブジェクトを返すか、コネクションエラーが発生した場合は、例外を発生させます。
+
+  # よい粒度のレスポンスのハンドリング (接続エラーの場合は例外発生)
+  my $res = $tx->result;
+  if    ($res->is_success)  { say $res->body }
+  elsif ($res->is_error)    { say $res->message }
+  elsif ($res->code == 301) { say $res->headers->location }
+  else                      { say 'Whatever...' }
+
+=head2 server_read
+
+  $tx = $tx->server_read($chunk);
+
+サーバーのデータを読み込み、処理する。
+サブクラスでオーバーロードされます。
+
+=head2 server_write
+
+  my $chunk = $tx->server_write;
+
+サーバーのデータを書き込む。
+Webサーバーを実装するのに利用されます。
+サブクラスでオーバーロードされます。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月29日更新)
+
+=cut

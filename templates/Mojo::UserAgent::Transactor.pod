@@ -1,0 +1,292 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::UserAgent::Transactor - ユーザーエージェントトランザクター
+
+=head1 使い方
+
+  use Mojo::UserAgent::Transactor;
+
+  # AcceptヘッダーのついたGETリクエスト
+  my $t = Mojo::UserAgent::Transactor->new;
+  say $t->tx(GET => 'http://example.com' => {Accept => '*/*'})->req->to_string;
+
+  #  "Do Not Track"ヘッダーとコンテンツを持ったPATCHリクエスト
+  say $t->tx(PATCH => 'example.com' => {DNT => 1} => 'Hi!')->req->to_string;
+
+  # フォームデータを持ったPOSTリクエスト
+  say $t->tx(POST => 'example.com' => form => {a => 'b'})->req->to_string;
+
+  # JSONデータを持ったPUTリクエスト
+  say $t->tx(PUT => 'example.com' => json => {a => 'b'})->req->to_string;
+
+=head1 説明
+
+[[Mojo::UserAgent::Transactor]]は[[Mojo::UserAgent]]のための
+トランザクションの構築と処理のためのフレームワークです。
+
+=head1 ジェネレーター
+
+以下のジェネレーターがデフォルトで利用可能です。
+
+=head2 form
+
+  $t->tx(POST => 'http://example.com' => form => {a => 'b'});
+
+クエリ文字列、C<application/x-www-form-urlencoded>あるいは、
+C<multipart/form-data>コンテンツを生成します。
+
+=head2 json
+
+  $t->tx(PATCH => 'http://example.com' => json => {a => 'b'});
+
+[[Mojo::JSON]]を使ってJSONコンテンツを生成します。
+
+=head2 multipart
+
+  $t->tx(PUT => 'http://example.com' => multipart => ['Hello', 'World!']);
+
+マルチパートコンテントを生成します。詳しくは"tx"を見てください。
+
+=head1 属性
+
+[[Mojo::UserAgent::Transactor]]は次の属性を実装しています。
+
+=head2 compressed
+
+  my $bool = $t->compressed;
+  $t       = $t->compressed($bool);
+
+Try to negotiate compression for the response content and decompress it
+automatically, defaults to the value of the C<MOJO_GZIP> environment variable or
+true.
+
+応答コンテンツの圧縮を交渉し、自動的に解凍を試みます。
+デフォルトはC<MOJO_GZIP>環境変数の値、あるいは真です。
+
+=head2 generators
+
+  my $generators = $t->generators;
+  $t             = $t->generators({foo => sub {...}});
+
+コンテンツのジェネレーターを登録します。
+デフォルトでC<form>とC<json>とC<multipart>がすでに定義されています。
+
+=head2 name
+
+  my $name = $t->name;
+  $t       = $t->name('Mojolicious');
+
+生成されたトランザクションのC<User-Agent>リクエストヘッダの値。デフォルトはC<Mojolicious (Perl)>です。
+
+=head1 メソッド
+
+[[Mojo::UserAgent::Transactor]]は[[Mojo::Base]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 add_generator
+
+  $t = $t->add_generator(foo => sub {...});
+
+新しいコンテンツジェネレーターを登録します。
+
+=head2 endpoint
+
+  my ($proto, $host, $port) = $t->endpoint(Mojo::Transaction::HTTP->new);
+
+トランザクションの実際のエンドポイント。
+
+=head2 peer
+
+  my ($proto, $host, $port) = $t->peer(Mojo::Transaction::HTTP->new);
+
+トランザクションの実際のあて先。
+
+=head2 promisify
+
+  $t->promisify(Mojo::Promise->new, Mojo::Transaction::HTTP->new);
+
+[[Mojo::Promise]]オブジェクトを、[[Mojo::Transaction::HTTP]]オブジェクトで解決または拒否します。
+
+=head2 proxy_connect
+
+  my $tx = $t->proxy_connect(Mojo::Transaction::HTTP->new);
+
+可能であればトランザクションのために[[Mojo::Transaction::HTTP]]プロキシ接続のリクエスト
+を構築します。
+
+=head2 redirect
+
+  my $tx = $t->redirect(Mojo::Transaction::HTTP->new);
+
+可能であればC<301>, C<302>, C<303>
+,C<307>リダイレクトレスポンスのための
+[[Mojo::Transaction::HTTP]]追跡リクエストを構築します。
+
+=head2 tx
+
+  my $tx = $t->tx(GET  => 'example.com');
+  my $tx = $t->tx(POST => 'http://example.com');
+  my $tx = $t->tx(GET  => 'http://example.com' => {Accept => '*/*'});
+  my $tx = $t->tx(PUT  => 'http://example.com' => 'Content!');
+  my $tx = $t->tx(PUT  => 'http://example.com' => form => {a => 'b'});
+  my $tx = $t->tx(PUT  => 'http://example.com' => json => {a => 'b'});
+  my $tx = $t->tx(PUT  => 'https://example.com' => multipart => ['a', 'b']);
+  my $tx = $t->tx(POST => 'example.com' => {Accept => '*/*'} => 'Content!');
+  my $tx = $t->tx(
+    PUT => 'example.com' => {Accept => '*/*'} => form => {a => 'b'});
+  my $tx = $t->tx(
+    PUT => 'example.com' => {Accept => '*/*'} => json => {a => 'b'});
+  my $tx = $t->tx(
+    PUT => 'example.com' => {Accept => '*/*'} => multipart => ['a', 'b']);
+
+コンテンツジェネレーターをサポートした、
+リクエストのための、用途の広い一般的な目的の
+[[Mojo::Transaction::HTTP]]トランザクションビルダー。
+
+  # DNTヘッダーとコンテンツを持ったカスタムGETリクエストを生成して覗く。
+  say $t->tx(GET => 'example.com' => {DNT => 1} => 'Bye!')->req->to_string;
+
+  # レスポンスコンテンツをSTDOUTにストリームする
+  my $tx = $t->tx(GET => 'http://example.com');
+  $tx->res->content->unsubscribe('read')->on(read => sub { say $_[1] });
+
+  # ファイルからコンテンツをストリームしたPUTリクエスト
+  my $tx = $t->tx(PUT => 'http://example.com');
+  $tx->req->content->asset(Mojo::Asset::File->new(path => '/foo.txt'));
+
+C<json>コンテンツジェネレーターはエンコードのために[[Mojo::JSON]]を使用し、
+コンテンツタイプをC<application/json>に設定します。
+
+  # "application/json"コンテンツのついたPOSTリクエスト
+  my $tx = $t->tx(
+    POST => 'http://example.com' => json => {a => 'b', c => [1, 2, 3]});
+
+C<form>コンテンツジェネレーターは自動的にクエリ文字列を
+C<GET>とC<HEAD>のリクエストのために使用します。
+
+  # クエリ文字列のついてGETリクエスト
+  my $tx = $t->tx(GET => 'http://example.com' => form => {a => 'b'});
+
+すべての他のリクエストメソッドでは、
+C<application/x-www-form-urlencoded>コンテントタイプが使用されます。
+
+  # "application/x-www-form-urlencoded"コンテンツがついたPOSTリクエスト
+  my $tx = $t->tx(
+    POST => 'http://example.com' => form => {a => 'b', c => 'd'});
+
+パラメーターはC<charset>オプションでエンコードすることもできます。.
+
+  # SHIFT_JISにエンコードされたフォームの値がついたPUTリクエスト
+  my $tx = $t->tx(
+    PUT => 'example.com' => form => {a => 'b'} => charset => 'Shift_JIS');
+
+配列のリファレンスは同じ名前で共有される複数のフォームの値のために利用可能です。
+
+  # 同じ名前を共有しているフォームの値を持ったPOSTリクエスト
+  my $tx = $t->tx(
+    POST => 'http://example.com' => form => {a => ['b', 'c', 'd']});
+
+C<content>かC<file>の値が設定されたハッシュリファレンスは、
+コンテントタイプをC<multipart/form-data>に変更し、ファイルアップロードのために、
+利用可能です。
+
+  # "multipart/form-data"コンテンツのついたPOSTリクエスト
+  my $tx = $t->tx(
+    POST => 'http://example.com' => form => {mytext => {content => 'lala'}});
+
+  # 同じ名前で共有される複数のファイルのPOSTリクエスト
+  my $tx = $t->tx(POST => 'http://example.com' =>
+    form => {mytext => [{content => 'first'}, {content => 'second'}]});
+
+C<file>の値は、アップロードしたいファイルのパスを含んでいるか、[[Mojo::Asset::File]]や[[Mojo::Asset::Memory]]のようなアセットオブジェクトであるべきです。
+
+  # アップロードがファイルからストリームされるPOSTリクエスト
+  my $tx = $t->tx(
+    POST => 'http://example.com' => form => {mytext => {file => '/foo.txt'}});
+
+  # アップロードがアッセトからストリームされるPOSTリクエスト
+  my $asset = Mojo::Asset::Memory->new->add_chunk('lalala');
+  my $tx    = $t->tx(
+    POST => 'http://example.com' => form => {mytext => {file => $asset}});
+
+C<filename>の値は、自動的に生成されますが、
+必要であれば、手動で設定できます。
+ハッシュのすべての残りの値は、ヘッダとしてC<multipart/form-data>にマージされます。
+
+  # フォームの値とカスタマイズされたアップロード(ファイル名とヘッダ)がついたPOSTリクエスト
+  my $tx = $t->tx(POST => 'http://example.com' => form => {
+    a      => 'b',
+    c      => 'd',
+    mytext => {
+      content        => 'lalala',
+      filename       => 'foo.txt',
+      'Content-Type' => 'text/plain'
+    }
+  });
+
+C<multipart/form-data>コンテントタイプは
+C<Content-Type>ヘッダを強制的に設定するのに利用できます。
+
+  # "multipart/form-data"の強制
+  my $headers = {'Content-Type' => 'multipart/form-data'};
+  my $tx = $t->tx(POST => 'example.com' => $headers => form => {a => 'b'});
+
+The C<multipart> content generator can be used to build custom multipart
+requests and does not set a content type.
+
+C <multipart>コンテンツジェネレータは、カスタムマルチパートを構築し、コンテントタイプを設定しないで利用可能です。
+
+  # マルチパートコンテンツでリクエストをポスト("foo" and "bar")
+  my $tx = $t->tx(POST => 'http://example.com' => multipart => ['foo', 'bar']);
+
+Similar to the C<form>コンテンツジェネレーターと似ていて、 ヘッダーと同じように、C<content>かC<file>の値のハッシュリファレンスを渡すことができます。
+
+  # ファイルからストリームされたマルチパートコンテンツでリクエストをPOST
+  my $tx = $t->tx(
+    POST => 'http://example.com' => multipart => [{file => '/foo.txt'}]);
+
+  # アセットからストリームされたマルチパートコンテンツでリクエストをPOST
+  my $headers = {'Content-Type' => 'multipart/custom'};
+  my $asset   = Mojo::Asset::Memory->new->add_chunk('lalala');
+  my $tx      = $t->tx(
+    PUT => 'http://example.com' => $headers => multipart => [{file => $asset}]);
+
+  # マルチパートコンテンツとカスタムヘッダーでリクエストをPOST
+  my $tx = $t->tx(POST => 'http://example.com' => multipart => [
+    {
+      content            => 'Hello',
+      'Content-Type'     => 'text/plain',
+      'Content-Language' => 'en-US'
+    },
+    {
+      content            => 'World!',
+      'Content-Type'     => 'text/plain',
+      'Content-Language' => 'en-US'
+    }
+  ]);
+
+=head2 upgrade
+
+  my $tx = $t->upgrade(Mojo::Transaction::HTTP->new);
+
+可能であれば[[Mojo::Transaction::WebSocket]]をフォローアップするWebSocketハンドシェイクトランザクションを構築します。
+
+=head2 websocket
+
+  my $tx = $t->websocket('ws://example.com');
+  my $tx = $t->websocket('ws://example.com' => {DNT => 1} => ['v1.proto']);
+
+WebSocketハンドシェイクリクエストのための
+多用途の[[Mojo::Transaction::WebSocket]]のビルダー。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月30日更新)
+
+=cut

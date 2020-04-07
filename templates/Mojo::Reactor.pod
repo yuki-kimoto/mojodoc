@@ -1,0 +1,203 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Reactor - 低レベルのイベントリアクターの基底クラス
+
+=head1 使い方
+
+  package Mojo::Reactor::MyEventLoop;
+  use Mojo::Base 'Mojo::Reactor';
+
+  $ENV{MOJO_REACTOR} ||= 'Mojo::Reactor::MyEventLoop';
+
+  sub io         {...}
+  sub is_running {...}
+  sub one_tick   {...}
+  sub recurring  {...}
+  sub remove     {...}
+  sub start      {...}
+  sub stop       {...}
+  sub timer      {...}
+  sub watch      {...}
+
+  1;
+
+=head1 説明
+
+[[Mojo::Reactor]]は、
+L<Mojo::Reactor::EV>やL<Mojo::Reactor::Poll>
+のような
+低レベルのイベント装置のための抽象基底クラスです。
+
+=head1 イベント
+
+[[Mojo::Reactor]]は、[[Mojo::EventEmitter]]を継承しており、
+次の新しいイベントを発行することができます。
+
+=head2 error
+
+  $reactor->on(error => sub {
+    my ($reactor, $err) = @_;
+    ...
+  });
+
+コールバックの中で例外をキャッチするために、このイベントが発行されます。
+もし処理されなければ、致命的です。
+イベントが処理できなかった場合あるいは、失敗した場合は、
+プログラムをキルするかもしれないので、注意してください。
+十分注意して使用してください。
+
+  $reactor->on(error => sub {
+    my ($reactor, $err) = @_;
+    say "Something very bad happened: $err";
+  });
+
+=head1 メソッド
+
+[[Mojo::Reactor]]はすべてのメソッドを[[Mojo::EventEmitter]]から継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 again
+
+  $reactor->again($id);
+
+アクティブなタイマーを再開始します。
+サブクラスでオーバーライドされます。
+このメソッドはアクティブなタイマーが必要であることに注意してください。
+
+=head2 detect
+
+  my $class = Mojo::Reactor->detect;
+
+もっともよい利用可能なウォッチャーの実装を検知し、ロードします。
+C<MOJO_REACTOR>環境変数の値か、[[Mojo::Reactor::EV]]か
+[[Mojo::Reactor::Poll]]を利用しようと試みます。
+
+  # 最善の利用可能なリアクターの実装で初期化
+  my $reactor = Mojo::Reactor->detect->new;
+
+=head2 io
+
+  $reactor = $reactor->io($handle => sub {...});
+
+I/Oイベントのためのハンドルを監視します。
+ハンドルが読み込み可能あるいは書き込み可能になればいつでも、
+コールバックが実行されます。
+サブクラスでオーバーロードされます。
+
+  # ハンドルが読み込み可能あるいは書き込み可能になったときに実行されるコールバック
+  $reactor->io($handle => sub {
+    my ($reactor, $writable) = @_;
+    say $writable ? 'Handle is writable' : 'Handle is readable';
+  });
+
+=head2 is_running
+
+  my $bool = $reactor->is_running;
+
+リアクターが実行されているかどうかをチェックします。
+サブクラスでオーバーロードされます。
+
+=head2 next_tick
+
+  my $undef = $reactor->next_tick(sub {...});
+
+できるだけ早くコールバックを呼び出します
+がリターンする前ではありません。
+いつでもC<undef>を返却します。
+
+=head2 one_tick
+
+  $reactor->one_tick;
+
+イベントが起こるか、イベントがもはや監視されなくなるまで、リアクターを実行します。
+このメソッドはリアクターに制御を戻すので、気をつけて使う必要があります。
+サブクラスでオーバーロードされます。
+
+  # 0.5秒以上はブロックしない
+  my $id = $reactor->timer(0.5 => sub {});
+  $reactor->one_tick;
+  $reactor->remove($id);
+
+=head2 recurring
+
+  my $id = $reactor->recurring(0.25 => sub {...});
+
+新しい再燃タイマーを生成します。
+与えられた秒数の後に、繰り返しコールバックが呼び出されます。
+
+  # できるだけはやく呼び出す
+  $reactor->recurring(0 => sub { say 'Reactor tick.' });
+
+=head2 remove
+
+  my $bool = $reactor->remove($handle);
+  my $bool = $reactor->remove($id);
+
+ハンドル、あるいはタイマーを削除します。
+サブクラスでオーバーロードされます。
+
+=head2 reset
+
+  $reactor->reset;
+
+すべてのハンドルとタイマーを取り除きます。
+サブクラスでオーバーロードされることが予定されています。
+
+=head2 start
+
+  $watcher->start;
+
+I/Oの監視とタイマーイベントを開始します。
+これはC<stop>が呼び出されるまでブロックします。
+いくつかのリアクターは、
+監視されるイベントがなくなれば、
+自動的に停止することに注意してください。
+サブクラスでオーバーロードされます。
+
+  # すでに実行されていないときだけ、リアクターを開始する。
+  $reactor->start unless $reactor->is_running;
+
+=head2 stop
+
+  $watcher->stop;
+
+I/O監視とタイマーイベントを停止します。
+サブクラスでオーバーロードされます。
+
+=head2 timer
+
+  my $id = $reactor->timer(0.5 => sub {...});
+
+新しいタイマーを生成します。
+与えられた秒数の後にコールバックが呼び出されます。
+サブクラスでオーバーロードすることが予定されています。
+
+=head2 watch
+
+  $reactor = $reactor->watch($handle, $readable, $writable);
+
+I/Oイベントのためのハンドルを監視します。
+
+  # 読み込み可能なイベントだけを監視する
+  $reactor->watch($handle, 1, 0);
+
+  # 書き込み可能なイベントだけを監視する
+  $reactor->watch($handle, 0, 1);
+
+  # 読み込み可能あるいは書き込み可能なイベントを監視する
+  $reactor->watch($handle, 1, 1);
+
+  # イベントの監視を停止する
+  $reactor->watch($handle, 0, 0);
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。更新日は2019年5月27日)
+
+=cut

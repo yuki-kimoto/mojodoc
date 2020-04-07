@@ -1,0 +1,213 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::IOLoop::Stream - ノンブロッキングなI/Oストリーム
+
+=head1 使い方
+
+  use Mojo::IOLoop::Stream;
+
+  # クライアントのストリーム
+  my $stream = Mojo::IOLoop::Stream->new($handle);
+  $stream->on(read => sub {
+    my ($stream, $bytes) = @_;
+    ...
+  });
+  $stream->on(close => sub {
+    my $stream = shift;
+    ...
+  });
+  $stream->on(error => sub {
+    my ($stream, $err) = @_;
+    ...
+  });
+
+  # 新しいデータのためのウォッチの開始と停止
+  $stream->start;
+  $stream->stop;
+
+  # 必要であればリアクターを開始
+  $stream->reactor->start unless $stream->reactor->is_running;
+
+=head1 説明
+
+[[Mojo::IOLoop::Stream]]は[[Mojo::IOLoop]]で利用されるI/Oストリームのコンテナです。
+
+=head1 イベント
+
+[[Mojo::IOLoop::Stream]]は[[ Mojo::EventEmitter]]からすべてのイベントを継承しており、
+次の新しいイベントを発行することができます。
+
+=head2 close
+
+  $stream->on(close => sub {
+    my $stream = shift;
+    ...
+  });
+
+ストリームが閉じられれば、このイベントが発行されます。
+
+=head2 drain
+
+  $stream->on(drain => sub {
+    my $stream = shift;
+    ...
+  });
+
+すべてのデータが書き込まれれたときに一度だけ、このイベントが発行されます。
+
+=head2 error
+
+  $stream->on(error => sub {
+    my ($stream, $err) = @_;
+    ...
+  });
+
+ストリームでエラーが起これば、このイベントが発行されます。処理されなかった場合は、致命的です。
+
+=head2 read
+
+  $stream->on(read => sub {
+    my ($stream, $bytes) = @_;
+    ...
+  });
+
+新しいデータがストリームに到達すれば、このイベントが発行されます。
+
+=head2 timeout
+
+  $stream->on(timeout => sub {
+    my $stream = shift;
+    ...
+  });
+
+ストリームが、とても長い間非アクティブになり、自動的にストリームが閉じられれば、
+発行されます。
+
+=head2 write
+
+  $stream->on(write => sub {
+    my ($stream, $bytes) = @_;
+    ...
+  });
+
+新しいデータがストリームに書きこままれれば、発行されます。
+
+=head1 属性
+
+[[Mojo::IOLoop::Stream]]は次の属性を実装しています。
+
+=head2 reactor
+
+  my $reactor = $stream->reactor;
+  $stream     = $stream->reactor(Mojo::Reactor::Poll->new);
+
+低レベルのイベントウォッチャー。
+デフォルトはグローバルな[[Mojo::IOLoop]]シングルトンのC<reactor>属性の値。
+この属性は、弱参照になるので注意してください。
+
+=head1 メソッド
+
+[[Mojo::IOLoop::Stream]]は[[Mojo::EventEmitter]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 bytes_read
+
+  my $num = $stream->bytes_read;
+
+受け取ったバイトの数。
+
+=head2 bytes_written
+
+  my $num = $stream->bytes_written;
+
+書き込まれたバイトの数。
+
+=head2 close
+
+  $stream->close;
+
+ストリームをすぐに閉じます。
+
+=head2 close_gracefully
+
+  $stream->close_gracefully;
+
+ストリームを徐々に閉じます。
+
+=head2 handle
+
+  my $handle = $stream->handle;
+
+ストリームのためのハンドルを取得します。通常はL<IO::Socket::IP>かL<IO::Socket::SSL>。
+
+=head2 is_readable
+
+  my $bool = $stream->is_readable;
+
+ストリームが読み込み可能であるかどうかをすばやくノンブロッキングでチェックします。
+汚染されたソケットを識別するのに役立ちます。
+
+=head2 is_writing
+
+  my $bool = $stream->is_writing;
+
+ストリームが書き込み可能かどうかをチェックします。
+
+=head2 new
+
+  my $stream = Mojo::IOLoop::Stream->new($handle);
+
+新しい[[Mojo::IOLoop::Stream]]オブジェクトを生成します。
+
+=head2 start
+
+  $stream->start;
+
+ストリームへの新しいデータの監視を停止します。
+
+=head2 stop
+
+  $stream->stop;
+
+ストリームへの新しいデータの監視を停止します。
+
+=head2 steal_handle
+
+  my $handle = $stream->steal_handle;
+
+ストリームからハンドルを盗み、自動的に閉じられるのを防ぎます。
+
+=head2 stop
+
+  $stream->stop;
+
+ストリームにおける新しいデータのための監視を停止します。
+
+=head2 timeout
+
+  my $timeout = $stream->timeout;
+  $stream     = $stream->timeout(45);
+
+自動的にストリームが非アクティブになるまでの最大の秒数です。
+デフォルトはC<15>です。
+この値をC<0>に設定するとこのストリームが無制限に非アクティブになることを許可します。
+
+=head2 write
+
+  $stream->write('Hello!');
+  $stream->write('Hello!', sub {...});
+
+データをストリームに書き込みます。オプショナルな排出コールバックは、
+すべてのデータが書き込まれた後に一度だけ実行されます。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月22日更新)
+
+=cut

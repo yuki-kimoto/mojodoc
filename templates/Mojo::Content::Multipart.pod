@@ -1,0 +1,120 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Content::MultiPart
+
+=head1 名前
+
+Mojo::Content::MultiPart - HTTPマルチパートコンテンツのコンテナ
+
+=head1 使い方
+
+  use Mojo::Content::MultiPart;
+
+  my $content = Mojo::Content::MultiPart->new;
+  $content->parse('Content-Type: multipart/mixed; boundary=---foobar');
+  my $part = $content->parts->[4];
+
+=head1 説明
+
+[[Mojo::Content::MultiPart]]は
+L<RFC 7230|http://tools.ietf.org/html/rfc7230>、
+L<RFC 7231|http://tools.ietf.org/html/rfc7231>、
+L<RFC 2388|http://tools.ietf.org/html/rfc2388>、
+で説明されている
+HTTP 1.1マルチパートコンテンツのための
+コンテナです。
+
+=head1 イベント 
+
+[[Mojo::Content::Multipart]]は[[Mojo::Content]]からすべてのイベントを継承しており、次の新しいイベントを
+発行することができます。
+
+=head2 part
+
+  $multi->on(part => sub {
+    my ($multi, $single) = @_;
+    ...
+  });
+
+新らしい[[Mojo::Content::Single]]の部分が開始するときに、発行されます。
+
+  $multi->on(part => sub {
+    my ($multi, $single) = @_;
+    return unless $single->headers->content_disposition =~ /name="([^"]+)"/;
+    say "Field: $1";
+  });
+
+=head1 属性
+
+[[Mojo::Content::MultiPart]]はL<Mojo::Content>からすべての属性を
+継承し、次の新しい属性を実装しています。
+
+=head2 parts
+
+  my $parts = $multi->parts;
+  $multi    = $multi->parts([Mojo::Content::Single->new]);
+
+このマルチパートコンテンツの中に埋め込まれたコンテンツのパーツ。
+通常は[[Mojo::Content::Single]]です。
+
+=head1 メソッド
+
+[[Mojo::Content::MultiPart]]は[[Mojo::Content]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 body_contains
+
+  my $bool = $content->body_contains('foobarbaz');
+
+コンテンツが指定した文字列を含んでいるかチェックします。
+
+=head2 body_size
+
+  my $size = $content->body_size;
+
+バイトでのコンテンツのサイズ。
+
+=head2 build_boundary
+
+  my $boundary = $content->build_boundary;
+
+適切なコンテンツの境界を生成し、C<Content-Type>ヘッダにそれを追加します。
+
+=head2 clone
+
+  my $clone = $multi->clone;
+
+可能であればコンテンツを複製し、新しい[[Mojo::Content::MultiPart]]オブジェクトを生成します。できないときは未定義値を返却します。
+
+=head2 get_body_chunk
+
+  my $chunk = $content->get_body_chunk(0);
+
+特定の位置から始まるコンテンツの断片を取得します。コンテンツが動的に生成されている場合は、同じチャンクを二度取得してしまう可能性があることに注意してください。
+
+=head2 is_multipart
+
+  my $true = $multi->is_multipart;
+
+常に真になります。これは[[Mojo::Content::MultiPart]]オブジェクトです。
+
+=head2 new
+
+  my $multi = Mojo::Content::MultiPart->new;
+  my $multi
+    = Mojo::Content::MultiPart->new(parts => [Mojo::Content::Single->new]);
+  my $multi
+    = Mojo::Content::MultiPart->new({parts => [Mojo::Content::Single->new]});
+
+新しい[[Mojo::Content::MultiPart]]オブジェクトを生成し、デフォルトのコンテンツパーサー
+でC<read>イベントを購読します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映)
+
+=cut

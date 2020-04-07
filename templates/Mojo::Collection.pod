@@ -1,0 +1,265 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Collection
+
+=head1 名前
+
+Mojo::Collection - コレクション
+
+=head1 使い方
+
+  use Mojo::Collection;
+
+  # コレクションの操作
+  my $collection = Mojo::Collection->new(qw(just works));
+  unshift @$collection, 'it';
+  say $collection->join("\n");
+
+  # チェーンメソッド
+  $collection->map(sub { ucfirst })->shuffle->each(sub {
+    my ($word, $num) = @_;
+    say "$num: $word";
+  });
+
+  # もうひとつのコンストラクタを使用
+  use Mojo::Collection 'c';
+  c(qw(a b c))->join('/')->url_escape->say;
+
+=head1 説明
+
+[[Mojo::Collection]]は、配列ベースのコレクションのコンテナです。
+
+  # コレクションを扱うために配列に直接アクセスする
+  my $collection = Mojo::Collection->new(1 .. 25);
+  $collection->[23] += 100;
+  say for @$collection;
+
+=head1 関数
+
+[[Mojo::Collection]]は次の関数を実装しています。個々にインポートすることもできます。
+
+=head2 c
+
+  my $collection = c(1, 2, 3);
+
+新しい[[Mojo::Collection]]オブジェクトを生成します。
+
+=head1 メソッド
+
+[[Mojo::Collection]]は次の新しいメソッドを実装しています。
+
+=head2 TO_JSON
+
+  my $array = $collection->TO_JSON;
+
+"to_array"のエイリアス。
+
+=head2 compact
+
+  my $new = $collection->compact;
+
+定義されている、あるいは空ではない文字列のすべてのすべての要素で新しいコレクションを作成します。
+
+  # "0, 1, 2, 3"
+  Mojo::Collection->new(0, 1, undef, 2, '', 3)->compact->join(', ');
+
+=head2 each
+
+  my @elements = $collection->each;
+  $collection  = $collection->each(sub {...});
+
+コレクションの中の、それぞれの要素にクロージャを適用します。もし何も引数がなければ、すべての要素をリストとして返却します。
+要素はコールバックに渡された最初の引数で、C<$_>として利用することもできます。
+
+  # 数のリストを作成
+  $collection->each(sub {
+    my ($e, $num) = @_;
+    say "$num: $e";
+  });
+
+=head2 first
+
+  my $first = $collection->first;
+  my $first = $collection->first(qr/foo/);
+  my $first = $collection->first(sub {...});
+  my $first = $collection->first('some_method');
+  my $first = $collection->first('some_method', @args);
+
+コレクションの中のそれぞれの要素にコールバック、あるいは正規表現を適用し、
+正規表現がマッチあるいはコールバック・メソッドが真を返した最初の要素を返却します。
+要素はコールバックに渡された最初の引数で、C<$_>として利用することもできます。
+
+  # 長いバージョン
+  my $first = $collection->first(sub { $_->some_method(@args) });
+
+  # "mojo"という言葉を含む最初の値を捜す
+  my $interesting = $collection->first(qr/mojo/i);
+
+  # 5より大きい最初の値を探す。
+  my $greater = $collection->first(sub { $_ > 5 });
+
+=head2 flatten
+
+  my $new = $collection->flatten;
+
+ネストされた「コレクション/配列」を平らにし、すべての要素で新しいコレクションを作成します。
+
+  # "1, 2, 3, 4, 5, 6, 7"
+  Mojo::Collection->new(1, [2, [3, 4], 5, [6]], 7)->flatten->join(', ');
+
+=head2 grep
+
+  my $new = $collection->grep(qr/foo/);
+  my $new = $collection->grep(sub {...});
+  my $new = $collection->grep('some_method');
+  my $new = $collection->grep('some_method', @args);
+
+コレクションの中のそれぞれの要素に正規表現あるいはコールバックを適用し、
+正規表現がマッチあるいは、コールバック・メソッドが真を返したすべての要素
+をもつ新しいコレクションを生成します。
+要素はコールバックに渡された最初の引数で、C<$_>として利用することもできます。
+
+  # 長いバージョン
+  my $new = $collection->grep(sub { $_->some_method(@args) });
+
+  # "mojo"という単語を含むすべての値を見つける
+  my $interesting = $collection->grep(qr/mojo/i);
+
+  # 5より大きいすべての値を見つける
+  my $greater = $collection->grep(sub { $_ > 5 });
+
+=head2 join
+
+  my $stream = $collection->join;
+  my $stream = $collection->join("\n");
+
+コレクションを結合して[[Mojo::ByteStream]]に変換します。
+
+  # コンマですべての値をつなげる
+  $collection->join(', ')->say;
+
+=head2 last
+
+  my $last = $collection->last;
+
+コレクションの最後の要素を返却します。
+
+=head2 map
+
+  my $new = $collection->map(sub {...});
+  my $new = $collection->map('some_method');
+  my $new = $collection->map('some_method', @args);
+
+コレクションのそれぞれの要素にコールバックを適用、あるいはメソッドを呼び出し、
+結果から新しいコレクションを生成します。
+要素はコールバックに渡された最初の引数で、C<$_>として利用することもできます。
+
+  # 長いバージョン
+  my $new = $collection->map(sub { $_->some_method(@args) });
+
+  # "mojo"という値をすべての値に追加
+  my $mojoified = $collection->map(sub { $_ . 'mojo' });
+
+=head2 new
+
+  my $collection = Mojo::Collection->new(1, 2, 3);
+
+新しい配列ベースの[[Mojo::Collection]]オブジェクトを生成します。
+
+=head2 reduce
+
+  my $result = $collection->reduce(sub {...});
+  my $result = $collection->reduce(sub {...}, $initial);
+
+コレクションに含まれる要素をコールバックを使って、リデュースし、コールバックが実行されるたびに、"$a", "$b"に設定される、最後の結果を返します。最初の時点で"$a"は、オプショナルな初期値に設定されるか、コレクションの最初の要素です。それから、"$a"はコールバックの戻り値に設定されます。一方で、"$b"は、いつもコレクションの次の値に設定されます。
+
+  # すべての値の合計を計算
+  my $sum = $collection->reduce(sub { $a + $b });
+
+  # コレクションの中のそれぞれの値が発生した回数をカウント
+  my $hash = $collection->reduce(sub { $a->{$b}++; $a }, {});
+
+=head2 reverse
+
+  my $new = $collection->reverse;
+
+すべての要素の順序を逆にした新しいコレクションを生成します。
+
+=head2 slice
+
+  my $new = $collection->slice(4 .. 7);
+
+すべての選択された要素を持つ新しいコレクションを生成します。
+
+  # "B C E"
+  Mojo::Collection->new('A', 'B', 'C', 'D', 'E')->slice(1, 2, 4)->join(' ');
+
+=head2 shuffle
+
+  my $new = $collection->shuffle;
+
+すべての要素をランダムな順にした新しい要素を生成します。
+
+=head2 size
+
+  my $size = $collection->size;
+
+コレクションの要素の数。
+
+=head2 sort
+
+  my $new = $collection->sort;
+  my $new = $collection->sort(sub {...});
+
+コールバックの戻り値に基づいて要素を並べ替え、結果から新しいコレクションを生成します。コールバックが実行されるたびに、"$a"と"$b"は比較される要素に設定されます。
+
+  # ケースインセンティブに値をソート
+  my $case_insensitive = $collection->sort(sub { uc($a) cmp uc($b) });
+
+=head2 tap
+
+  $collection = $collection->tap(sub {...});
+
+[[Mojo::Base]]のC<tap>の別名です。
+
+=head2 to_array
+
+  my $array = $collection->to_array;
+
+コレクションを配列のリファレンスに変換します。
+
+=head2 uniq
+
+  my $new = $collection->uniq;
+  my $new = $collection->uniq(sub {...});
+  my $new = $collection->uniq('some_method');
+  my $new = $collection->uniq('some_method', @args);
+
+一意性を決定するために、それぞれの要素の文字列表現か、コールバック・メソッドの戻り値を使って、重複した要素をなくしたコレクションを作成します。"undef"は空の文字列と同じものとして扱われることに注意してください。
+
+  # 長いバージョン
+  my $new = $collection->uniq(sub { $_->some_method(@args) });
+
+  # "foo bar baz"
+  c('foo', 'bar', 'bar', 'baz')->uniq->join(' ');
+
+  # "[[1, 2], [2, 1]]"
+  c([1, 2], [2, 1], [3, 2])->uniq(sub{ $_->[1] })->to_array;
+
+=head2 with_roles
+
+  my $new_class = Mojo::Collection->with_roles('Mojo::Collection::Role::One');
+  my $new_class = Mojo::Collection->with_roles('+One', '+Two');
+  $collection   = $collection->with_roles('+One', '+Two');
+
+[[Mojo::Base]]の"with_roles"のエイリアス。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映)
+
+=cut

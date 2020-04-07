@@ -1,0 +1,410 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Template - Perlで書けるテンプレート!
+
+=head1 使い方
+
+  use Mojo::Template;
+
+  # Perlモジュールを使う
+  my $mt = Mojo::Template->new;
+  say $mt->render(<<'EOF');
+  % use Time::Piece;
+  <div>
+    % my $now = localtime;
+    Time: <%= $now->hms %>
+  </div>
+  EOF
+
+  # 引数を渡して描画
+  say $mt->render(<<'EOF', [1 .. 13], 'Hello World!');
+  % my ($numbers, $title) = @_;
+  <div>
+    <h1><%= $title %></h1>
+    % for my $i (@$numbers) {
+      Test <%= $i %>
+    % }
+  </div>
+  EOF
+
+  # 名前つきの変数を渡して描画
+  say $mt->vars(1)->render(<<'EOF', {title => 'Hello World!'});
+  <div>
+    <h1><%= $title %></h1>
+    %= 5 + 5
+  </div>
+  EOF
+
+=head1 説明
+
+[[Mojo::Template]]は最小限でとてもPerlらしいテンプレートエンジンです。
+特に長い期間にわたる大きなプロジェクトになるすべての小さな仕事のために
+設計されています。
+設定ファイルの前処理のように、ヒアドキュメントとそれに似たようなことから
+テキストを生成できます。
+
+=head1 文法
+
+[[Mojolicious]]のレンダラーでコンテンツを生成する方法の情報については[[Mojolicious::Guides::Rendering]]を見てください。
+
+  <% Perlのコード %>
+  <%= Perlの実行文。結果に置き換えられる。 %>
+  <%== Perlの実行文。XMLエスケープされた結果に置き換えられる。 %>
+  <%# コメント。デバッグに便利 %>
+  <%% "<%"に置換される。テンプレートを生成するのに便利
+  % Perlのコードでできた行。"<% line =%>"と同じ
+  %= Perlの実行文でできた行, "<%= line %>"と同じ
+  %== Perlの実行文でできた行。"<%== line %>"と同じ
+  %# コメントの行。"<%# line =%>"と同じ
+  %% "%"に置換される。テンプレートを生成するのに便利
+
+自動的なエスケープの処理はC<auto_escape>属性を使って反転させるこことができます。
+これはたとえば[[Mojolicious]]のC<.ep>テンプレートのデフォルトです。
+
+  <%= Perlの文。XMLエスケープされた結果に置き換えられる。 %>
+  <%== Perlの文。結果に置き換えられる。 %>
+
+[[Mojo::ByteStream]]オブジェクトはいつでも自動的なエスケープの対象外になります。
+
+  % use Mojo::ByteStream 'b';
+  <%= b('<div>excluded!</div>') %>
+
+タグに囲まれた空白文字は、追加のイコールをタグの末尾につけることで、
+取り除くことができます。
+
+  <% for (1 .. 3) { %>
+    <%= 'Trim all whitespace characters around this expression' =%>
+  <% } %>
+
+新しい行はバックスラッシュでエスケープすることができます。
+
+  This is <%= 1 + 1 %> a\
+  single line
+
+新しい行の前のバックスラッシュはもうひとつのバックスラッシュをエスケープします。
+
+  This will <%= 1 + 1 %> result\\
+  in multiple\\
+  lines
+
+改行文字は、すべてのテンプレートに自動的に追加されます。
+最後の文字はバックスラッシュです。テンプレートの最後にある空行は
+無視されます。
+
+  There is <%= 1 + 1 %> no newline at the end here\
+
+後で再利用するためにC<begin>とC<end>キーワードを使って、
+テンプレートブロック全体をキャプチャすることができます。
+両方のキーワードが周囲のタグの一部で、実際のPerlコードではないことに注意してください。
+ですので、C<begin>の後とC<end>の前には、空白だけを置くことができます。
+
+  <% my $block = begin %>
+    <% my $name = shift; =%>
+    Hello <%= $name %>.
+  <% end %>
+  <%= $block->('Baerbel') %>
+  <%= $block->('Wolfgang') %>
+
+Perlの行においても自由にインデントすることができます。
+
+  % my $block = begin
+    % my $name = shift;
+    Hello <%= $name %>.
+  % end
+  %= $block->('Baerbel')
+  %= $block->('Wolfgang')
+
+[[Mojo::Template]]テンプレートはPerlのサブルーチン(実際には内部的なPerlのサブルーチンにコンパイルrされる)の用に機能します。
+つまり引数は簡単にC<@_>を使ってアクセスできるということを意味します。
+
+  % my ($foo, $bar) = @_;
+  % my $x = shift;
+  test 123 <%= $foo %>
+
+テンプレートは内部的にはPerlのコードにコンパイルされるので、
+デバックは少しトリッキーになります。
+しかし、[[Mojo::Template]]は状況つきのエラーメッセージを文字列化するための
+[[Mojo::Exception]]オブジェクトを返却します。
+
+  Bareword "xx" not allowed while "strict subs" in use at template line 4.
+  2: </head>
+  3: <body>
+  4: % my $i = 2; xx
+  5: %= $i * 2
+  6: </body>
+  template:4 (Mojo::Template::Sandbox)
+  path/to/Mojo/Template.pm:123 (Mojo::Template)
+  path/to/myapp.pl:123 (main)
+
+=head1 属性
+
+[[Mojo::Template]]は次の属性を実装しています。
+
+=head2 auto_escape
+
+  my $bool = $mt->auto_escape;
+  $mt      = $mt->auto_escape($bool);
+
+自動的なXMLエスケープを有効にします。
+
+=head2 append
+
+  my $code = $mt->append;
+  $mt      = $mt->append('warn "Processed template"');
+
+Perlのコードをコンパイルされたテンプレートに追加します。
+このコードには含めないでください
+改行文字、またはエラーメッセージ内の行番号は、間違っている可能性があります。
+
+=head2 capture_end
+
+  my $capture_end = $mt->capture_end;
+  $mt             = $mt->capture_end('end');
+
+キャプチャブロックの終了を示すキーワード。
+デフォルトはC<end>。
+
+  <% my $block = begin %>
+    Some data!
+  <% end %>
+
+=head2 capture_start
+
+  my $capture_start = $mt->capture_start;
+  $mt               = $mt->capture_start('begin');
+
+キャプチャブロックの開始を示すキーワード。
+デフォルトはC<begin>。
+
+  <% my $block = begin %>
+    Some data!
+  <% end %>
+
+=head2 code
+
+  my $code = $mt->code;
+  $mt      = $mt->code($code);
+
+コンパイルされたテンプレートのコード。
+
+=head2 comment_mark
+
+  my $comment_mark = $mt->comment_mark;
+  $mt              = $mt->comment_mark('#');
+
+コメントの開始を示す文字。デフォルトはC<#>。
+
+  <%# This is a comment %>
+
+=head2 compiled
+
+  my $compiled = $mt->compiled;
+  $mt          = $mt->compiled($compiled);
+
+コンパイルされたテンプレートコード。
+
+=head2 encoding
+
+  my $encoding = $mt->encoding;
+  $mt          = $mt->encoding('UTF-8');
+
+テンプレートファイルで利用されるエンコーディング。
+
+=head2 escape
+
+  my $cb = $mt->escape;
+  $mt    = $mt->escape(sub {...});
+
+エスケープ表現の結果をエスケープするために利用されるコールバック。
+デフォルトは[[Mojo::Util]]のC<xss_escape>です。
+
+  $mt->escape(sub {
+    my $str = shift;
+    return reverse $str;
+  });
+
+=head2 escape_mark
+
+  my $escape_mark = $mt->escape_mark;
+  $mt             = $mt->escape_mark('=');
+
+エスケープされた文の開始を示す文字。デフォルトはC<=>。
+
+  <%== $foo %>
+
+=head2 expression_mark
+
+  my $expression_mark = $mt->expression_mark;
+  $mt                 = $mt->expression_mark('=');
+
+式のスタートの開始を示す文字。デフォルトはC<=>。
+
+  <%= $foo %>
+
+=head2 line_start
+
+  my $line_start = $mt->line_start;
+  $mt            = $mt->line_start('%');
+
+コードの行の開始を示す文字。デフォルトはC<%>。
+
+  % $foo = 23;
+
+=head2 name
+
+  my $name = $mt->name;
+  $mt      = $mt->name('foo.mt');
+
+現在の処理中のテンプレートの名前。デフォルトC<template>です。
+この値は、クォートまたは、新しい行の文字を含むべきではありません。
+エラーメッセージが間違ったものになるでしょう。
+
+=head2 namespace
+
+  my $namespace = $mt->namespace;
+  $mt           = $mt->namespace('main');
+
+テンプレートをコンパイルするために利用される名前空間。
+デフォルトは[[ Mojo::Template::SandBox]]。
+
+名前空間はテンプレート間で非常に慎重に共有されるべきです。
+関数とグローバル変数は自動的にクリアされないためです。
+
+=head2 prepend
+
+  my $code = $mt->prepend;
+  $mt      = $mt->prepend('my $self = shift;');
+
+コンパイルされたPerコードの前に追加します。
+このコードは改行文字を追加しないように注意してください。
+そうしなければ、エラーメッセージの行番号が間違った結果になってしまいます。
+
+=head2 replace_mark
+
+  my $replace_mark = $mt->replace_mark;
+  $mt              = $mt->replace_mark('%');
+
+タグと行の開始をエスケープするために利用される文字。
+デフォルトはC<%>。
+
+  <%% my $foo = 23; %>
+
+=head2 tag_start
+
+  my $tag_start = $mt->tag_start;
+  $mt           = $mt->tag_start('<%');
+
+タグの開始を示す文字。デフォルトはC<E<lt>%>。
+
+  <% $foo = 23; %>
+
+=head2 tag_end
+
+  my $tag_end = $mt->tag_end;
+  $mt         = $mt->tag_end('%>');
+
+タグの終了を示す文字。デフォルトはC<%E<gt>>。
+
+  <%= $foo %>
+
+=head2 tree
+
+  my $tree = $mt->tree;
+  $mt      = $mt->tree([['text', 'foo'], ['line']]);
+
+解析された木。この構造は動的なものなので、慎重に利用してください。
+
+=head2 trim_mark
+
+  my $trim_mark = $mt->trim_mark;
+  $mt           = $mt->trim_mark('-');
+
+自動的な空白のトリミングを有効にする文字列。
+デフォルトはC<=>。
+
+  <%= $foo =%>
+
+=head2 unparsed
+
+  my $unparsed = $mt->unparsed;
+  $mt          = $mt->unparsed($unparsed);
+
+生の未解析のテンプレート。
+
+=head2 vars
+
+  my $bool = $mt->vars;
+  $mt      = $mt->vars($bool);
+
+データをテンプレートに渡すために、値のリストの代わりに、名前の付いた変数でハッシュリファレンスを使用します。
+
+  # "works!"
+  Mojo::Template->new(vars => 1)->render('<%= $test %>!', {test => 'works'});
+
+=head1 メソッド
+
+[[Mojo::Template]]は[[Mojo::Base]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 parse
+
+  $mt = $mt->parse('<%= 1 + 1 %>');
+
+テンプレートを解析してC<tree>に設定します。
+
+=head2 process
+
+  my $output = $mt->process;
+  my $output = $mt->process(@args);
+  my $output = $mt->process({foo => 'bar'});
+
+Process previously parsed template and return the result, or a
+L<Mojo::Exception> object if rendering failed.
+
+以前に解析されたテンプレートを処理して結果を返します。描画に失敗した場合は、[[Mojo::Exception]]オブジェクトを返します。
+
+  # 解析と処理
+  say Mojo::Template->new->parse('Hello <%= $_[0] %>')->process('Bender');
+
+  # テンプレートノ再利用 (よりよいパフォーマンス)
+  my $mt = Mojo::Template->new;
+  say $mt->render('Hello <%= $_[0] %>!', 'Bender');
+  say $mt->process('Fry');
+  say $mt->process('Leela');
+
+=head2 render
+
+  my $output = $mt->render('<%= 1 + 1 %>');
+  my $output = $mt->render('<%= shift() + shift() %>', @args);
+  my $output = $mt->render('<%= $foo %>', {foo => 'bar'});
+
+テンプレートを描画し、結果を返します。描画に失敗した場合は、[[Mojo::Exception]]オブジェクトを返します。
+
+  # 長いバージョン
+  my $output = $mt->parse('<%= 1 + 1 %>')->process;
+
+  # 引数を渡して描画
+  say Mojo::Template->new->render('<%= $_[0] %>', 'bar');
+
+  # 名前付きの変数を渡して描画
+  say Mojo::Template->new(vars => 1)->render('<%= $foo %>', {foo => 'bar'});
+
+=head2 render_file
+
+  my $output = $mt->render_file('/tmp/foo.mt');
+  my $output = $mt->render_file('/tmp/foo.mt', @args);
+  my $output = $mt->render_file('/tmp/bar.mt', {foo => 'bar'});
+
+renderと同じですが、テンプレートファイルに描画します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月29日更新)
+
+=cut

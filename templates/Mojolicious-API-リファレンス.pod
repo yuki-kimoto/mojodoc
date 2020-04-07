@@ -1,0 +1,259 @@
+=encoding utf8
+
+[[Mojoliciousガイド|Home]]
+
+=head1 Mojolicious API リファレンス 日本語訳
+
+MojoliciousのAPIリファレンスです。
+
+=head2 クラス
+
+=over 2
+
+=item * [[Mojo]] - HTML5 Webのためのダクトテープ
+
+=item * [[Mojo::Asset]] - HTTPコンテンツのストレージの基底クラス
+ 
+=item * [[Mojo::Asset::File]] - HTTPコンテンツのファイルストレージ
+
+=item * [[Mojo::Asset::Memory]] - HTTPコンテンツのメモリストレージ
+
+=item * [[Mojo::Base]] - Mojoプロジェクトのための小さなベースクラス 
+
+=item * [[Mojo::ByteStream]] - バイトストリーム
+
+=item * [[Mojo::Cache]] - 素朴なインメモリーキャッシュ 
+
+=item * [[Mojo::Collection]] - コレクション
+
+=item * [[Mojo::Content]] - HTTPのコンテントの基底クラス 
+
+=item * [[Mojo::Content::MultiPart]] - HTTPマルチパートコンテンツ 
+
+=item * [[Mojo::Content::Single]] - HTTPコンテンツ
+
+=item * [[Mojo::Cookie]] - HTTPクッキーの基底クラス 
+
+=item * [[Mojo::Cookie::Request]] - HTTPリクエストのクッキー
+
+=item * [[Mojo::Cookie::Response]] - HTTPレスポンスのクッキー
+
+=item * [[Mojo::DOM]] - CSSセレクタを利用できる小さなXML/HTML5のDOMパーサー
+
+=item * [[Mojo::DOM::CSS]] - CSSセレクタエンジン
+
+=item * [[Mojo::DOM::HTML]] - HTML5/XMLエンジン
+
+=item * [[Mojo::Date]] - HTTPの日付
+
+=item * [[Mojo::EventEmitter]] - イベント発行体の基底クラス
+
+=item * [[Mojo::Exception]] - 状況つきの例外
+
+=item * [[Mojo::File]] - ファイルシステムのパス
+
+=item * [[Mojo::Headers]] - ヘッダー 
+
+=item * [[Mojo::HelloWorld]] - Hello World! 
+
+=item * [[Mojo::Home]] -ホーム、スゥートホーム!
+
+=item * [[Mojo::IOLoop]] - 最小限のイベントループ
+
+=item * [[Mojo::IOLoop::Client]] - ノンブロッキングなTCPクライアント
+
+=item * [[Mojo::IOLoop::Delay]] - コールバックを扱って、イベントのフローを制御する
+
+=item * [[Mojo::IOLoop::Server]] - ノンブロッキングなTCPサーバー
+
+=item * [[Mojo::IOLoop::Subprocess]] - サブプロセス
+
+=item * [[Mojo::IOLoop::Stream]] - ノンブロッキングなI/Oストリーム
+
+=item * [[Mojo::IOLoop::TLS]] - ノンブロッキングTLSハンドシェイク
+
+=item * [[Mojo::JSON]] - 小さなJSON
+
+=item * [[Mojo::JSON::Pointer]] - JSONポインタ
+
+=item * [[Mojo::Loader]] - ローダー 
+
+=item * [[Mojo::Log]] - シンプルなロガー
+
+=item * [[Mojo::Message]] - HTTPメッセージの基底クラス
+
+=item * [[Mojo::Message::Request]] - HTTPリクエスト
+
+=item * [[Mojo::Message::Response]] - HTTPレスポンス
+
+=item * [[Mojo::Parameters]] - パラメーター
+
+=item * [[Mojo::Path]] - パス
+
+=item * [[Mojo::Promise]] - Promises/A+
+
+=item * [[Mojo::Reactor]] - 低レベルのイベント装置の基底クラス
+
+=item * [[Mojo::Reactor::EV]] - L<EV>をベースにした低レベルのイベント装置
+
+=item * [[Mojo::Reactor::Poll]] - L<IO::Poll>をベースにした低レベルのイベント装置
+
+=item * [[Mojo::Server]] - HTTPサーバーの基底クラス
+
+=item * [[Mojo::Server::CGI]] - CGIサーバー
+
+=item * [[Mojo::Server::Daemon]] - ノンブロッキングなHTTPとWebSocketのサーバー
+
+=item * [[Mojo::Server::Hypnotoad]] - ノンブロッキングなHTTPとWebSocketのホットデプロイメント可能なプリフォークサーバー
+
+=item * [[Mojo::Server::Morbo]] - 開発用サーバー
+
+=item * [[Mojo::Server::Morbo::Backend]] - Morboのバックエンドクラス
+
+=item * [[Mojo::Server::Morbo::Backend::Poll]] - Morboのデフォルトのバックエンド
+
+=item * [[Mojo::Server::PSGI]] - PSGIサーバー
+
+=item * [[Mojo::Server::Prefork]] - ノンブロッキングI/OのHTTPとWebSocketのプリフォークサーバー
+
+=item * [[Mojo::Template]] - Perl的なテンプレート
+
+=item * [[Mojo::Transaction]] - トランザクションの基底クラス
+
+=item * [[Mojo::Transaction::HTTP]] - HTTPトランザクション
+
+=item * [[Mojo::Transaction::WebSocket]] - WebSocketトランザクション
+
+=item * [[Mojo::URL]] - URL
+
+=item * [[Mojo::Upload]] - アップロード
+
+=item * [[Mojo::UserAgent]] - ノンブロッキングなHTTPとWebSocketのユーザーエージェント
+
+=item * [[Mojo::UserAgent::CookieJar]] - HTTPユーザーエージェントのためのクッキージャー 
+
+=item * [[Mojo::UserAgent::Proxy]] - ユーザーエージェントのプロキシマネージャー
+
+=item * [[Mojo::UserAgent::Server]] - アプリケーションサーバー
+
+=item * [[Mojo::UserAgent::Transactor]] - ユーザーエージェントトランザクター
+
+=item * [[Mojo::Util]] - ポータブルなユーティリティ関数
+
+=item * [[Mojolicious]] - リアルタイムWebフレームワーク
+
+=item * [[Mojolicious::Command]] - コマンドの基底クラス 
+
+=item * [[Mojolicious::Command::Author::cpanify]] - Cpanifyコマンド
+
+=item * [[Mojolicious::Command::Author::generate]] - 生成コマンド
+
+=item * [[Mojolicious::Command::Author::generate::app]] - アプリケーション生成コマンド
+
+=item * [[Mojolicious::Command::Author::inflate]] - Inflateコマンド
+
+=item * [[Mojolicious::Command::Author::generate::lite_app]] - Lite App生成コマンド
+
+=item * [[Mojolicious::Command::Author::generate::makefile]] - Makefile生成コマンド
+
+=item * [[Mojolicious::Command::Author::generate::plugin]] - プラグイン生成コマンド
+
+=item * [[Mojolicious::Command::cgi]] - CGIコマンド
+
+=item * [[Mojolicious::Command::daemon]] - デーモンコマンド
+
+=item * [[Mojolicious::Command::eval]] - Evalコマンド
+
+=item * [[Mojolicious::Command::get]] - Getコマンド
+
+=item * [[Mojolicious::Command::prefork]] - プリフォークコマンド
+
+=item * [[Mojolicious::Command::psgi]] - PSGIコマンド
+
+=item * [[Mojolicious::Command::routes]] - ルーティングコマンド
+
+=item * [[Mojolicious::Command::version]] - バージョンコマンド
+
+=item * [[Mojolicious::Commands]] - コマンド
+
+=item * [[Mojolicious::Controller]] - コントローラーの基底クラス
+
+=item * [[Mojolicious::Lite]] - マイクロウェブフレームワーク
+
+=item * [[Mojolicious::Plugin]] - プラグイン基底クラス
+
+=item * [[Mojolicious::Plugin::Config]] - コンフィグプラグイン
+
+=item * [[Mojolicious::Plugin::DefaultHelpers]] - デフォルトヘルパープラグイン
+
+=item * [[Mojolicious::Plugin::EPLRenderer]] - EPL描画プラグイン
+
+=item * [[Mojolicious::Plugin::EPRenderer]] - EP描画プラグイン
+
+=item * [[Mojolicious::Plugin::HeaderCondition]] - ヘッダー条件プラグイン
+
+=item * [[Mojolicious::Plugin::JSONConfig]] - JSONコンフィグプラグイン
+
+=item * [[Mojolicious::Plugin::Mount]] - アプリケーションマウントプラグイン
+
+=item * [[Mojolicious::Plugin::TagHelpers]] - タグヘルパープラグイン
+
+=item * [[Mojolicious::Plugins]] - プラグインマネージャー
+
+=item * [[Mojolicious::Renderer]] - MIMEタイプに基づく描画
+
+=item * [[Mojolicious::Routes]] - いつもルーティングによって行き先を発見する
+
+=item * [[Mojolicious::Routes::Match]] - ルーティングのマッチ
+
+=item * [[Mojolicious::Routes::Pattern]] - ルーティングのパターン
+
+=item * [[Mojolicious::Routes::Route]] - ルーティング
+
+=item * [[Mojolicious::Sessions]] - 暗号化クッキーに基づくセッション
+
+=item * [[Mojolicious::Static]] - スタティックファイルのサーバー
+
+=item * [[Mojolicious::Types]] - MIMEタイプ
+
+=item * [[Mojolicious::Validator]] - パラメーターの検証
+
+=item * [[Mojolicious::Validator::Validation]] - Mojolicious::Validatorによる検証チェックを行う
+
+=item * [[Test::Mojo]] - Mojoの試験
+
+=item * [[ojo]] - Mojoを使った楽しいワンライナー
+
+=back
+
+=head2 スクリプト
+
+=over 2
+
+=item * [[mojo|mojo(スクリプト)]] - Mojoliciousコマンドシステム
+
+=item * [[hypnotoad]] - Hypnotoad HTTP and WebSocketサーバー
+
+=item * [[morbo]] - Morbo HTTP and WebSocket開発サーバー
+
+=back
+
+=head2 ガイド
+
+=over 2
+
+=item * [[Mojolicious::Guides::Tutorial]] - チュートリアル。
+
+=item * [[Mojolicious::Guides::Routing]] - ルーティング。
+
+=item * [[Mojolicious::Guides::Rendering]] - 描画とテンプレート。
+
+=item * [[Mojolicious::Guides::Growing]] - アプリケーションの成長
+
+=item * [[Mojolicious::Guides::Cookbook]] - クックブック
+
+=item * [[Mojolicious::Guides::FAQ]] - FAQ
+
+=item * [[Mojolicious::Guides::CodingGuidelines]] - コーディングガイドライン
+
+=back

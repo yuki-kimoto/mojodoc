@@ -1,0 +1,67 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::Author::cpanify - Cpanifyコマンド
+
+=head1 SYNOPSIS
+
+  Usage: APPLICATION cpanify [OPTIONS] [FILE]
+
+  mojo cpanify -u sri -p secr3t Mojolicious-Plugin-MyPlugin-0.01.tar.gz
+
+  Options:
+    -h, --help                  Show this summary of available options
+    -p, --password <password>   PAUSE password
+    -u, --user <name>           PAUSE username
+
+=head1 DESCRIPTION
+
+L<Mojolicious::Command::Author::cpanify> ファイルのCPANへのアップロード。
+
+いつでも有効になっていて、
+これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目
+をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::Author::cpanify]]は[[Mojo::Command]]から
+すべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $cpanify->description;
+  $cpanify        = $cpanify->description('Foo');
+
+このコマンドの短い説明。コマンド一覧のために利用されます。
+
+=head2 usage
+
+  my $usage = $cpanify->usage;
+  $cpanify  = $cpanify->usage('Foo');
+
+このコマンドの使用情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::Author::cpanify]]は[[Mojo::Command]]からすべてのメソッドを継承しており、 
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $cpanify->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。更新日2019年6月5日)
+
+=cut

@@ -1,0 +1,107 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::JSON - 最小限の JSON
+
+=head1 使い方
+
+  use Mojo::JSON qw(decode_json encode_json);
+
+  my $bytes = encode_json {foo => [1, 2], bar => 'hello!', baz => \1};
+  my $hash  = decode_json $bytes;
+
+=head1 説明
+
+[[Mojo::JSON]] は最小限のできるだけ高速な RFC4627 の実装です。
+
+これはスカラ、配列、ハッシュのような通常の Perl のデータ形式を
+サポートします。bless されたリファレンスに対してはC<TO_JSON>メソッドを
+呼び出そうと試みま、存在しなければ文字列化します。
+
+文字列と数値を区別することは、Perlでは難しく、それがどのように利用されるかに依存します、
+スカラは、同時に、数値でもあり文字列でもあります。
+両方の表現が等価な場合でなければ、文字列の値が優先されます。
+
+  [1, -2, 3]     -> [1, -2, 3]
+  {"foo": "bar"} -> {foo => 'bar'}
+
+リテラル名は、[[Mojo::JSON]] 定数や、類似した Perl 固有の値と相互に変換されます。
+
+  true  -> Mojo::JSON->true
+  false -> Mojo::JSON->false
+  null  -> undef
+
+加えて、スカラリファレンスは、これらの値が真または偽であるかに基づいて
+真偽値を生成するのに利用することができます。
+
+  \1 -> true
+  \0 -> false
+
+文字C</>はXSSアタックを防ぐためにいつでもエスケープされます。
+
+  "</script>" -> "<\/script>"
+
+より良いパフォーマンスのためには、オプションのモジュールL<Cpanel::JSON::XS> (4.04+)が可能であれば自動的に使用されます。これはまたC<MOJO_NO_JSON_XS>環境変数で無効にすることができます。
+
+=head1 関数
+
+[[Mojo::JSON]]は次の関数を実装しています。ここにインポートすることもできます。
+
+=head2 decode_json
+
+  my $value = decode_json $bytes;
+
+JSONをPerlの値へデコードします。デコードが失敗すれば、例外が発生します。
+
+=head2 encode_json
+
+  my $bytes = encode_json {i => '笙･ mojolicious'};
+
+Perlの値をJSONにエンコードします。
+
+=head2 false
+
+  my $false = false;
+
+負値 (Perl が同等の値を持たないため使用されます)。
+
+=head2 from_json
+
+  my $value = from_json $chars;
+
+C<UTF-8>でエンコードされていない
+JSONテキストを、Perlの値にデコードします。
+デコードが失敗したときは、例外が発生します。
+
+=head2 j
+
+  my $bytes = j [1, 2, 3];
+  my $bytes = j {i => '♥ mojolicious'};
+  my $value = j $bytes;
+
+Perlのデータ構造(配列のリファレンスとハッシュのリファレンスだけ)をエンコード、
+あるいはJSONをデコードします。
+C<undef>という戻り値は、生のC<null>か、デコードの失敗を意味します。
+
+=head2 to_json
+
+  my $chars = to_json {i => '♥ mojolicious'};
+
+Perlの値を、C<UTF-8>でエンコードされていない、JSONテキストにエンコードします。
+
+=head2 true
+
+  my $true = true;
+
+正値 (Perl が同等の値を持たないため使用されます)。
+
+=head1 参考
+
+[[Mojolicious]], [[Mojolicious::Guides]], L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月22日)
+
+=cut

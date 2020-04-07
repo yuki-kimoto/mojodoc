@@ -1,0 +1,101 @@
+=encoding utf8
+
+B<このプラグインはコアのディストリビューションから削除されました。>
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojolicious::Plugin::I18N
+
+=head1 名前
+
+Mojolicious::Plugin::I18N - 国際化プラグイン
+
+=head1 使い方
+
+  # Mojolicious
+  $self->plugin('I18N');
+  % languages 'de';
+  %=l 'hello'
+
+  # Mojolicious::Lite
+  plugin I18N => {namespace => 'MyApp::I18N'};
+  %=l 'hello'
+
+  # Lexicon
+  package MyApp::I18N::de;
+  use Mojo::Base 'MyApp::I18N';
+
+  our %Lexicon = (hello => 'hallo');
+
+  1;
+  
+=head1 説明
+
+L<Mojolicous::Plugin::I18n> はL<Locale::Maketext>のサポートをL<Mojolicious>に追加します。
+
+このプラグインを有効にした上で行うことは、必要な分の辞書クラスを追加することだけです。
+通常、言語はC<Accept-Languages>リクエストヘッダから自動的に検出されます。
+
+デフォルトで次のようなコード自動的に生成されるので、
+このプラグインでたくさんのタイピングを省略することができます。
+
+  # $self->plugin('I18N');
+  package MyApp::I18N;
+  use base 'Locale::Maketext';
+  package MyApp::I18N::en;
+  use base 'MyApp::I18N';
+  our %Lexicon = (_AUTO => 1);
+  1;
+
+生成されるコードの名前空間とデフォルトの言語はそれぞれのオプションに影響されます。
+デフォルトの語集クラスは、まだそれが存在しない場合にだけ生成されます。
+
+=head1 オプション
+
+=head2 default
+
+  # Mojolicious::Lite
+  plugin I18N => {default => 'en'};
+
+デフォルトの言語。
+
+=head2 namespace
+
+  # Mojolicious::Lite
+  plugin I18N => {namespace => 'MyApp::I18N'};
+
+語集の名前空間。デフォルトはアプリケーションクラスに続くC<::I18N>になります。
+
+=head1 ヘルパー
+
+=head2 l
+
+  %=l 'hello'
+  $self->l('hello');
+
+文の翻訳。
+
+=head2 languages
+
+  % languages 'de';
+  $self->languages('de');
+
+言語を切り替えます。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::I18N]]は、[[Mojolicious::Plugin]]のすべてのメソッドを継承し、以下の新しいメソッドを実装しています。
+
+=head2 register
+
+  $plugin->register;
+
+プラグインのフックとヘルパーをL<Mojolicious>アプリケーションに登録します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(2012/6/7更新)
+
+=cut

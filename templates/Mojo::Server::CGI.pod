@@ -1,0 +1,73 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Server::CGI
+
+=head1 名前
+
+Mojo::Server::CGI - CGIサーバー
+
+=head1 使い方
+
+  use Mojo::Server::CGI;
+
+  my $cgi = Mojo::Server::CGI->new;
+  $cgi->unsubscribe('request')->on(request => sub {
+    my ($cgi, $tx) = @_;
+
+    # リクエスト
+    my $method = $tx->req->method;
+    my $path   = $tx->req->url->path;
+
+    # レスポンス
+    $tx->res->code(200);
+    $tx->res->headers->content_type('text/plain');
+    $tx->res->body("$method request for $path!");
+
+    # トランサクションをレジューム
+    $tx->resume;
+  });
+  $cgi->run;
+
+=head1 説明
+
+[[Mojo::Server::CGI]]は簡単でポータブルなRFC 3875の実装です。
+デプロイメントのレシピについては[[Mojolicious::Guides::Cookbook]]
+を見てください。
+
+=head1 イベント
+
+[[Mojo::Server::CGI]]はすべてのイベントを[[Mojo::Server]]
+から継承しています。
+
+=head1 属性
+
+[[Mojo::Server::CGI]]は[[Mojo::Server]]を継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 nph
+
+  my $bool = $cgi->nph;
+  $cgi     = $cgi->nph($bool);
+
+ノンパースヘッダーモードを有効にします。
+
+=head1 メソッド
+
+[[Mojo::Server::CGI]]は[[Mojo::Server]]からすべてのメソッドを
+継承しており、次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $cgi->run;
+
+CGIを処理します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月27日)
+
+=cut

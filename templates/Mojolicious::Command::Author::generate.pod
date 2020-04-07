@@ -1,0 +1,78 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::Author::generate - 生成コマンド
+
+=head1 使い方
+
+  Usage: APPLICATION generate GENERATOR [OPTIONS]
+
+    mojo generate app
+    mojo generate lite_app
+
+=head1 説明
+
+[[Mojolicious::Command::Author::generate]]は利用可能なジェネレータを一覧表示します。
+
+いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::Author::generate]]は
+[[Mojolicious::Commands]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $generator->description;
+  $generator      = $generator->description('Foo');
+
+このコマンドの短い説明。コマンド一覧のために利用されます。
+
+=head2 hint
+
+  my $hint   = $generator->hint;
+  $generator = $generator->hint('Foo');
+
+利用可能なジェネレーターコマンドの後に表示される短いヒント。
+
+=head2 message
+
+  my $message = $generator->message;
+  $generator  = $generator->message('Bar');
+
+利用可能なジェネレーターコマンドの前に表示される使用方法のメッセージ
+
+=head2 namespaces
+
+  my $namespaces = $generator->namespaces;
+  $generator     = $generator->namespaces(['Mojo::Command::Generate']);
+
+利用可能なジェネレーターコマンドを検索するための
+名前空間。デフォルトは[[Mojolicious::Command::Author::generate]]と
+Mojo::Command::Generateです。
+
+=head1 メソッド
+
+[[Mojolicious::Command::Author::generate]]
+[[Mojolicious::Commands]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 help
+
+  $generator->help('app');
+
+ジェネレーターコマンドの使用方法の情報を出力します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

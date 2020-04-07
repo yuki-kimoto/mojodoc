@@ -1,0 +1,124 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Date
+
+=head1 名前
+
+Mojo::Date - HTTP 1.1 日付コンテナ
+
+=head1 使い方
+
+  use Mojo::Date;
+
+  # 解析
+  my $date = Mojo::Date->new('Sun, 06 Nov 1994 08:49:37 GMT');
+  say $date->epoch;
+
+  # 構築
+  my $date = Mojo::Date->new(time + 60);
+  say "$date";
+
+=head1 説明
+
+L<Mojo::Date>は、
+L<RFC 7230|http://tools.ietf.org/html/rfc7230>、
+L<RFC 7231|http://tools.ietf.org/html/rfc7231>、
+L<RFC 3339|http://tools.ietf.org/html/rfc3339>
+に基づいた
+HTTPの日付と時刻の関数を実装しています。
+
+=head1 属性
+
+[[Mojo::Date]]は次の属性を実装しています。
+
+=head2 epoch
+
+  my $epoch = $date->epoch;
+  $date     = $date->epoch(784111777);
+
+エポック秒。デフォルトは、現在の時刻です。
+
+=head1 メソッド
+
+[[Mojo::Date]]は[[Mojo::Base]]のすべてのメソッドを継承していて、
+次の新しいメソッドを実装しています。
+
+=head2 new
+
+  my $date = Mojo::Date->new;
+  my $date = Mojo::Date->new('Sun Nov  6 08:49:37 1994');
+
+新しい[[Mojo::Date]]オブジェクトを構築します。必要であれば「parse」メソッドで、解析します。
+
+=head2 parse
+
+  $date = $date->parse('Sun Nov  6 08:49:37 1994');
+
+パース可能なフォーマットは以下のもの含みます。
+
+  # Epoch
+  say Mojo::Date->new('784111777')->epoch;
+  say Mojo::Date->new('784111777.21')->epoch;
+
+  # RFC 822/1123
+  say Mojo::Date->new('Sun, 06 Nov 1994 08:49:37 GMT')->epoch;
+
+  # RFC 850/1036
+  say Mojo::Date->new('Sunday, 06-Nov-94 08:49:37 GMT')->epoch;
+
+  # Ansi C asctime()
+  say Mojo::Date->new('Sun Nov  6 08:49:37 1994')->epoch;
+
+  # RFC 3339
+  say Mojo::Date->new('1994-11-06T08:49:37Z')->epoch;
+  say Mojo::Date->new('1994-11-06T08:49:37')->epoch;
+  say Mojo::Date->new('1994-11-06T08:49:37.21Z')->epoch;
+  say Mojo::Date->new('1994-11-06T08:49:37+01:00')->epoch;
+  say Mojo::Date->new('1994-11-06T08:49:37-01:00')->epoch;
+
+=head2 to_datetime
+
+  my $str = $date->to_datetime;
+
+L<RFC 3339|http://tools.ietf.org/html/rfc3339>の日付と時刻を描画する。
+
+  # "1994-11-06T08:49:37Z"
+  Mojo::Date->new(784111777)->to_datetime;
+
+  # "1994-11-06T08:49:37.21Z"
+  Mojo::Date->new(784111777.21)->to_datetime;
+
+=head2 to_string
+
+  my $str = $date->to_string;
+
+HTTPメッセージのために適切に日付を描画します。
+
+  # "Sun, 06 Nov 1994 08:49:37 GMT"
+  Mojo::Date->new(784111777)->to_string;
+
+=head1 演算子
+
+[[Mojo::Date]]は次の演算子をオーバーロードしています。
+
+=head2 ブール
+
+  my $bool = !!$date;
+
+いつでも真。
+
+=head2 文字列化
+
+  my $str = "$date";
+
+C<to_string>のエイリアス。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.1を反映。2019年5月14日)
+
+=cut

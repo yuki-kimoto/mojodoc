@@ -1,0 +1,82 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Cookie - HTTPクッキーの基底クラス
+
+=head1 使い方
+
+  package Mojo::Cookie::MyCookie;
+  use Mojo::Base 'Mojo::Cookie';
+
+  sub parse     {...}
+  sub to_string {...}
+
+=head1 説明
+
+[[Mojo::Cookie]]は、L<RFC 6265|http://tools.ietf.org/html/rfc6265>
+を元にした、[[Mojo::Cookie::Request]]や[[Mojo::Cookie::Response]]などの
+HTTP 1.1クッキーの抽象基底クラスです。
+
+=head1 属性
+
+[[Mojo::Cookie]]は次の属性を実装しています。
+
+=head2 name
+
+  my $name = $cookie->name;
+  $cookie  = $cookie->name('foo');
+
+クッキー名。
+
+=head2 value
+
+  my $value = $cookie->value;
+  $cookie   = $cookie->value('/test');
+
+クッキーの値。
+
+=head1 メソッド
+
+[[Mojo::Cookie]]は[[Mojo::Base]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 parse
+
+  my $cookies = $cookie->parse($string);
+
+クッキーを解析します。
+サブクラスでオーバーロードされることを想定しています。
+
+=head2 to_string
+
+  my $str = $cookie->to_string;
+
+クッキーを描画します。
+サブクラスでオーバーロードされることを想定しています。
+
+=head1 演算子
+
+[[Mojo::Cookie]]は次の演算子をオーバーロードしています。
+
+=head2 ブール
+
+  my $bool = !!$cookie;
+
+いつでも真です。
+
+=head2 文字列化
+
+  my $str = "$cookie";
+
+[[to_string]]の別名。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映)
+
+=cut

@@ -1,0 +1,81 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::UserAgent::Server - アプリケーションサーバー
+
+=head1 使い方
+
+  use Mojo::UserAgent::Server;
+
+  my $server = Mojo::UserAgent::Server->new;
+  say $server->url;
+
+=head1 説明
+
+[[Mojo::UserAgent::Server]]は、[[Mojo::UserAgent]]のリクエストを処理する
+[[Mojo::Server::Daemon]]をベースにした埋め込みのWebサーバーです。
+
+=head1 属性
+
+[[Mojo::UserAgent::Server]]は次の属性を実装しています。
+
+=head2 ioloop
+
+  my $loop = $server->ioloop;
+  $server  = $server->ioloop(Mojo::IOLoop->new);
+
+I/O演算のために利用するループオブジェクト、
+デフォルトはグローバルな[[Mojo::IOLoop]]シングルトンです。
+
+=head1 メソッド
+
+[[Mojo::UserAgent::Server]]は、[[Mojo::Base]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 app
+
+  my $app = Mojo::UserAgent::Server->app;
+            Mojo::UserAgent::Server->app(Mojolicious->new);
+  my $app = $server->app;
+  $server = $server->app(Mojolicious->new);
+
+このサーバーを処理するアプリケーション。
+特定のアプリケーションのインスタンスは、グローバルなデフォルトを上書きます。
+
+  # アプリケーションの振る舞いを変更する
+  $server->app->defaults(testing => 'oh yea!');
+
+=head2 nb_url
+
+  my $url = $ua->nb_url;
+  my $url = $ua->nb_url('http');
+  my $url = $ua->nb_url('https');
+
+ノンブロッキングのリクエストをC<app>で処理するサーバーのための
+絶対パスの[[Mojo::URL]]オブジェクトを取得します。
+必要であればプロトコルを変更できます。
+
+=head2 restart
+
+  $server->restart;
+
+新しいポートでサーバーをリスタートします。
+
+=head2 url
+
+  my $url = $ua->url;
+  my $url = $ua->url('http');
+  my $url = $ua->url('https');
+
+ブロッキングのリクエストをC<app>で処理するサーバーのための
+絶対パスの[[Mojo::URL]]オブジェクトを取得します。
+必要であればプロトコルを変更できます。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月30日更新)

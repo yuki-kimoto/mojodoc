@@ -1,0 +1,457 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Routes::Route - ルーティング
+
+=head1 使い方
+
+  use Mojolicious::Routes::Route;
+  my $r = Mojolicious::Routes::Route->new;
+
+=head1 説明
+
+[[Mojolicious::Routes::Route]]は[[Mojolicious::Routes]]で利用されるルートのコンテナです。
+
+=head1 属性
+
+[[Mojolicious::Routes]]は次の属性を実装しています。
+
+=head2 children
+
+  my $children = $r->children;
+  $r           = $r->children([Mojolicious::Routes->new]);
+
+このルートの子供たち。
+ネストするルートで利用されます。
+
+=head2 inline
+
+  my $bool = $r->inline;
+  $r       = $r->inline($bool);
+
+ルートのためにC<bridge>の動作を許可する。
+
+=head2 parent
+
+  my $parent = $r->parent;
+  $r         = $r->parent(Mojolicious::Routes->new);
+
+このルートの親。
+ネストするルートで利用されます。通常は[[Mojolicious::Routes::Route]]オブジェクト。
+
+=head2 partial
+
+  my $bool = $r->partial;
+  $r       = $r->partial($bool);
+
+ルートは特定の終端を持っていない。C<path>において、
+残されている文字列がキャプチャされるでしょう。
+
+=head2 pattern
+
+  my $pattern = $r->pattern;
+  $r          = $r->pattern(Mojolicious::Routes::Pattern->new);
+
+このルートのパターン。
+デフォルトはマッチに利用される[[Mojolicious::Routes::Pattern]]オブジェクト。
+
+=head1 メソッド
+
+[[Mojolicious::Routes]]は[[Mojo::Base]]のすべてのメソッドを
+継承しており、次のメソッドを実装しています。
+
+=head2 new
+
+  my $r = Mojolicious::Routes->new;
+  my $r = Mojolicious::Routes::Route->new('/:action');
+  my $r = Mojolicious::Routes::Route->new('/:action', action => qr/\w+/);
+  my $r = Mojolicious::Routes::Route->new(format => 0);
+
+新しいルートオブジェクトを構築します。
+
+=head2 add_child
+
+  $r = $r->add_child(Mojolicious::Route->new);
+
+新しい子供をこのルートに追加します。
+
+  # ルートのリタッチ
+  $r->add_child($r->find('foo'));
+
+=head2 any
+
+  my $route = $r->any('/:foo');
+  my $route = $r->any('/:foo' => sub {...});
+  my $route = $r->any('/:foo' => {foo => 'bar'} => sub {...});
+  my $route = $r->any('/:foo' => [foo => qr/\w+/] => sub {...});
+  my $route = $r->any([qw(GET POST)] => '/:foo' => sub {...});
+  my $route = $r->any([qw(GET POST)] => '/:foo' => [foo => qr/\w+/]);
+
+Generate L<Mojolicious::Routes::Route> object matching any of the listed HTTP
+request methods or all.
+
+リストされたHTTPメソッドのどれかか、指定されない場合はすべてのHTTPメソッドマッチするL<Mojolicious::Routes::Route>オブジェクトを生成します。
+
+  # パターンと行先でルーティング
+  $r->any('/user')->to('user#whatever');
+
+All arguments are optional, but some have to appear in a certain order, like the
+two supported array reference values, which contain the HTTP methods to match
+and restrictive placeholders.
+
+すべての引数はオプションですが、
+二つのサポートされている配列リファレンスの値のように、
+特定の順序で使わなければならないものもあります。
+マッチのためのHTTPメソッドと制約プレースホルダーを含むものです。
+
+  # HTTPメソッドとパターン、制約的なプレースホルダーと行き先でルーティング
+  $r->any(['DELETE', 'PUT'] => '/:foo' => [foo => qr/\w+/])->to('foo#bar');
+
+二つのサポートされている文字列についても、同じです。
+ルーティングパターンとルーティング名を含むものです。
+デフォルトは、ぽたーんC</>とパターンに基づく名前です。
+
+  # パターンと名前と行き先でルーティング
+  $r->any('/:foo' => 'foo_route')->to('foo#bar');
+
+An arbitrary number of key/value pairs in between the route pattern and name can
+be used to specify route conditions.
+
+ルートパターンと名前の間にある任意の数のキーと値のペアは
+ルーティング条件を指定するために使用されます。
+
+  # パターンと条件と行き先でルーティング
+  $r->any('/' => (agent => qr/Firefox/))->to('foo#bar');
+
+A hash reference is used to specify optional placeholders and default values for
+the stash.
+
+ハッシュリファレンスは、オプションナルプレースホルダとスタッシュのデフォルト値の指定に使用されます。
+
+  # パターンとオプショナルプレースホルダーと行き先でルーティング
+  $r->any('/:foo' => {foo => 'bar'})->to('foo#bar');
+
+
+コードリファレンスは、C<cb>の値を指定し、デフォルト値をスタッシュにマージするために利用されます。
+
+  # パターンと行き先をクロージャーで指定してルーティングする。
+  $r->any('/:foo' => sub {
+    my $c = shift;
+    $c->render(text => 'Hello World!');
+  });
+
+あらゆる与えられたHTTPリクエスト、あるいはすべてのHTTPリクエストの
+メソッドにマッチするルートを生成します。
+引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]
+のチュートリアルも見てください。
+
+=head2 delete
+
+  my $route = $r->delete;
+  my $route = $r->delete('/:foo');
+  my $route = $r->delete('/:foo' => sub {...});
+  my $route = $r->delete('/:foo' => sub {...} => 'name');
+  my $route = $r->delete('/:foo' => {foo => 'bar'} => sub {...});
+  my $route = $r->delete('/:foo' => [foo => qr/\w+/] => sub {...});
+  my $route = $r->delete('/:foo' => (agent => qr/Firefox/) => sub {...});
+
+C<DELETE>リクエストにだけマッチするルートを生成します。
+引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]
+のチュートリアルも見てください。
+
+  # 行き先でルーティング
+  $r->delete('/user')->to('user#remove');
+
+=head2 detour
+
+  $r = $r->detour(action => 'foo');
+  $r = $r->detour('controller#action');
+  $r = $r->detour(Mojolicious->new, foo => 'bar');
+  $r = $r->detour('MyApp', {foo => 'bar'});
+
+このルートのためにデフォルトのパラメーターを設定し、
+アプリケーションの埋め込み簡単にするための、
+部分的なマッチングを許可します。
+C<to>と同じ引数をとります。
+
+=head2 find
+
+  my $route = $r->find('foo');
+
+名前で子ルートを探します。
+カスタム名は自動的に生成されたルート名より優先します。
+
+  # 名前付きルートのデフォルトパラメータを変更する
+  $r->find('show_user')->to(foo => 'bar');
+
+=head2 get
+
+  my $route = $r->get;
+  my $route = $r->get('/:foo');
+  my $route = $r->get('/:foo' => sub {...});
+  my $route = $r->get('/:foo' => sub {...} => 'name');
+  my $route = $r->get('/:foo' => {foo => 'bar'} => sub {...});
+  my $route = $r->get('/:foo' => [foo => qr/\w+/] => sub {...});
+  my $route = $r->get('/:foo' => (agent => qr/Firefox/) => sub {...});
+
+リクエストだけにマッチするルートを生成します。
+引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]
+も見てください。
+
+  # 行き先でルーティング
+  $r->get('/user')->to('user#show');
+
+=head2 has_custom_name
+
+  my $bool = $r->has_custom_name;
+
+ルートがユーザーが定義したカスタム名を持っていれば、
+真を返却します。
+
+=head2 has_websocket
+
+  my $bool = $r->has_websocket;
+
+このルートがWebSocketの祖先を持っている場合は真を返却し、将来のために結果をキャッシュします。
+
+=head2 is_endpoint
+
+  my $bool = $r->is_endpoint;
+
+このルートが終点として評価されれば真を返却します。
+
+=head2 is_websocket
+
+  my $bool = $r->is_websocket;
+
+ルートがWebSocketならば真を返却します。
+
+=head2 name
+
+  my $name = $r->name;
+  $r       = $r->name('foo');
+
+このルートの名前。デフォルトはルートのパターンに基づいて自動的に生成された名前です。
+C<current>という名前は現在のルートを参照するために予約されているということに
+注意してください。
+
+  $r->get('/user')->to('user#show')->name('show_user');
+
+=head2 options
+
+  my $route = $r->options;
+  my $route = $r->options('/:foo');
+  my $route = $r->options('/:foo' => sub {...});
+  my $route = $r->options('/:foo' => sub {...} => 'name');
+  my $route = $r->options('/:foo' => {foo => 'bar'} => sub {...});
+  my $route = $r->options('/:foo' => [foo => qr/\w+/] => sub {...});
+  my $route = $r->options('/:foo' => (agent => qr/Firefox/) => sub {...});
+
+C<OPTIONS>リクエストにだけマッチするルートを生成します。
+引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]
+も見てください。
+
+  $r->options('/user')->to('user#overview');
+
+=head2 over
+
+  my $over = $r->over;
+  $r       = $r->over(foo => 1);
+  $r       = $r->over(foo => 1, bar => {baz => 'yada'});
+  $r       = $r->over([foo => 1, bar => {baz => 'yada'}]);
+
+条件のパラメータをこのルートに適用します。
+
+  $r->get('/foo')->over(host => qr/mojolicio\.us/)->to('foo#bar');
+
+=head2 parse
+
+  $r = $r->parse('/:action');
+  $r = $r->parse('/:action', action => qr/\w+/);
+  $r = $r->parse(format => 0);
+
+パターンを解析します。
+
+=head2 patch
+
+  my $route = $r->patch;
+  my $route = $r->patch('/:foo');
+  my $route = $r->patch('/:foo' => sub {...});
+  my $route = $r->patch('/:foo' => sub {...} => 'name');
+  my $route = $r->patch('/:foo' => {foo => 'bar'} => sub {...});
+  my $route = $r->patch('/:foo' => [foo => qr/\w+/] => sub {...});
+  my $route = $r->patch('/:foo' => (agent => qr/Firefox/) => sub {...});
+
+C<PATCH>リクエストのみにマッチするルートを生成します。
+引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]
+も見てください。
+
+  # 行き先をルーティング
+  $r->patch('/user')->to('user#update');
+
+=head2 post
+
+  my $route = $r->post;
+  my $route = $r->post('/:foo');
+  my $route = $r->post('/:foo' => sub {...});
+  my $route = $r->post('/:foo' => sub {...} => 'name');
+  my $route = $r->post('/:foo' => {foo => 'bar'} => sub {...});
+  my $route = $r->post('/:foo' => [foo => qr/\w+/] => sub {...});
+  my $route = $r->post('/:foo' => (agent => qr/Firefox/) => sub {...});
+
+C<POST>リクエストのみにマッチするルートを生成します。
+引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]
+も見てください。
+
+  $r->post('/user')->to('user#create');
+
+=head2 put
+
+  my $route = $r->put;
+  my $route = $r->put('/:foo');
+  my $route = $r->put('/:foo' => sub {...});
+  my $route = $r->put('/:foo' => sub {...} => 'name');
+  my $route = $r->put('/:foo' => {foo => 'bar'} => sub {...});
+  my $route = $r->put('/:foo' => [foo => qr/\w+/] => sub {...});
+  my $route = $r->put('/:foo' => (agent => qr/Firefox/) => sub {...});
+
+C<PUT>リクエストのみにマッチするルートを生成します。
+引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]
+も見てください。
+
+  $r->put('/user')->to('user#replace');
+
+=head2 remove
+
+  $r = $r->remove;
+
+親からルートを取り除きます。
+
+  # 完全にルートを取り除く
+  $r->find('foo')->remove;
+
+  # 新しい親にルートをリタッチ
+  $r->route('/foo')->add_child($r->find('bar')->remove);
+
+=head2 render
+
+  my $path = $r->render({foo => 'bar'});
+
+パラメータつきのルートをパスに描画します。
+
+=head2 root
+
+  my $root = $r->root;
+
+このルートの先祖である[[Mojolicious::Routes]]オブジェクト。
+
+=head2 route
+
+  my $route = $r->route;
+  my $route = $r->route('/:action');
+  my $route = $r->route('/:action', action => qr/\w+/);
+  my $route = $r->route(format => 0);
+
+すべてのHTTPリクエストメソッドにマッチするルートを生成します。
+
+=head2 suggested_method
+
+  my $method = $r->suggested_method;
+
+このルートに到達するためのHTTPメソッドを推測します。
+C<GET>とC<POST>が好まれます。
+
+=head2 to
+
+  my $defaults = $r->to;
+  $r           = $r->to(action => 'foo');
+  $r           = $r->to({action => 'foo'});
+  $r           = $r->to('controller#action');
+  $r           = $r->to('controller#action', foo => 'bar');
+  $r           = $r->to('controller#action', {foo => 'bar'});
+  $r           = $r->to(Mojolicious->new);
+  $r           = $r->to(Mojolicious->new, foo => 'bar');
+  $r           = $r->to(Mojolicious->new, {foo => 'bar'});
+  $r           = $r->to('MyApp');
+  $r           = $r->to('MyApp', foo => 'bar');
+  $r           = $r->to('MyApp', {foo => 'bar'});
+
+このルートのためにデフォルトのパラメーターを設定します。
+
+=head2 to_string
+
+  my $string = $r->to_string;
+
+ルート全体を文字列化します。
+
+=head2 under
+
+  my $route = $r->under(sub {...});
+  my $route = $r->under('/:foo' => sub {...});
+  my $route = $r->under('/:foo' => {foo => 'bar'});
+  my $route = $r->under('/:foo' => [foo => qr/\w+/]);
+  my $route = $r->under([format => 0]);
+
+
+ブリッジを生成します。
+引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]
+も見てください。
+
+  # 長いバージョン
+  $r->any('/:foo' => sub {...})->inline(1);
+
+  # 2つのルート間で共有される中間の宛先とプレフィックス
+  my $auth = $r->under('/user')->to('user#auth');
+  $auth->get('/show')->to('#show');
+  $auth->post('/create')->to('#create');
+
+=head2 via
+
+  my $methods = $r->via;
+  $r          = $r->via('GET');
+  $r          = $r->via(qw(GET POST));
+  $r          = $r->via([qw(GET POST)]);
+
+このルートが処理するのを許可する制限されたHTTPメソッド。
+デフォルトでは何の制限もありません。
+
+  $r->route('/foo')->via('GET', 'POST')->to('foo#bar');
+
+=head2 websocket
+
+  my $route = $r->websocket;
+  my $route = $r->websocket('/:foo');
+  my $route = $r->websocket('/:foo' => sub {...});
+  my $route = $r->websocket('/:foo' => sub {...} => 'name');
+  my $route = $r->websocket('/:foo' => {foo => 'bar'} => sub {...});
+  my $route = $r->websocket('/:foo' => [foo => qr/\w+/] => sub {...});
+  my $route = $r->websocket('/:foo' => (agent => qr/Firefox/) => sub {...});
+
+C<WebSocket>ハンドシェイクにだけマッチするルートを生成します。
+引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]
+も見てください。
+
+=head1 ショートカット
+
+上記の属性やメソッドに加えて、[[Mojolicious::Routes]]のインスタンスからショートカットを呼ぶこともできます。
+
+  # "firefox"ショートカットを追加
+  $r->add_shortcut(firefox => sub {
+    my ($r, $path) = @_;
+    $r->get($path, agent => qr/Firefox/);
+  });
+
+  # ルートを生成するために"firefox"ショートカットを使用する
+  $r->firefox('/welcome')->to('firefox#welcome');
+  $r->firefox('/bye')->to('firefox#bye');
+
+=head1 参照
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月13日更新)
+
+=cut

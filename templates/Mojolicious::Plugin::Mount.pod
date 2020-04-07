@@ -1,0 +1,58 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Plugin::Mount - Applicationマウントプラグイン
+
+=head1 使い方
+
+  # Mojolicious
+  $self->plugin(Mount => {'/prefix' => '/home/sri/myapp.pl'});
+
+  # Mojolicious::Lite
+  plugin Mount => {'/prefix' => '/home/sri/myapp.pl'};
+
+  # 生成されたルートを調整
+  my $example = plugin Mount => {'/example' => '/home/sri/example.pl'};
+  $example->to(message => 'It works great!');
+  my $app = $example->pattern->defaults->{app};
+  $app->config(foo => 'bar');
+
+  # ホストと一緒にアプリケーションをマウント
+  plugin Mount => {'mojolicio.us' => '/home/sri/myapp.pl'};
+
+  # ホストとパス
+  plugin Mount => {'mojolicio.us/myapp' => '/home/sri/myapp.pl'};
+
+  # ワイルドカードのサブドメインと一緒にホストを利用
+  plugin Mount => {'*.mojolicio.us/myapp' => '/home/sri/myapp.pl'};
+
+=head1 説明
+
+[[Mojolicious::Plugin::Mount]]は完全な[[Mojolicious]]アプリケーションを
+マウントするためのプラグインです。
+
+このプラグインのコードは新しいプラグインを構築するのを学ぶのによい助けとなります。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::Mount]]は[[Mojolicious::Plugin]]から
+すべてのメソッドを継承しており、次の新しいメソッドを持っています。
+
+=head2 register
+
+  $plugin->register;
+
+[[Mojolicious]]アプリケーションをマウントします。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月12日更新)
+
+=cut

@@ -1,0 +1,990 @@
+=encoding utf8
+
+=head1 名前
+
+Mojolicious::Guides::Routing - ルーティングリクエスト
+
+=head1 概要
+
+このドキュメントはMojoliciousのルータ(router)のシンプルで楽しい入門と基本的なコンセプトを含んでいます。
+
+=head1 概念
+
+すべての[[Mojolicious]]開発者が知るべき本質
+
+=head2 ディスパッチャ
+
+すべてのWebフレームワークの基盤は、受信したリクエストを適切なレスポンスを生成するコードを結びつける小さなブラックボックスです。
+
+  GET /user/show/1 -> $c->render(text => 'Daniel');
+
+このブラックボックスは普通ディスパッチャと呼ばれます。これらの接続を確立するため、いろいろな戦略を使う多くの実装がありますが、その大部分はリクエストのパスとある種のレスポンスジェネレータとの対応付けが基盤になっています。
+
+  /user/show/2 -> $c->render(text => 'Isabell');
+  /user/show/3 -> $c->render(text => 'Sara');
+  /user/show/4 -> $c->render(text => 'Stefan');
+  /user/show/5 -> $c->render(text => 'Fynn');
+
+これらすべてのコネクションを静的なものにすることは可能ですが、かなり非効率になります。このため、ディスパッチ処理をより動的にするために正規表現がよく利用されるわけです。
+
+  qr!/user/show/(\d+)! -> $c->render(text => $users{$1});
+
+モダンなディスパッチャは、HTTPが持つ機能の大部を自前で用意していて、リクエストパスにくわえてC<Host>, C<User-Agent>, C<Accept>といったその他さまざまな変数を利用できます。
+
+  GET /user/show/23 HTTP/1.1
+  Host: mojolicious.org
+  User-Agent: Mojolicious (Perl)
+  Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+
+=head2 ルーティング(Routes)
+
+正規表現はとても強力である一方、あまり読みやすいとは言えません。それに、一般的に通常のパスのマッチングにはオーバースペックなところがあります。
+
+  qr!/user/show/(\d+)! -> $c->render(text => $users{$1});
+
+ここでルーティングが役立ちます。これは、プレースホルダーを使ってパスを表すために一からデザインされています。
+
+  /user/show/:id -> $c->render(text => $users{$id});
+
+上記の例において、静的なパスとルーティングの違いは「:id」プレースホルダーだけです。一つ以上のプレースホルダーをルーティングの中のどこにでも置くことができます。
+
+  /user/:action/:id
+
+Mojoliciousのルータの基本的コンセプトとして、抽出されたプレースホルダーの値はハッシュに変換されます。
+
+  /user/show/23 -> /user/:action/:id -> {action => 'show', id => 23}
+
+このハッシュは、ほとんどの場合ですべてのMojoliciousアプリケーションの中心になります。これについては後で学びます。内部では、ルーティングは正規表現にコンパイルされます。少し経験すれば両方のやり方の良いところがわかるでしょう。
+
+  /user/show/:id -> qr/(?-xism:^\/user\/show\/([^\/.]+))/
+
+パスの末尾のスラッシュは任意です。
+
+  /user/show/23/ -> /user/:action/:id -> {action => 'show', id => 23}
+
+=head2 可逆性
+
+ルーティングが正規表現に対して優れている点のひとつは、ルーティングは簡単に元に戻すことができることです。抽出されたプレースホルダーはいつでもパスに戻すことができます。
+
+  /sebastian -> /:name -> {name => 'sebastian'}
+  {name => 'sebastian'} -> /:name -> /sebastian
+
+たとえ空文字列であっても、すべてのプレースホルダーは名前を持ちます。
+
+=head2 標準プレースホルダー
+
+標準プレースホルダーは、もっとも簡単なプレースホルダーです。コロンをプレフィックスに取り、C</>とC<.>を除くすべての文字にマッチします。正規表現のC<([^/.]+)>に似ています。
+
+  /hello              -> /:name/hello -> undef
+  /sebastian/23/hello -> /:name/hello -> undef
+  /sebastian.23/hello -> /:name/hello -> undef
+  /sebastian/hello    -> /:name/hello -> {name => 'sebastian'}
+  /sebastian23/hello  -> /:name/hello -> {name => 'sebastian23'}
+  /sebastian 23/hello -> /:name/hello -> {name => 'sebastian 23'}
+
+プレースホルダーは、C<E<lt>> と C<E<gt>> で囲むことによって周囲の文字列と区別できます。
+
+  /hello             -> /<:name>hello -> undef
+  /sebastian/23hello -> /<:name>hello -> undef
+  /sebastian.23hello -> /<:name>hello -> undef
+  /sebastianhello    -> /<:name>hello -> {name => 'sebastian'}
+  /sebastian23hello  -> /<:name>hello -> {name => 'sebastian23'}
+  /sebastian 23hello -> /<:name>hello -> {name => 'sebastian 23'}
+
+コロンのプレフィックスは、C<E<lt>>とC<E<gt>>で囲まれた標準プレースホルダには付けても付けなくても構いません。
+
+  /i♥mojolicious -> /<one>♥<two> -> {one => 'i', two => 'mojolicious'}
+
+=head2 リラックスプレースホルダー
+
+リラックスプレースホルダーは、上記のふたつのプレースホルダーに似ていますが、C</>を除いたすべての文字にマッチする点が異なります。正規表現のC<([^/]+)>に似ています。
+
+  /hello              -> /#name/hello -> undef
+  /sebastian/23/hello -> /#name/hello -> undef
+  /sebastian.23/hello -> /#name/hello -> {name => 'sebastian.23'}
+  /sebastian/hello    -> /#name/hello -> {name => 'sebastian'}
+  /sebastian23/hello  -> /#name/hello -> {name => 'sebastian23'}
+  /sebastian 23/hello -> /#name/hello -> {name => 'sebastian 23'}
+
+とくに拡張子付きのファイル名を手動でマッチングさせるときに、フォーマット検知を使うよりも便利です。
+
+  /music/song.mp3 -> /music/#filename -> {filename => 'song.mp3'}
+
+=head2 ワイルドカードプレースホルダー
+
+ワイルドカードプレースホルダーは、先に紹介したふたつのプレースホルダーに似ていますが、
+アスタリスクをプレフィックスに取りC</>とC<.>を含むすべてにマッチします。正規表現のC<(.+)>に似ています。
+
+  /hello              -> /*name/hello -> undef
+  /sebastian/23/hello -> /*name/hello -> {name => 'sebastian/23'}
+  /sebastian.23/hello -> /*name/hello -> {name => 'sebastian.23'}
+  /sebastian/hello    -> /*name/hello -> {name => 'sebastian'}
+  /sebastian23/hello  -> /*name/hello -> {name => 'sebastian23'}
+  /sebastian 23/hello -> /*name/hello -> {name => 'sebastian 23'}
+
+ファイルパスの全体に手動でマッチさせたいときに便利です。
+
+  /music/rock/song.mp3 -> /music/*filepath -> {filepath => 'rock/song.mp3'}
+
+=head1 基礎
+
+すべてのMojolicious開発者が知っておくべきもっとも一般的に利用される機能
+
+=head2 最小限のルーティング
+
+[[Mojolicious]]のC<routes>属性はルーティング構造を生成するために使用できるルーターを含みます。
+
+  # アプリケーション
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  sub startup {
+    my $self = shift;
+
+    # ルーター
+    my $r = $self->routes;
+
+    # ルーティング
+    $r->get('/welcome')->to(controller => 'foo', action => 'welcome');
+  }
+
+  1;
+
+上記の最小のルーティングでは、C<MyApp::Controller::Foo>というクラスをロードし、そのインスタンスを生成してC<welcome>メソッドを呼び出しています。ルーティングは普通はアプリケーションクラスのC<startup>メソッドの中で設定されますが、すべての場所(たとえ実行中であっても)からアクセスできます。
+
+  # コントローラー
+  package MyApp::Controller::Foo;
+  use Mojo::Base 'Mojolicious::Controller';
+
+  # アクション
+  sub welcome {
+    my $self = shift;
+
+    # レスポンスの描画
+    $self->render(text => 'Hello there.');
+  }
+
+  1;
+
+すべてのルーティングは、定義されたのと同じ順序でマッチし、適切なルーティングが見つかるとすぐにマッチングが停止します。そのため、最も頻繁にアクセスされるルーティングを最初に宣言することで、ルーティングのパフォーマンスを向上させることができます。突然のトラフィックの急増をより適切に処理するために、ルーティングキャッシュも自動的に使用されます。
+
+=head2 ルーティングの行き先
+
+[[Mojolicious::Routes::Route]]のC<get>メソッドで新しいルーティングを開始した後、
+[[Mojolicious::Routes::Route]]のC<to>メソッドをチェーンして、行き先をハッシュ形式で与えることができます。
+
+  # /welcome -> {controller => 'foo', action => 'welcome'}
+  $r->get('/welcome')->to(controller => 'foo', action => 'welcome');
+
+[[Mojolicious::Routes::Route]]のC<route>メソッドで、受信したリクエストにルーティングがマッチすれば、
+[[Mojolicious::Routes::Route]]のC<to>メソッドを使ったハッシュの内容を使って
+レスポンスを生成するために適切なコードを見つけようとします。
+
+=head2 HTTPメソッド
+
+よく使われるほとんどのHTTPリクエストメソッドにはショートカットがあらかじめ用意されていて、そのひとつに[[Mojolicious::Routes::Route]]のC<post>があります。もっとコントロールしたい場合は、
+[[Mojolicious::Routes::Route]]のC<any>を使えば、第一引数に配列レファレンスを渡すことによって、任意のリクエストメソッドを指定できます。
+
+  # PUT /hello  -> undef
+  # GET /hello  -> {controller => 'foo', action => 'hello'}
+  $r->get('/hello')->to(controller => 'foo', action => 'hello');
+
+  # PUT /hello -> {controller => 'foo', action => 'hello'}
+  $r->put('/hello')->to(controller => 'foo', action => 'hello');
+
+  # POST /hello -> {controller => 'foo', action => 'hello'}
+  $r->post('/hello')->to(controller => 'foo', action => 'hello');
+
+  # GET|POST /bye  -> {controller => 'foo', action => 'bye'}
+  $r->any(['GET', 'POST'] => '/bye')->to(controller => 'foo', action => 'bye');
+
+  # * /whatever -> {controller => 'foo', action => 'whatever'}
+  $r->any('/whatever')->to(controller => 'foo', action => 'whatever');
+
+ひとつの小さな例外として、HEADリクエストはGETリクエストと同じものとみなされますが、
+コンテンツはたとえ存在したとしてもレスポンスで送信されません。
+
+  # GET /test  -> {controller => 'bar', action => 'test'}
+  # HEAD /test -> {controller => 'bar', action => 'test'}
+  $r->get('/test')->to(controller => 'bar', action => 'test');
+
+C<_method>クエリパラメータを使用してリクエストメソッドをオーバーライドすることもできます。
+C<GET>とC<POST>のみをサポートするブラウザでフォームを送信するとき、これは非常に役に立ちます。
+
+  # PUT  /stuff             -> {controller => 'baz', action => 'stuff'}
+  # POST /stuff?_method=PUT -> {controller => 'baz', action => 'stuff'}
+  $r->put('/stuff')->to(controller => 'baz', action => 'stuff');
+
+=head2 IRIs
+
+IRIsは透過的に扱うことができます。これは、パスがアンエスケープされ、Perlの文字にデコードされることが保証されるということです。
+
+  # /&#9731; (unicode snowman) -> {controller => 'foo', action => 'snowman'}
+  $r->route('/&#9731;')->to(controller => 'foo', action => 'snowman');
+
+=head2 スタッシュ
+
+生成されるマッチしたルーティングのハッシュは、実は[[Mojolicious]]のリクエストサイクル全体の中心です。私たちはそれをスタッシュと呼び、これはレスポンスが生成されるまで存続します。
+
+  # /bye -> {controller => 'foo', action => 'bye', mymessage => 'Bye'}
+  $r->get('/bye')
+    ->to(controller => 'foo', action => 'bye', mymessage => 'Bye');
+
+C<controller>やC<action>などのスタッシュの値のいくつかは特別な意味を持ちますが、一般的にはレスポンスを生成するために必要なデータをなんでも入れることができます。いったんディスパッチされれば、スタッシュのすべての内容はいつでも変更できます。
+
+  sub bye {
+    my $self = shift;
+
+    # スタッシュからメッセージを得る
+    my $message = $self->stash('mymessage');
+
+    # スタッシュのメッセージを変更
+    $self->stash(mymessage => 'Welcome');
+  }
+
+すべての予約された値を見るには[[Mojolicious::Controller]]のC<stash>を参考にしてください。
+
+=head2 ネストされたルーティング
+
+重複するコードを取り除くために、ルーティングから木構造を構築することも可能です。子を持つルーティングは自身にはマッチしません。それらのネストしたルーティング
+の実際のエンドポイントだけがマッチします。
+
+  # /foo     -> undef
+  # /foo/bar -> {controller => 'foo', action => 'bar'}
+  my $foo = $r->any('/foo')->to(controller => 'foo');
+  $foo->get('/bar')->to(action => 'bar');
+
+スタッシュは単にルーティングからルーティングに受け継がれ、古い値は新しい値でオーバーライドされます。
+
+  # /cats      -> {controller => 'cats', action => 'index'}
+  # /cats/nyan -> {controller => 'cats', action => 'nyan'}
+  # /cats/lol  -> {controller => 'cats', action => 'default'}
+  my $cats = $r->any('/cats')->to(controller => 'cats', action => 'default');
+  $cats->get('/')->to(action => 'index');
+  $cats->get('/nyan')->to(action => 'nyan');
+  $cats->get('/lol');
+
+よく使うプレフィックスを設定することで、多くのルートを持つアプリケーションのルーティングパフォーマンスを大幅に向上させることができます。これは、プレフィックスが最初にマッチした場合にのみ子が試行されるためです。
+
+=head2 特別なスタッシュの値
+
+ディスパチャはスタッシュの中のC<controller>とC<action>の値を見るとき、いつでもそれらをディスパッチ先のクラスとメソッドに変換しようとします。C<controller>の値は[[Mojo::Util]]のC<camelize>によってC<snake_case>からC<CamelCase>に変換され、ひとつかそれ以上のネームスペースの後ろに追加されます。デフォルトで追加先となるのは、アプリケーションクラス（C<MyApp::Controller>）に基づくコントローラーネームスペースと素のアプリケーションクラス（C<MyApp>）です。これらのネームスペースが順番に検索されます。このため両方の値は大文字と小文字が区別されます。
+
+  # アプリケーション
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  sub startup {
+    my $self = shift;
+
+    # /bye -> MyApp::Controller::Foo->bye
+    $self->routes->get('/bye')->to(controller => 'foo', action => 'bye');
+  }
+
+  1;
+
+  # コントローラー
+  package MyApp::Controller::Foo;
+  use Mojo::Base 'Mojolicious::Controller';
+
+  # アクション
+  sub bye {
+    my $self = shift;
+
+    # レスポンスの描画
+    $self->render(text => 'Good bye.');
+  }
+
+  1;
+
+コントローラクラスは大きなプロジェクトでコードを体系化するのにぴったりです。たくさんのディスパッチ戦略がありますが、コントローラはもっとも一般的に使用されるものなので、C<controller#action>という形式の専用ショートカットが用意されています。
+
+  # /bye -> {controller => 'foo', action => 'bye', mymessage => 'Bye'}
+  $r->get('/bye')->to('foo#bye', mymessage => 'Bye');
+
+C<->はキャメルケース化の際にC<::>へ置き換えられます。これによって複数の階層をC<controller>に持たせることができます。
+
+  # / -> MyApp::Controller::Foo::Bar->hi
+  $r->get('/')->to('Foo::Bar#hi');
+
+スネークケースの代わりに、C<controller>をキャメルケースで指定することもできます。
+
+  # / -> MyApp::Controller::Foo::Bar->hi
+  $r->get('/')->to('Foo::Bar#hi');
+
+セキュリティ上の理由から、ディスパッチャは常にC<controller>が本当に[[Mojolicious::Controller]]のサブクラスまたは[[Mojo]]であるかどうかをディスパッチ前に調べます。
+
+=head2 名前空間
+
+C<namespace>スタッシュ値を使って、子ルーティングを含んだルーティング全体のネームスペースを変えることができます。
+
+  # /bye -> MyApp::MyController::Foo::Bar->bye
+  $r->get('/bye')
+    ->to(namespace => 'MyApp::MyController::Foo::Bar', action => 'bye');
+
+C<controller>は、常にC<snake_case>からC<CamelCase>に[[Mojo::Util]]のC<camelize>によって変換され、このC<namespace>の後ろに追加されます。
+
+  # /bye -> MyApp::MyController::Foo::Bar->bye
+  $r->get('/bye')->to('foo-bar#bye', namespace => 'MyApp::MyController');
+
+  # /hey -> MyApp::MyController::Foo::Bar->hey
+  $r->get('/hey')->to('Foo::Bar#hey', namespace => 'MyApp::MyController');
+
+ルーター属性[[Mojolicious::Routes]]のC<namespaces>を使用して、アプリケーション内のすべてのルーティングは、デフォルトの名前空間を変更することもできます。通常、デフォルトはアプリケーションクラス（C<MyApp::Controller>）および素のアプリケーションクラス（C<MyApp>）に基づく名前空間になります。
+
+  $r->namespaces(['MyApp::MyController']);
+
+=head2 コールバックへのルーティング(C<cb>)
+
+コントローラをバイパスして、代わりにコールバックを実行するためにスタッシュのC<cb>を使うことができます。
+
+  $r->get('/bye')->to(cb => sub {
+    my $c = shift;
+    $c->render(text => 'Good bye.');
+  });
+
+[[Mojolicious::Lite]]と同じようにコールバックを直接渡すこともできます。通常、こちらの方が見た目が良くなります。
+
+  $r->get('/bye' => sub {
+    my $c = shift;
+    $c->render(text => 'Good bye.');
+  });
+
+=head2 名前つきルーティング
+
+ルーティングに名前をつければフレームワーク全体をとおして、多くのメソッドとヘルパー関数から逆引きできるようになります。ほとんどの場合、この機能は内部的に[[Mojolicious::Controller]]のC<url_for>を頼りにしています。
+
+  # /foo/marcus -> {controller => 'foo', action => 'bar', user => 'marcus'}
+  $r->get('/foo/:user')->to('foo#bar')->name('baz');
+
+  # URL "/foo/marcus" for route "baz" を生成
+  my $url = $c->url_for('baz');
+
+  # URL "/foo/jan" for route "baz" を生成
+  my $url = $c->url_for('baz', user => 'jan');
+
+  # URL "http://127.0.0.1:3000/foo/jan" for route "baz" を生成
+  my $url = $c->url_for('baz', user => 'jan')->to_abs;
+
+[[Mojolicious::Routes::Route]]のC<name>で名前をつけることができます。または、ルーターが自動的に名前を生成するようにします。これはノンワード文字を含まないルート自体と同じになりますが、カスタム名の方が優先されます。
+
+  # /foo/bar ("foobar")
+  $r->get('/foo/bar')->to('test#stuff');
+
+  # URL "/foo/bar"を生成
+  my $url = $c->url_for('foobar');
+
+現在のルーティングを参照するためには、予約語のC<current>を使うか、名前の指定を省きます。
+
+  # Generate URL for current route
+  $self->url_for('current');
+  $self->url_for;
+
+[[Mojolicious::Plugin::DefaultHelpers]]のC<current_route>で
+現在のルーティング名をチェックあるいは取得できます。
+
+  # 現在のルーティング名
+  my $name = $c->current_route;
+
+  # 複数のルーティングで共有されるコードにおいてルーティング名をチェック
+  $c->stash(button => 'green') if $c->current_route('login');
+
+=head2 プレースホルダーのオプション
+
+抽出されたプレースホルダーの値は、古いスタッシュの値が存在していればそれを上書きします。
+
+  # /bye -> {controller => 'foo', action => 'bar', mymessage => 'bye'}
+  # /hey -> {controller => 'foo', action => 'bar', mymessage => 'hey'}
+  $r->get('/:mymessage')->to('foo#bar', mymessage => 'hi');
+
+さらにもうひとつの興味深い効果として、プレースホルダーは、同じ名前のスタッシュの値がすでに存在していれば、自動的にオプショナルになります。これは正規表現C<([^/.]+)?>に似ています。
+
+  # / -> {controller => 'foo', action => 'bar', mymessage => 'hi'}
+  $r->get('/:mymessage')->to('foo#bar', mymessage => 'hi');
+
+  # /test/123     -> {controller => 'foo', action => 'bar', mymessage => 'hi'}
+  # /test/bye/123 -> {controller => 'foo', action => 'bar', mymessage => 'bye'}
+  $r->get('/test/:mymessage/123')->to('foo#bar', mymessage => 'hi');
+
+ふたつのオプショナルなプレースホルダーが、スラッシュによって分割されている場合だけ、
+スラッシュはオプショナルなものになります。
+
+  # /           -> {controller => 'foo',   action => 'bar'}
+  # /users      -> {controller => 'users', action => 'bar'}
+  # /users/list -> {controller => 'users', action => 'list'}
+  $r->get('/:controller/:action')->to('foo#bar');
+
+C<controller>やC<action>などの特別なスタッシュの値もまたプレースホルダーとなりえます。これによってきわめて柔軟なルーティングの構築が可能になります。これは開発の間は特にとても便利ですが、すべてのコントローラーメソッドがルーティングになる可能性があるので、注意深く利用すべきです。アンダースコアで始まるこれらのメソッドと同じように、すべての大文字のメソッドは自動的にルーターから隠されます。隠す対象を追加するためには[[Mojolicious::Routes]]のC<hide>を使うこともできます。
+
+  # すべてのコントローラーでC<create>メソッドを隠す
+  $r->hide('create');
+
+[[Mojolicious::Controller]]のすべての属性とメソッドでは、これがすでに行われています。
+
+=head2 制約的なプレースホルダー
+
+プレースホルダーにより多くの制約を加えるには、選択リストを使うのが簡単です。候補となる値のリストを作るだけでOKです。これは正規表現C<(bender|leela)>に似ています。
+
+  # /fry    -> undef
+  # /bender -> {controller => 'foo', action => 'bar', name => 'bender'}
+  # /leela  -> {controller => 'foo', action => 'bar', name => 'leela'}
+  $r->get('/:name' => [name => ['bender', 'leela']])->to('foo#bar');
+
+必要であればプレースホルダーの正規表現を調節できます。ただし、C<^>とC<$>を使うことや、グループC<(...)>のキャプチャは避けてください。これは、プレースホルダーが内部の大きな正規表現の一部だからです。けれどもキャプチャしないC<(?:...)>は使っても大丈夫です。
+
+  # /23   -> {controller => 'foo', action => 'bar', number => 23}
+  # /test -> undef
+  $r->get('/:number' => [number => qr/\d+/])->to('foo#bar');
+
+  # /23   -> undef
+  # /test -> {controller => 'foo', action => 'bar', name => 'test'}
+  $r->get('/:name' => [name => qr/[a-zA-Z]+/])->to('foo#bar');
+
+このようにして読みやすいルーティングと正規表現の素の力を簡単に得ることができます。
+
+=head2 プレースホルダーの種類
+
+また、制限的なプレースホルダを使用するルーティングが複数ある場合は、それらを[[Mojolicious::Routes]]のC<add_type>でプレースホルダ型に変えることもできます。
+
+  # リストを使った型
+  $r->add_type(futurama_name => ['bender', 'leela']);
+
+  # /fry    -> undef
+  # /bender -> {controller => 'foo', action => 'bar', name => 'bender'}
+  # /leela  -> {controller => 'foo', action => 'bar', name => 'leela'}
+  $r->get('/<name:futurama_name>')->to('foo#bar');
+
+プレースホルダ型は制限的なプレースホルダと同じように機能します。それらはC<E<lt>プレースホルダー:typeE<gt>>表記で再利用できます。
+
+  ＃ 正規表現を適応させる型
+  $r->add_type(upper => qr/[A-Z]+/);
+
+  # /user/ROOT -> {controller => 'users', action => 'show', name => 'ROOT'}
+  # /user/root -> undef
+  # /user/23   -> undef
+  $r->get('/user/<name:upper>')->to('users#show');
+
+C<num>のようないくつかの型は非常に一般的に使われているので、デフォルトで利用可能です。
+
+  # /article/12   -> {controller => 'article', action => 'show', id => 12}
+  # /article/test -> undef
+  $r->get('/article/<id:num>')->to('articles#show');
+
+利用可能なプレースホルダタイプの全リストについては[[Mojolicious::Routes]]のC<TYPES>も見てください 。
+
+=head2 内観
+
+利用可能なすべてルーティングを名前と背後の正規表現と一緒に列挙するには、コマンドラインから[[Mojolicious::Command::routes]]のコマンドが利用できます。
+
+  $ ./myapp.pl routes -v
+  /foo/:name  ....  POST  fooname  ^/foo/([^/.]+)/?(?:\.([^/]+))?$
+  /bar        ..U.  *     bar      ^/bar
+    +/baz     ...W  GET   baz      ^/baz(?:\.([^/]+)$)?
+  /yada       ....  *     yada     ^/yada(?:\.([^/]+)$)?
+
+=head2 アンダー (Under)
+
+複数階層にネストしたルーティングのコードを共有するには、[[Mojolicious::Routes::Route]]のC<under>メソッドが利用できます。通常のネストしたルーティングとは異なり、この方法で生成されたルーティングはそれぞれが中間目的地を持ち、マッチしたときに追加のディスパッチサイクルが開始します。
+
+  # /foo     -> undef
+  # /foo/bar -> {controller => 'foo', action => 'baz'}
+  #             {controller => 'foo', action => 'bar'}
+  my $foo = $r->under('/foo')->to('foo#baz');
+  $foo->get('/bar')->to('#bar');実際のブリッジのコードは真の値を返す必要があります。
+
+ブリッジのコードは真の値を返す必要があります。そうでなければ、ディスパッチのチェーンは壊れます。このためにブリッジは認証のためのとても強力なツールになっています。
+
+  # /blackjack -> {cb => sub {...}}
+  #               {controller => 'hideout', action => 'blackjack'}
+  my $auth = $r->under('/' => sub {
+    my $c = shift;
+
+    # 認証済み
+    return 1 if $c->req->headers->header('X-Bender');
+
+    # 未認証
+    $c->render(text => "You're not Bender.", status => 401);
+    return undef;
+  });
+  $auth->get('/blackjack')->to('hideout#blackjack');
+
+壊れたディスパッチチェーンは
+[[Mojolicious::Plugin::DefaultHelpers]]のC<continue>メソッドを呼び出すことによって続けることができます。これによって、たとえば、ノンブロッキング処理を次のディスパッチサイクルに到達する前に終了させることができます。
+
+  my $maybe = $r->under('/maybe' => sub {
+    my $c = shift;
+
+    # 3秒まって、50%の確率で継続する
+    Mojo::IOLoop->timer(3 => sub {
+
+      # 負け
+      return $c->render(text => 'No luck.') unless int rand 2;
+
+      # 勝ち
+      $c->continue;
+    });
+
+    return undef;
+  });
+  $maybe->get('/')->to('maybe#winner');
+
+フォーマットルーティングの末尾にあるC<.html>やC<.txt>などのファイルの拡張子は自動的に検知されスタッシュのC<format>に保存されます。もう少し強力にするには、L<Mojolicious::Controller>のC<match> で前後の目的地を詳しく調べてください。 
+
+  # 4回目のディスパッチサイクルのアクション
+  my $action = $c->match->stack->[3]{action};
+
+=head2 フォーマット
+
+ルートの終わりにあるC<.html>やC<.txt>のようなファイル拡張子は自動的に検出され、C<format>スタッシュ値に格納されます。
+
+  # /foo      -> {controller => 'foo', action => 'bar'}
+  # /foo.html -> {controller => 'foo', action => 'bar', format => 'html'}
+  # /foo.txt  -> {controller => 'foo', action => 'bar', format => 'txt'}
+  $r->get('/foo')->to('foo#bar');
+
+これにより、たとえば、異なるフォーマットの複数のテンプレートが同じアクションコードを共有できます。制限付きプレースホルダを使用して、許可されるフォーマットを制限することもできます。
+
+  # /foo.txt -> undef
+  # /foo.rss -> {controller => 'foo', action => 'bar', format => 'rss'}
+  # /foo.xml -> {controller => 'foo', action => 'bar', format => 'xml'}
+  $r->get('/foo' => [format => ['rss', 'xml']])->to('foo#bar');
+
+C<format>値はL<Mojolicious::Controller>のC<url_for> にも渡すことができます。
+
+  # /foo/bar.txt -> {controller => 'foo', action => 'bar', format => 'txt'}
+  $r->get('/foo/:action')->to('foo#')->name('baz');
+
+  # Generate URL "/foo/bar.txt" for route "baz"
+  my $url = $c->url_for('baz', action => 'bar', format => 'txt');
+
+あるいは、ネストしたルートによって継承される特別な種類の制限的なプレースホルダを使用してフォーマット検出を無効にしてから、必要に応じて再度有効にすることもできます。
+
+  # /foo      -> {controller => 'foo', action => 'bar'}
+  # /foo.html -> undef
+  $r->get('/foo' => [format => 0])->to('foo#bar');
+
+  # /foo      -> {controller => 'foo', action => 'bar'}
+  # /foo.html -> undef
+  # /foo.html -> undef
+  # /baz      -> undef
+  # /baz.html -> {controller => 'baz', action => 'yada', format => 'html'}
+  # /baz.xml  -> undef
+  my $inactive = $r->under([format => 0]);
+  $inactive->get('/foo')->to('foo#bar');
+  $inactive->get('/baz' => [format => ['txt', 'html']])->to('baz#yada');
+
+=head2 WebSocket
+
+[[Mojolicious::Routes::Route]]のC<websocket>メソッドを使ってWebSocketハンドシェイクへのアクセスを制限できます。WebSocketハンドシェイクとは、普通のGETリクエストに追加の情報がついたものです。
+
+  # /echo (WebSocket handshake)
+  $r->websocket('/echo')->to('foo#echo');
+
+  # コントローラー
+  package MyApp::Controller::Foo;
+  use Mojo::Base 'Mojolicious::Controller';
+
+  # アクション
+  sub echo {
+    my $self = shift;
+    $self->on(message => sub {
+      my ($self, $message) = @_;
+      $self->send("echo: $message");
+    });
+  }
+
+  1;
+
+WebSocketハンドシェイクリクエストに、C<101>レスポンスで応答したときに、コネクションは確立されます。このレスポンスは、[[Mojolicious::Controller]]のC<on>でイベントを定期受信したとき、また[[Mojolicious::Controller]]
+のC<send>でメッセージを送ったときに、自動的に発生します。
+
+  GET /echo HTTP/1.1
+  Host: mojolicious.org
+  User-Agent: Mojolicious (Perl)
+  Connection: Upgrade
+  Upgrade: websocket
+  Sec-WebSocket-Key: IDM3ODE4NDk2MjA1OTcxOQ==
+  Sec-WebSocket-Version: 13
+
+  HTTP/1.1 101 Switching Protocols
+  Server: Mojolicious (Perl)
+  Date: Tue, 03 Feb 2015 17:08:24 GMT
+  Connection: Upgrade
+  Upgrade: websocket
+  Sec-WebSocket-Accept: SWsp5N2iNxPbHlcOTIw8ERvyVPY=
+
+=head2 キャッチオールルート
+
+定義された順番でルートはマッチするので、
+オプショナルなワイルドカードプレースホルダーによって、
+最後のルートにおいてマッチしなかった
+すべてのリクエストをキャッチできます。
+
+  # * /*
+  $r->any('/*whatever' => {whatever => ''} => sub {
+    my $c        = shift;
+    my $whatever = $c->param('whatever');
+    $c->render(text => "/$whatever did not match.", status => 404);
+  });
+
+=head2 条件
+
+L<Mojolicious::Plugin::HeaderCondition>のC<headers>、C<agent>、C<host>メソッドなどは、L<Mojolicious::Routes::Route>のC<over>メソッドを使って任意のルーティングに適用できます。これによって、さらに強力なルートを構成できるようになります。
+
+  # / (Origin: http://perl.org)
+  $r->get('/')->over(headers => {Origin => qr/perl\.org/})->to('foo#bar');
+
+  # / (Firefox)
+  $r->get('/')->over(agent => qr/Firefox/)->to('browser-test#firefox');
+
+  # / (Internet Explorer)
+  $r->get('/')->over(agent => qr/Internet Explorer/)->to('browser-test#ie');
+
+  # http://mojolicious.org/perldoc
+  $r->get('/perldoc')->over(host => 'mojolicious.org')->to('perldoc#index');
+
+ルーティングキャッシュは通常、繰り返しのリクエストを高速化しますが、条件は複雑すぎるため、パフォーマンスが低下する可能性があります。
+
+=head2 フック
+
+フックはルーティングシステムの外側で実行され、
+[[Mojolicious]]のC<hook>を使って、
+すべてのリクエストでコードを共有することによって
+フレームワーク自体を拡張することを可能にします。これはプラグインのためのとても強力なツールです。
+
+  # アプリケーション
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  sub startup {
+    my $self = shift;
+
+    # "/test"プレフィックスを含んでいるすべてのリクエストをチェック
+    $self->hook(before_dispatch => sub {
+      my $c = shift;
+      $c->render(text => 'This request did not reach the router.')
+        if $c->req->url->path->contains('/test');
+    });
+
+    # 上のフックがレスポンスを描画すれば、ここには到達しない。
+    my $r = $self->routes;
+    $r->get('/welcome')->to('foo#welcome');
+    $r->post('/bye')->to('foo#bye');
+  }
+
+  1;
+
+追加のレスポンスヘッダを設定するような後処理の仕事などは一般的な使用方法でしょう。
+
+  # 静的ファイルがキャッシュされるようにする
+  $app->hook(after_static => sub {
+    my $c = shift;
+    $c->res->headers->cache_control('max-age=3600, must-revalidate');
+  });
+
+  # デフォルトヘッダを削除
+  $self->hook(after_dispatch => sub {
+    my $c = shift;
+    $c->res->headers->remove('Server');
+  });
+
+リクエストの前処理において同じことをする。
+
+  # リクエストヘッダーに基づいてテンプレートバリアントを選択
+  $app->hook(before_dispatch => sub {
+    my $c = shift;
+    return unless my $agent = $c->req->headers->user_agent;
+    $c->stash(variant => 'ie') if $agent =~ /Internet Explorer/;
+  });
+
+モニタリングをアプリケーションに加える発展的な拡張
+
+  # Webサービスに例外を通知する
+  $self->hook(after_dispatch => sub {
+    my $c = shift;
+    return unless my $e = $c->stash('exception');
+    $c->ua->post('https://example.com/bugs' => form => {exception => $e});
+  });
+
+コアの機能の多くを拡張することも可能です。
+
+  # コントローラーオブジェクトをアクションの中で$_で利用できるようにする
+  $app->hook(around_action => sub {
+    my ($next, $c, $action, $last) = @_;
+    local $_ = $c;
+    return $next->();
+  });
+
+  # ルーティング名をアクションへの引数として渡す
+  $app->hook(around_action => sub {
+    my ($next, $c, $action, $last) = @_;
+    return $c->$action($c->current_route);
+  });
+
+すべてのフックの一覧は [[Mojolicious]]のC<HOOKS>を見てください。
+
+=head1 発展
+
+一般的ではないが、より強力な機能
+
+=head2 ショートカット
+
+ルート生成の表現力を高めるためには[[Mojolicious::Routes]]のC<add_shortcut>を使って独自のショートカットを加えることができます。
+
+  # 簡単な"resource"ショートカット
+  $r->add_shortcut(resource => sub {
+    my ($r, $name) = @_;
+
+    # リソースのプレフィックス
+    my $resource = $r->any("/$name")->to("$name#");
+
+    # リソースのリストの描画
+    $resource->get->to('#index')->name($name);
+
+    # 新しいリソースを作成するために、フォームを描画する("store"へのサブミット)
+    $resource->get('/create')->to('#create')->name("create_$name");
+
+    # 新しく作成したリソースを保存する ("create"によってサブミット)
+    $resource->post->to('#store')->name("store_$name");
+
+    # 特別なリソースを描画する
+    $resource->get('/:id')->to('#show')->name("show_$name");
+
+    # リソースを編集するためにフォームを描画する ("update"へのサブミット)
+    $resource->get('/:id/edit')->to('#edit')->name("edit_$name");
+
+    # リソースをアップデートする("edit"によってサブミット)
+    $resource->put('/:id')->to('#update')->name("update_$name");
+
+    # リソースを削除する
+    $resource->delete('/:id')->to('#remove')->name("remove_$name");
+
+    return $resource;
+  });
+
+  # GET /users         -> {controller => 'users', action => 'index'}
+  # GET /users/create  -> {controller => 'users', action => 'create'}
+  # POST /users        -> {controller => 'users', action => 'store'}
+  # GET /users/23      -> {controller => 'users', action => 'show', id => 23}
+  # GET /users/23/edit -> {controller => 'users', action => 'edit', id => 23}
+  # PUT /users/23      -> {controller => 'users', action => 'update', id => 23}
+  # DELETE /users/23   -> {controller => 'users', action => 'remove', id => 23}
+  $r->resource('users');
+
+=head2 ルーティングのリアレンジ
+
+アプリケーションが立ち上げってから最初のリクエストが処理されるまでは、すべてのルーティングは、
+[[Mojolicious::Routes::Route]]のC<add_child>や
+[[Mojolicious::Routes::Route]]のC<remove>などによって
+移動させたり、削除できます。
+
+  # GET /example/show -> {controller => 'example', action => 'show'}
+  my $show = $r->get('/show')->to('example#show');
+  $r->any('/example')->add_child($show);
+
+  # なし
+  $r->get('/secrets/show')->to('secrets#show')->name('show_secrets');
+  $r->find('show_secrets')->remove;
+
+特にプラグインによって生成されたルーティングを再構成するためにとても便利でしょう。
+[[Mojolicious::Routes::Route]]のC<find>を使って名前によってルーティングを探すことができます。
+
+  # GET /example/test -> {controller => 'example', action => 'test'}
+  $r->get('/something/else')->to('something#else')->name('test');
+  my $test = $r->find('test');
+  $test->pattern->parse('/example/test');
+  $test->pattern->defaults({controller => 'example', action => 'test'});
+
+さらにルーティングパターンと目的地は、[[Mojolicious::Routes::Pattern]]のC<parse>や
+[[Mojolicious::Routes::Pattern]]のC<defaults>を使ってまだ変更できます。
+
+=head2 条件の追加
+
+独自の条件を[[Mojolicious::Routes]]のC<add_condition>を使って追加できます。すべての条件は基本的には、新しいリクエストが到着するたびに実行されるルータープラグインです。条件は、
+ルーティングとマッチしたときに真を返す必要があります。
+
+  # ランダムでルーティングにマッチする条件
+  $r->add_condition(random => sub {
+    my ($route, $c, $captures, $num) = @_;
+
+    # 負け
+    return undef if int rand $num;
+
+    # 勝ち
+    return 1;
+  });
+
+  # /maybe（25% の確率）
+  $r->get('/maybe')->over(random => 4)->to('foo#bar');
+
+必要なリクエスト情報を使う
+
+  # クエリパラメーターをチェックする条件（モックウェブサービスに便利）
+  $r->add_condition(query => sub {
+    my ($route, $c, $captures, $hash) = @_;
+
+    for my $key (keys %$hash) {
+      my $param = $c->req->url->query->param($key);
+      return undef unless defined $param && $param eq $hash->{$key};
+    }
+
+    return 1;
+  });
+
+  # /hello?to=world&test=1
+  $r->get('/hello')->over(query => {test => 1, to => 'world'})->to('foo#bar');
+
+=head2 条件プラグイン
+
+再利用可能なプラグインとして条件をパッケージ化できます。
+
+  # プラグイン
+  package Mojolicious::Plugin::WerewolfCondition;
+  use Mojo::Base 'Mojolicious::Plugin';
+
+  use Astro::MoonPhase;
+
+  sub register {
+    my ($self, $app) = @_;
+
+    # “おおかみ男（werewolf）”条件を追加
+    $app->routes->add_condition(werewolf => sub {
+      my ($r, $c, $captures, $days) = @_;
+
+      # おおかみ男を入れるな！
+      return if abs(14 - (phase(time))[2]) > ($days / 2);
+
+      # 大丈夫だ、おおかみ男ではない
+      return 1;
+    });
+  }
+
+  1;
+
+プラグインをロードして、すべてのアプリケーションで条件を使うことができます。
+
+  # アプリケーション
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  sub startup {
+    my $self = shift;
+
+    # プラグイン
+    $self->plugin('WerewolfCondition');
+
+    # /hideout（満月から4日間は中に入れない）
+    $self->routes->get('/hideout')->over(werewolf => 4)
+      ->to(controller => 'foo', action => 'bar');
+  }
+
+  1;
+
+=head2 アプリケーションのマウント
+
+完全な自分を含んだアプリケーションをあるドメインあるいはプレフィックス(もしくは両方)の下にマウントするのに、[[Mojolicious::Plugin::Mount]]を利用できます。
+
+  use Mojolicious::Lite;
+
+  # C</prefix>の下に完全なアプリケーションをマウント
+  plugin Mount => {'/prefix' => '/home/sri/myapp.pl'};
+
+  # サブドメインでアプリケーションをマウント
+  plugin Mount => {'test.example.com' => '/home/sri/myapp2.pl'};
+
+  # 普通のルート
+  get '/' => sub { shift->render_text('Hello World!') };
+
+  app->start;
+
+=head2 埋め込みアプリケーション
+
+コントローラの代わりに、アプリケーション全体を簡単に埋め込むことができます。これによって、たとえば、[[Mojolicious]]のコントローラの中で、[[Mojolicious::Lite]]のドメイン固有言語を使用できるようになります。
+
+  # コントローラー
+  package MyApp::Controller::Bar;
+  use Mojolicious::Lite;
+
+  # /hello
+  # "hello.html.ep"というテンプレートを描画
+    my $c    = shift;
+    my $name = $c->param('name') || '';
+    $c->render(text => "Hello $name.");
+  };
+
+  1;
+
+[[Mojolicious::Routes::Route]]のC<to>にとてもよく似ている[[Mojolicious::Routes::Route]]のC<detour>を使えば、
+埋め込みのアプリケーションの中で、ルーティングを部分的にマッチさせ、残ったパスだけを使用できます。ベースパスはC<path>スタッシュ値として引き渡されます。
+
+  # /foo/*
+  $r->any('/foo')->detour('bar#', name => 'Mojo');
+
+最小の埋め込みアプリケーションは、[[Mojolicious::Controller]]オブジェクトを受け入れるためのC<handler>メソッドを持つ、ただの[[Mojo]]のサブクラスです。
+
+  package MyApp::Controller::Bar;
+  use Mojo::Base 'Mojolicious';
+
+  sub handler {
+    my ($self, $c) = @_;
+    $c->res->code(200);
+    my $name = $c->param('name') || '';
+    $c->res->body("Hello $name.");
+  }
+
+  1;
+
+ホストアプリケーションはスタッシュを通して組み込みアプリケーションとほとんど情報を共有しません。そのため、[[Mojolicious::Controller]]のC<url_for>で問題が発生する可能性があるため、現在組み込みアプリケーションに至るルーティングにおいてルーティングプレースホルダーを使用することはできません。
+
+=head2 アプリケーションプラグイン
+
+再利用可能なプラグインとしてアプリケーションをパッケージ化することだってできます。
+
+  # プラグイン
+  package Mojolicious::Plugin::MyEmbeddedApp;
+  use Mojo::Base 'Mojolicious::Plugin';
+
+  sub register {
+    my ($self, $app) = @_;
+
+    # ルートを自動的に追加
+    $app->routes->any('/foo')->detour(app => EmbeddedApp::app());
+  }
+
+  package EmbeddedApp;
+  use Mojolicious::Lite;
+
+  get '/bar' => 'bar';
+
+  1;
+  __DATA__;
+  @@ bar.html.ep
+  Hello World!
+
+スタッシュのC<app>の値は、すでにインスタンス化されたアプリケーションで利用できます。単にプラグインをロードするだけです。
+
+  # アプリケーション
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  sub startup {
+    my $self = shift;
+
+    # プラグイン
+    $self->plugin('MyEmbeddedApp');
+  }
+
+  1;
+
+=head1 より学ぶには
+
+さあ、[[Mojolicious::Guides]] を続けるか、[[Mojolicious wiki|http://github.com/mojolicious/mojo/wiki]]を見てみましょう。多くの著者がドキュメントやサンプルをたくさん書いています。
+
+=head1 サポート
+
+このドキュメントでわからない部分があれば、
+[[mailing list|http://groups.google.com/group/mojolicious]] かC<irc.freenode.net> (L<chat
+now!|https://kiwiirc.com/nextclient/#irc://irc.freenode.net/mojo?nick=guest-?>)の公式IRCチャンネル C<#mojo> まで気軽に質問してください。
+
+（2019/04/06 Mojoliciuos 8.12を反映）
+=cut

@@ -1,0 +1,154 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::IOLoop::Subprocess - Subprocesses
+
+=head1 使い方
+
+  use Mojo::IOLoop::Subprocess;
+
+  # 5秒間イベントループをブロックする操作
+  my $subprocess = Mojo::IOLoop::Subprocess->new;
+  $subprocess->run(
+    sub {
+      my $subprocess = shift;
+      sleep 5;
+      return '♥', 'Mojolicious';
+    },
+    sub {
+      my ($subprocess, $err, @results) = @_;
+      say "Subprocess error: $err" and return if $err;
+      say "I $results[0] $results[1]!";
+    }
+  );
+
+  # 必要ならばイベントループを開始する
+  $subprocess->ioloop->start unless $subprocess->ioloop->is_running;
+
+=head1 説明
+
+[[Mojo::IOLoop::Subprocess]]は、イベントループをブロックすることなく、がサブプロセスで高負荷なオペレーションを実行できるようにします。
+
+=head1 イベント
+
+[[Mojo::IOLoop::Subprocess]]は[[Mojo::EventEmitter]]からすべてのイベントを継承しており、次の新しいイベントを発行します。
+
+=head2 progress
+
+  $subprocess->on(progress => sub {
+    my ($subprocess, @data) = @_;
+    ...
+  });
+
+サブプロセスが、progressメソッドを呼び出すと、親プロセスで発行されます。
+
+=head2 spawn
+
+  $subprocess->on(spawn => sub {
+    my $subprocess = shift;
+    ...
+  });
+
+サブプロセスが生成されたときに親プロセスで発行されます。
+
+  $subprocess->on(spawn => sub {
+    my $subprocess = shift;
+    my $pid = $subprocess->pid;
+    say "Performing work in process $pid";
+  });
+
+=head1 属性
+
+[[Mojo::IOLoop::Subprocess]]は次の属性を実装しています。
+
+=head2 deserialize
+
+  my $cb      = $subprocess->deserialize;
+  $subprocess = $subprocess->deserialize(sub {...});
+
+サブプロセスの戻り値をデシリアライズするために使用されるコールバック。デフォルトはL<Storable>を使用します。
+
+  $subprocess->deserialize(sub {
+    my $bytes = shift;
+    return [];
+  });
+
+=head2 ioloop
+
+  my $loop    = $subprocess->ioloop;
+  $subprocess = $subprocess->ioloop(Mojo::IOLoop->new);
+
+制御のためのイベントループオブジェクト。デフォルトはグローバルな[[Mojo::IOLoop]]シングルトンです。
+この属性は弱参照であることに注意してください。
+
+=head2 serialize
+
+  my $cb      = $subprocess->serialize;
+  $subprocess = $subprocess->serialize(sub {...});
+
+サブプロセスの戻り値をシリアライズするために使用されるコールバック。デフォルトはL<Storable>を使用します。
+
+  $subprocess->serialize(sub {
+    my $array = shift;
+    return '';
+  });
+
+=head1 メソッド
+
+[[Mojo::IOLoop::Subprocess]]は[[Mojo::EventEmitter]]からすべてのメソッドを継承し、次の新しいメソッドを実装します。
+
+=head2 pid
+
+  my $pid = $subprocess->pid;
+
+利用可能ならば、生成されたサブプロセスのプロセスID。
+
+=head2 progress
+
+  $subprocess->progress(@data);
+
+L<Storable>でシリアライズされたデータを、サブプロセスの実行中いつでも、親プロセスに送ります
+サブプロセスによって呼び出されなければならず、データを持つ親プロセスにおいて、"progress"イベントを発行します。
+
+  # 進捗情報を親プロセスに送信する
+  $subprocess->run(
+    sub {
+      my $subprocess = shift;
+      $subprocess->progress('0%');
+      sleep 5;
+      $subprocess->progress('50%');
+      sleep 5;
+      return 'Hello Mojo!';
+    },
+    sub {
+      my ($subprocess, $err, @results) = @_;
+      say 'Progress is 100%';
+      say $results[0];
+    }
+  );
+  $subprocess->on(progress => sub {
+    my ($subprocess, @data) = @_;
+    say "Progress is $data[0]";
+  });
+
+=head2 run
+
+  $subprocess = $subprocess->run(sub {...}, sub {...});
+
+子プロセスで最初のコールバックを実行し、それが、ひとつか複数の値を返すまで待ちます。
+親プロセスで"ioloopをブロックすることはありあせん。
+それから一つ目の実行結果を使って、親プロセス内の2番目のコールバックを実行します。
+最初のコールバックとそれによってスローされた例外は、L<Storable>によってシリアライズされます。
+ですので、プロセス間で共有できます。
+
+=head1 SEE ALSO
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<https://mojolicious.org>.
+
+(Mojolicious 8.12。2019年5月22日更新)
+
+=cut
+

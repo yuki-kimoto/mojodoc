@@ -8,6 +8,12 @@ use utf8;
 
 use File::Basename 'basename';
 
+use Pod::Simple::XHTML;
+
+sub _indentation {
+  (sort map {/^(\s+)/} @{shift()})[0];
+}
+
 sub run {
   my ($self, @args) = @_;
 
@@ -33,8 +39,42 @@ sub run {
     # Get content from file in templates directory
     $api->get_content($data);
 
+    # Parse POD
+    if ($data->{file} =~ /(\.pm|\.pod)$/) {
+      my $content = $data->{content};
+
+      # Parse title
+      parse_title($api, $data);
+
+      # Parse description
+      parse_description($api, $data);
+
+      my $pod = $content;
+      my $parser = Pod::Simple::XHTML->new;
+      $parser->$_('') for qw(html_header html_footer);
+      $parser->strip_verbatim_indent(\&_indentation);
+      $parser->output_string(\(my $output));
+      $parser->parse_string_document("$pod");
+      
+      $content = $output;
+      
+      $content =~ s|\Qhttp://search.cpan.org/perldoc?\E([^"]+)|my $name = $1; $name =~ s!::!/!g; $name .= ".html"; "/$name";|ge;
+      
+      $data->{content} = $content;
+
+      # Fix extension
+      $data->{file} =~ s/\.pm$/.html/;
+      $data->{file} =~ s/\.pod$/.html/;
+      
+      # Top page
+      if ($data->{file} eq 'Giblog.html') {
+        $data->{file} = 'index.html';
+      }
+    }
     # Parse Giblog syntax
-    $api->parse_giblog_syntax($data);
+    else {
+      $api->parse_giblog_syntax($data);
+    }
 
     # Parse title
     $api->parse_title_from_first_h_tag($data);
@@ -186,6 +226,36 @@ EOS
   # Write content to public file
   my $public_file = $api->rel_file('public/list.html');
   $api->write_to_file($public_file, $data->{content});
+}
+
+sub parse_title {
+  my ($api, $data) = @_;
+  
+  my $content = $data->{content};
+  my $title;
+  if ($content =~ /=head1 名前(.*?)=/s) {
+    $title = $1;
+    $title =~ s/^\s*//;
+    $title =~ s/\s+$//;
+  } 
+  
+  $data->{title} = $title;
+}
+
+sub parse_description {
+  my ($api, $data) = @_;
+  
+  my $content = $data->{content};
+  my $description;
+  if ($content =~ /=head1 説明(.*?)=/s) {
+    $description = $1;
+    $description =~ s/^\s*//;
+    $description =~ s/\s+$//;
+    $description =~ s/B<//g;
+    $description =~ s/>//g;
+  } 
+  
+  $data->{description} = $description;
 }
 
 1;

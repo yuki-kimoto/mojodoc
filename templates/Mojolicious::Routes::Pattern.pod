@@ -1,0 +1,174 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Routes::Pattern - ルーティングのパターン
+
+=head1 使い方
+
+  use Mojolicious::Routes::Pattern;
+
+  # パターンの生成
+  my $pattern = Mojolicious::Routes::Pattern->new('/test/:name');
+
+  # ルーティングのマッチ
+  my $captures = $pattern->match('/test/sebastian');
+  say $captures->{name};
+
+=head1 説明
+
+[[Mojolicious::Routes::Pattern]]はパスのマッチに利用されるルーティングパターンの
+ためのコンテナです。
+
+=head1 属性
+
+[[Mojolicious::Routes::Pattern]]は次の属性を実装しています。
+
+=head2 constraints
+
+  my $constraints = $pattern->constraints;
+  $pattern        = $pattern->constraints({foo => qr/\w+/});
+
+正規表現による制約。
+
+=head2 defaults
+
+  my $defaults = $pattern->defaults;
+  $pattern     = $pattern->defaults({foo => 'bar'});
+
+デフォルトのパラメーター。
+
+=head2 placeholder_start
+
+  my $start = $pattern->placeholder_start;
+  $pattern  = $pattern->placeholder_start(':');
+
+プレースホルダーを示す文字。デフォルトはC<:>。
+
+=head2 placeholders
+
+  my $placeholders = $pattern->placeholders;
+  $pattern         = $pattern->placeholders(['foo', 'bar']);
+
+プレースホルダーの名前。
+
+=head2 quote_end
+
+  my $end  = $pattern->quote_end;
+  $pattern = $pattern->quote_end('}');
+
+クォートされたプレースホルダの終了を示す文字。
+デフォルトはC<E<gt>>。
+
+=head2 quote_start
+
+  my $start = $pattern->quote_start;
+  $pattern  = $pattern->quote_start('{');
+
+クォートされたプレースホルダの開始を示す文字。
+デフォルトはC<E<lt>>。
+
+=head2 regex
+
+  my $regex = $pattern->regex;
+  $pattern  = $pattern->regex($regex);
+
+コンパイルされた正規表現形式におけるパターン。
+
+=head2 relaxed_start
+
+  my $relaxed = $pattern->relaxed_start;
+  $pattern    = $pattern->relaxed_start('*');
+
+リラックスプレースホルダーを示す文字。
+デフォルトはC<#>。
+
+=head2 tree
+
+  my $tree = $pattern->tree;
+  $pattern = $pattern->tree([['text', '/foo']]);
+
+解析された形式におけるパターン。
+
+=head2 type_start
+
+  my $start = $pattern->type_start;
+  $pattern  = $pattern->type_start('|');
+
+プレースホルダータイプの開始を示す文字。デフォルトは、C<:>。
+
+=head2 types
+
+  my $types = $pattern->types;
+  $pattern  = $pattern->types({int => qr/[0-9]+/});
+
+プレースホルダーのタイプ。
+
+=head2 unparsed
+
+  my $unparsed = $pattern->unparsed;
+  $pattern     = $pattern->unparsed('/:foo/:bar');
+
+解析されていない生のパターン。
+
+=head2 wildcard_start
+
+  my $wildcard = $pattern->wildcard_start;
+  $pattern     = $pattern->wildcard_start('*');
+
+ワイルドカードプレースホルダの開始を示す文字。デフォルトはC<*>。
+
+=head1 メソッド
+
+[[Mojolicious::Routes::Pattern]]は[[Mojo::Base]]のすべてのメソッドを
+継承しており、次のメソッドを実装しています。
+
+=head2 match
+
+  my $captures = $pattern->match('/foo/bar');
+  my $captures = $pattern->match('/foo/bar', 1);
+
+パスに対してパターンをマッチします。
+
+=head2 match_partial
+
+  my $captures = $pattern->match_partial(\$path);
+  my $captures = $pattern->match_partial(\$path, 1);
+
+パスに対するパターンにマッチし、マッチした部分を削除します。
+フォーマットの見地はデフォルトで無効になっています。
+
+=head2 new
+
+  my $pattern = Mojolicious::Routes::Pattern->new;
+  my $pattern = Mojolicious::Routes::Pattern->new('/:action');
+  my $pattern
+    = Mojolicious::Routes::Pattern->new('/:action', action => qr/\w+/);
+  my $pattern = Mojolicious::Routes::Pattern->new(format => 0);
+
+新しいパターンオブジェクトを構築します。
+
+=head2 parse
+
+  $pattern = $pattern->parse('/:action');
+  $pattern = $pattern->parse('/:action', action => qr/\w+/);
+  $pattern = $pattern->parse(format => 0);
+
+生のパターンを解析します。
+
+=head2 render
+
+  my $path = $pattern->render({action => 'foo'});
+  my $path = $pattern->render({action => 'foo'}, 1);
+
+パターンをパラメータ付きのパスに描画します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojoliciosu 8.12を反映。2019年6月13日更新)
+
+=cut

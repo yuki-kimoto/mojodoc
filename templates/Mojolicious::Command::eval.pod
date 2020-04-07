@@ -1,0 +1,71 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::eval - Evalコマンド
+
+=head1 使い方
+
+  Usage: APPLICATION eval [OPTIONS] CODE
+
+    ./myapp.pl eval 'say app->ua->get("/")->result->body'
+    ./myapp.pl eval 'say for sort keys %{app->renderer->helpers}'
+    ./myapp.pl eval -v 'app->home'
+    ./myapp.pl eval -V 'app->renderer->paths'
+
+  Options:
+    -h, --help          Show this summary of available options
+        --home <path>   Path to home directory of your application, defaults to
+                        the value of MOJO_HOME or auto-detection
+    -m, --mode <name>   Operating mode for your application, defaults to the
+                        value of MOJO_MODE/PLACK_ENV or "development"
+    -v, --verbose       Print return value to STDOUT
+    -V                  Print returned data structure to STDOUT
+
+=head1 説明
+
+[[Mojolicious::Command::eval]]はアプリケーションのコードを実行します。
+
+いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::eval]]は[[Mojo::Command]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $eval->description;
+  $eval           = $eval->description('Foo');
+
+このコマンドの短い説明。コマンド一覧のために利用されます。
+
+=head2 usage
+
+  my $usage = $eval->usage;
+  $eval     = $eval->usage('Foo');
+
+このコマンドの使用情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::eval]]は[[Mojo::Command]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $eval->run;
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

@@ -1,0 +1,201 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojolicious::Command
+
+=head1 名前
+
+Mojolicious::Command - コマンド基底クラス
+
+=head1 使い方
+
+  # 小文字のコマンド名
+  package Mojolicious::Command::mycommand;
+  use Mojo::Base 'Mojolicious::Command';
+
+  # 短い説明
+  has description => 'My first Mojo command.';
+
+  # 短い使用方法のメッセージ
+  has usage => <<EOF;
+  Usage: APPLICATION mycommand [OPTIONS]
+
+  # SYNOPSISからの使用方法のメッセージ
+  has usage => sub { shift->extract_usage };
+
+  sub run {
+    my ($self, @args) = @_;
+
+    # Magic here! :)
+  }
+
+  1;
+
+  =head1 SYNOPSIS
+
+    Usage: APPLICATION mycommand [OPTIONS]
+
+    Options:
+      -s, --something   Does something
+
+  =cut
+
+
+
+=head1 説明
+
+[[Mojolicious::Command]]は[[Mojo]]コマンドの抽象基底クラスです。
+
+デフォルトで利用できるコマンドのリストについては[[Mojolicious::Commands]]のC<コマンド>の項目を見てください。
+
+=head1 属性
+
+[[Mojolicious::Command]]は次の属性を実装しています。
+
+=head2 app
+
+  my $app  = $command->app;
+  $command = $command->app(Mojolicious->new);
+
+コマンドのためのアプリケーション。
+デフォルトは[[Mojo::HelloWorld]]オブジェクト。
+
+  # 内観
+  say "Template path: $_" for @{$command->app->renderer->paths};
+  
+=head2 description
+
+  my $description = $command->description;
+  $command        = $command->description('Foo');
+
+コマンドの短い説明。コマンドリストで利用されます。
+
+=head2 quiet
+
+  my $bool = $command->quiet;
+  $command = $command->quiet($bool);
+
+コマンドの出力の制限。
+
+=head2 template
+
+  my $template = $command->template;
+  $command     = $command->template({vars => 1});
+
+"render_data"でテンプレートを描画するために使用される[[Mojo::Template]]オブジェクトに渡される属性の値。
+デフォルトはC<vars>です。
+
+=head2 usage
+
+  my $usage = $command->usage;
+  $command  = $command->usage('Foo');
+
+コマンドの使用方法の情報。ヘルプ画面で利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command]]は[[Mojo::Base]]のすべてのメソッドを継承しており、
+次の新しいメソッドを継承しています。
+
+=head2 chmod_file
+
+  $command = $command->chmod_file('/foo/bar.txt', 0644);
+
+ポータブルにファイルのモードを変更します。
+
+=head2 chmod_rel_file
+
+  $command = $command->chmod_rel_file('foo/foo.txt', 0644);
+
+ポータブルに相対ファイルのモードを変更します。
+現在のワーキングディレクトリからの相対パスで指定できます。
+
+=head2 create_dir
+
+  $command = $command->create_dir('/foo/bar/baz');
+
+ポータブルにディレクトリを作成します。
+
+=head2 create_rel_dir
+
+  $command = $command->create_rel_dir('foo/bar/baz');
+
+ポータブルに作業ディレクトリに対する相対ディレクトリを作成します。
+
+=head2 extract_usage
+
+  my $usage = $command->extract_usage;
+
+Extract usage message from the ファイルの
+
+このメソッドが呼び出されるファイルのSYNOPSISセクションから使用方法のメッセージを抽出します。
+
+=head2 help
+
+  $command->help;
+
+コマンドの使用方法の情報を出力します。
+
+=head2 rel_file
+
+  my $path = $command->rel_file('foo/bar.txt');
+
+ポータブルに現在の作業ディレクトリから相対パスから絶対パスを生成します(ファイル名)。
+
+=head2 render_data
+
+  my $data = $command->render_data('foo_bar');
+  my $data = $command->render_data('foo_bar', @args);
+  my $data = $command->render_data('foo_bar', {foo => 'bar'});
+
+[[Mojo::Loader]]と[[Mojo::Template]]を使って
+コマンドクラスのC<DATA>セクションを元にテンプレートを描画します。
+
+=head2 render_to_file
+
+  $command = $command->render_to_file('foo_bar', '/home/sri/foo.txt');
+  $command = $command->render_to_file('foo_bar', '/home/sri/foo.txt', @args);
+
+[[Mojo::Template]]を使って、
+コマンドクラスのC<DATA>セクションを元にテンプレートをファイルに描画し、
+必要であればディレクトリも作成されます。
+
+=head2 render_to_rel_file
+
+  $command = $command->render_to_rel_file('foo_bar', 'foo/bar.txt');
+
+[[Mojo::Template]]を使って、
+ポータブルに
+コマンドクラスのC<DATA>セクションを元にテンプレートを
+現在の作業ディレクトリからの相対パスでファイルに描画し、
+必要であればディレクトリも作成されます。
+
+=head2 run
+
+  $commands->run;
+  $commands->run(@ARGV);
+
+コマンドを実行します。
+サブクラスでオーバーロードされます。
+
+=head2 write_file
+
+  $command = $command->write_file('/home/sri/foo.txt', 'Hello World!');
+
+テキストをファイルに書き込み、必要であればディレクトも作成します。
+
+=head2 write_rel_file
+
+  $command = $command->write_rel_file('foo/bar.txt', 'Hello World!');
+
+ポータブルにテキストを相対ファイルに書き込み、
+必要であればディレクトリも作成します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月3日更新)
+
+=cut

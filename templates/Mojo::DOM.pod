@@ -1,0 +1,755 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::DOM - CSS3 セレクタを持つ最小限の XML/HTML5 DOM パーサ
+
+=head1 使い方
+
+  use Mojo::DOM;
+
+  # 解析
+  my $dom = Mojo::DOM->new('<div><p id="a">Test</p><p id="b">123</p></div>');
+  
+  # 見つける
+  say $dom->at('#b')->text;
+  say $dom->find('p')->map('text')->join("\n");
+  say $dom->find('[id]')->map(attr => 'id')->join("\n");
+
+  # イテレート
+  $dom->find('p[id]')->reverse->each(sub { say $_->{id} });
+
+  # ループ
+  for my $e ($dom->find('p[id]')->each) {
+    say $e->{id}, ':', $e->text;
+  }
+
+  # 修正
+  $dom->find('div p')->last->append('<p id="c">456</p>');
+  $dom->at('#c')->prepend($dom->new_tag('p', id => 'd', '789'));
+  $dom->find(':not(p)')->map('strip');
+
+  # 描画
+  say "$dom";
+
+=head1 説明
+
+[[Mojo::DOM]] は CSS3 セレクタのサポートを持つ最小限かつとても緩やかな 
+XML/HTML5 DOM パーサです。
+これは壊れた XML でさえ解釈しようとするので、妥当性検証には使用するべきでは
+ありません。
+
+=head1 ノードと要素
+
+HTML/XMLの断片を解析しようとしたとき、結果はノードのツリーに変換されます。
+
+  <!DOCTYPE html>
+  <html>
+    <head><title>Hello</title></head>
+    <body>World!</body>
+  </html>
+
+現在は、8種類のノード C<cdata>, C<comment>,
+C<doctype>, C<pi>, C<raw>, C<root>, C<tag> and C<text>があります。
+要素は、C<tag>のノードです。
+
+  root
+  |- doctype (html)
+  +- tag (html)
+     |- tag (head)
+     |  +- tag (title)
+     |     +- raw (Hello)
+     +- tag (body)
+        +- text (World!)
+
+すべてのノードタイプは、[[Mojo::DOM]]オブジェクトとして表現されますが、
+いくつかのメソッド、たとえば"attr"と"namespace"は、要素だけに適用されます。
+
+=head1 ケースセンシティビティ
+
+[[Mojo::DOM]]のデフォルトはHTMLの動作です。すべてのタグと属性は小文字化され、セレクタも同様に小文字を必要とします。
+
+  my $dom = Mojo::DOM->new('<P ID="greeting">Hi!</P>');
+  say $dom->at('p[id]')->text;
+
+もしXMLの処理命令が発見されれば、パーサーは自動的にXMLモードに切り替わり、大文字小文字の区別がなされます。
+
+  my $dom = Mojo::DOM->new('<?xml version="1.0"?><P ID="greeting">Hi!</P>');
+  say $dom->at('P[ID]')->text;
+
+XMLの検知はC<xml>メソッドで無効にすることも可能です。
+
+  # HTMLセマンティクスの強制
+  my $dom = Mojo::DOM->new->xml(0)->parse('<P ID="greeting">Hi!</P>');
+  say $dom->at('p[id]')->text;
+
+  # XMLセマンティクスの強制
+  my $dom = Mojo::DOM->new->xml(1)->parse('<P ID="greeting">Hi!</P>');
+  say $dom->at('P[ID]')->text;
+
+=head1 メソッド
+
+[[Mojo::DOM]] は以下のメソッドを実装しています。
+
+=head2 all_text
+
+  my $text = $dom->all_text;
+
+この要素のすべての下部のノードからすべてのテキスト内容を抽出します。
+デフォルトでスマートな空白の除去が有効になっています。
+
+  # "foo\nbarbaz\n"
+  $dom->parse("<div>foo\n<p>bar</p>baz\n</div>")->at('div')->all_text;
+
+=head2 ancestors
+
+  my $collection = $dom->ancestors;
+  my $collection = $dom->ancestors('div ~ p');
+
+CSSセレクタにマッチするこのノードのすべての祖先を探索し、
+[[Mojo::DOM]]オブジェクトとしてこれらの要素を含んでいる[[Mojo::Collection]]オブジェクト
+を返却します。
+[[Mojo::DOM::CSS]]のC<SELECTORS>のすべてのセレクタをサポートしています。
+
+  # 祖先の要素のタグ名を一覧する
+  say $dom->ancestors->map('tag')->join("\n");
+
+=head2 append
+
+  $dom = $dom->append('<p>I ♥ Mojolicious!</p>');
+  $dom = $dom->append(Mojo::DOM->new);
+
+HTML/XMLの断片をこのノードに追加します。
+
+  # "<div><h1>Test</h1><h2>123</h2></div>"
+  $dom->parse('<div><h1>Test</h1></div>')
+    ->at('h1')->append('<h2>123</h2>')->root;
+
+  # "<p>Test 123</p>"
+  $dom->parse('<p>Test</p>')->at('p')
+    ->child_nodes->first->append(' 123')->root;
+
+=head2 append_content
+
+  $dom = $dom->append_content('<p>I ♥ Mojolicious!</p>');
+  $dom = $dom->append_content(Mojo::DOM->new);
+
+
+HTML/XMLフラグメント(C<root>やC<tag>ノード)、または生のコンテンツを
+このノードのコンテンツに追加します。
+
+  # "<div><h1>Test123</h1></div>"
+  $dom->parse('<div><h1>Test</h1></div>')
+    ->at('h1')->append_content('123')->root;
+
+  # "<!-- Test 123 --><br>"
+  $dom->parse('<!-- Test --><br>')
+    ->child_nodes->first->append_content('123 ')->root;
+
+  # "<p>Test<i>123</i></p>"
+  $dom->parse('<p>Test</p>')->at('p')->append_content('<i>123</i>')->root;
+
+=head2 at
+
+  my $result = $dom->at('div ~ p');
+  my $result = $dom->at('svg|line', svg => 'http://www.w3.org/2000/svg');
+
+CSSセレクタにより、この要素の最初の子孫の要素を見つけ、
+[[Mojo::DOM]]オブジェクトとして
+返却します。何も見つからなければ未定義値が返却されます。
+[[Mojo::DOM::CSS]]のセレクタの項目に記述されているセレクタがサポートされます。
+
+  # svg名前空間定義で最初の要素を見つける
+  my $namespace = $dom->at('[xmlns\:svg]')->{'xmlns:svg'};
+
+後ろに続くキーと値のペアは、xml名前空間のエイリアスを定義するために利用されます。
+
+  # "<rect />"
+  $dom->parse('<svg xmlns="http://www.w3.org/2000/svg"><rect /></svg>')
+    ->at('svg|rect', svg => 'http://www.w3.org/2000/svg');
+
+=head2 attr
+
+  my $hash = $dom->attr;
+  my $foo  = $dom->attr('foo');
+  $dom     = $dom->attr({foo => 'bar'});
+  $dom     = $dom->attr(foo => 'bar');
+
+この要素の属性。
+
+  # 属性を削除する
+  delete $dom->attr->{id};
+
+  # 値のない属性
+  $dom->attr(selected => undef);
+
+  # id属性を一覧する
+  say $dom->find('*')->map(attr => 'id')->compact->join("\n");
+
+=head2 child_nodes
+
+  my $collection = $dom->child_nodes;
+
+この要素のすべての子ノードを[[Mojo::DOM]]として含む[[Mojo::Collection]]オブジェクトを返却します。
+
+  # "<p><b>123</b></p>"
+  $dom->parse('<p>Test<b>123</b></p>')->at('p')->child_nodes->first->remove;
+
+  # "<!-- Test -->"
+  $dom->parse('<!-- Test --><b>123</b>')->child_nodes->first;
+
+=head2 children
+
+  my $collection = $dom->children;
+  my $collection = $dom->children('div ~ p');
+
+C<find>と似ていて、この要素の子供を含む[[Mojo::Collection]]オブジェクトを返却します。
+[[Mojo::DOM]]オブジェクトの集まりです。
+[[Mojo::DOM::CSS]]のセレクタの項目に記述されているセレクタがサポートされます。
+
+  # ランダムな子要素のタグ名を表示する
+  say $dom->children->shuffle->first->tag;
+
+=head2 content
+
+  my $str = $dom->content;
+  $dom    = $dom->content('<p>I ♥ Mojolicious!</p>');
+  $dom    = $dom->content(Mojo::DOM->new);
+
+このエレメントのコンテンツを返却、あるいはHTML/XMLの断片か生のコンテンツに置換します。
+
+  # "<b>Test</b>"
+  $dom->parse('<div><b>Test</b></div>')->at('div')->content;
+
+  # "<div><h1>123</h1></div>"
+  $dom->parse('<div><h1>Test</h1></div>')->at('h1')->content('123')->root;
+
+  # "<p><i>123</i></p>"
+  $dom->parse('<p>Test</p>')->at('p')->content('<i>123</i>')->root;
+
+  # "<div><h1></h1></div>"
+  $dom->parse('<div><h1>Test</h1></div>')->at('h1')->content('')->root;
+
+  # " Test "
+  $dom->parse('<!-- Test --><br>')->child_nodes->first->content;
+
+  # "<div><!-- 123 -->456</div>"
+  $dom->parse('<div><!-- Test -->456</div>')
+    ->at('div')->child_nodes->first->content(' 123 ')->root;
+
+=head2 descendant_nodes
+
+  my $collection = $dom->descendant_nodes;
+
+[[Mojo::DOM]]オブジェクトとして、この要素の子孫ノードを含んでいる[[Mojo::Collection]]オブジェクトを返却します。
+
+  # "<p><b>123</b></p>"
+  $dom->parse('<p><!-- Test --><b>123<!-- 456 --></b></p>')
+    ->descendant_nodes->grep(sub { $_->type eq 'comment' })
+    ->map('remove')->first;
+
+  # "<p><b>test</b>test</p>"
+  $dom->parse('<p><b>123</b>456</p>')
+    ->at('p')->descendant_nodes->grep(sub { $_->type eq 'text' })
+    ->map(content => 'test')->first->root;
+
+=head2 find
+
+  my $collection = $dom->find('div ~ p');
+  my $collection = $dom->find('svg|line', svg => 'http://www.w3.org/2000/svg');
+
+CSS3セレクタを使って要素を検索し、[[Mojo::Collection]]オブジェクトを返却します。
+[[Mojo::DOM]]オブジェクトの集まりです。
+[[Mojo::DOM::CSS]]のすべてのセレクタがサポートされています。
+[[Mojo::DOM::CSS]]のセレクタの項目に記述されているセレクタがサポートされます。
+
+  # 特定の要素を検索し、情報を抽出します。
+  my $id = $dom->find('div')->[23]{id};
+
+  # 複数の要素から情報を抽出します。
+  my @headers = $dom->find('h1, h2, h3')->text->each;
+  my @headers = $dom->find('h1, h2, h3')->map('text')->each;
+
+  # すべての異なるタグをカウントします
+  my $hash = $dom->find('*')->reduce(sub { $a->{$b->tag}++; $a }, {});
+
+  # ドットを含むクラスを使って、要素を探す
+  my @divs = $dom->find('div.foo\.bar')->each;
+
+後ろに続くキーと値のペアは、xml名前空間のエイリアスを宣言するために利用されます。
+
+  # "<rect />"
+  $dom->parse('<svg xmlns="http://www.w3.org/2000/svg"><rect /></svg>')
+    ->find('svg|rect', svg => 'http://www.w3.org/2000/svg')->first;
+
+=head2 following
+
+  my $collection = $dom->following;
+  my $collection = $dom->following('div ~ p');
+
+CSSセレクタにマッチする、このノードの後のすべての兄弟要素を検索し、
+これらの要素を[[Mojo::DOM]]オブジェクトとして含む[[Mojo::Collection]]
+オブジェクトを返却します。
+[[Mojo::DOM::CSS]]のC<SELECTORS>の目次のすべてのセレクタがサポートされています。
+
+  # このノードの後の兄弟要素のタグを一覧する
+  say $dom->following->map('tag')->join("\n");
+
+=head2 following_nodes
+
+  my $collection = $dom->following_nodes;
+
+このノードの後のすべての兄弟ノードを[[Mojo::DOM]]として含む[[Mojo::Collection]]
+オブジェクトを返却します。
+
+  # "C"
+  $dom->parse('<p>A</p><!-- B -->C')->at('p')->following_nodes->last->content;
+
+=head2 match
+
+  my $bool = $dom->matches('div ~ p');
+  my $bool = $dom->matches('svg|line', svg => 'http://www.w3.org/2000/svg');
+
+この要素へのCSSセレクタにマッチする、[[Mojo::DOM]]オブジェクトを返却します。
+[[Mojo::DOM::CSS]]のセレクタの項目に記述されているセレクタがサポートされます。
+
+  # 真
+  $dom->parse('<p class="a">A</p>')->at('p')->matches('.a');
+  $dom->parse('<p class="a">A</p>')->at('p')->matches('p[class]');
+
+  # 偽
+  $dom->parse('<p class="a">A</p>')->at('p')->matches('.b');
+  $dom->parse('<p class="a">A</p>')->at('p')->matches('p[id]');
+
+後ろに続くキーと値のペアは、xml名前空間のエイリアスを宣言するために利用されます。
+
+  # 真
+  $dom->parse('<svg xmlns="http://www.w3.org/2000/svg"><rect /></svg>')
+    ->matches('svg|rect', svg => 'http://www.w3.org/2000/svg');
+
+=head2 namespace
+
+  my $namespace = $dom->namespace;
+
+この要素のネームスペースを検索します。見つからなければ、C<undef>を返却します。
+
+   # 名前空間のプレフィックスを持つ要素のための名前空間を見つける
+   my $namespace = $dom->at('svg > svg\:circle')->namespace;
+
+   # 名前空間のプレフィックスを持つかもしれない要素のための名前空間を見つける
+   my $namespace = $dom->at('svg > circle')->namespace;
+
+=head2 new
+
+  my $dom = Mojo::DOM->new;
+  my $dom = Mojo::DOM->new('<foo bar="baz">I ♥ Mojolicious!</foo>');
+
+新しい配列ベースの[[Mojo::DOM]]オブジェクトを構築し、
+必要であればHTML/XMLドキュメントを"parse"を使って解析します。
+
+=head2 new_tag
+
+  my $tag = Mojo::DOM->new_tag('div');
+  my $tag = $dom->new_tag('div');
+  my $tag = $dom->new_tag('div', id => 'foo', hidden => undef);
+  my $tag = $dom->new_tag('div', 'safe content');
+  my $tag = $dom->new_tag('div', id => 'foo', 'safe content');
+  my $tag = $dom->new_tag('div', data => {mojo => 'rocks'}, 'safe content');
+  my $tag = $dom->new_tag('div', id => 'foo', sub { 'unsafe content' });
+
+属性とコンテンツあり、または、なしのHTML/XMLタグを指定して[[Mojo::DOM]]オブジェクトを構築します。
+C<data>属性は、属性を生成するために、キーと値のペアのハッシュリファレンスを含むことができます。
+
+  # "<br>"
+  $dom->new_tag('br');
+
+  # "<div></div>"
+  $dom->new_tag('div');
+
+  # "<div id="foo" hidden></div>"
+  $dom->new_tag('div', id => 'foo', hidden => undef);
+
+  # "<div>test &amp; 123</div>"
+  $dom->new_tag('div', 'test & 123');
+
+  # "<div id="foo">test &amp; 123</div>"
+  $dom->new_tag('div', id => 'foo', 'test & 123');
+
+  # "<div data-foo="1" data-bar="test">test &amp; 123</div>""
+  $dom->new_tag('div', data => {foo => 1, Bar => 'test'}, 'test & 123');
+
+  # "<div id="foo">test & 123</div>"
+  $dom->new_tag('div', id => 'foo', sub { 'test & 123' });
+
+  # "<div>Hello<b>Mojo!</b></div>"
+  $dom->parse('<div>Hello</div>')->at('div')
+    ->append_content($dom->new_tag('b', 'Mojo!'))->root;
+
+=head2 next
+
+  my $sibling = $dom->next;
+
+要素の次の兄弟を返却します。これ[[Mojo::DOM]]オブジェクトです。
+兄弟要素がない場合は未定義値を返却します。
+
+  # "<h2>123</h2>"
+  $dom->parse('<div><h1>Test</h1><h2>123</h2></div>')->at('h1')->next;
+
+=head2 next_node
+
+  my $sibling = $dom->next_node;
+
+次の兄弟ノードとして[[Mojo::DOM]]オブジェクトを返却し、もし兄弟がいなければ、C<undef>を返却します。
+
+  # "456"
+  $dom->parse('<p><b>123</b><!-- Test -->456</p>')
+    ->at('b')->next_node->next_node;
+
+  # " Test "
+  $dom->parse('<p><b>123</b><!-- Test -->456</p>')
+    ->at('b')->next_node->content;
+
+=head2 parent
+
+  my $parent = $dom->parent;
+
+このノードの親を[[Mojo::DOM]]オブジェクトとして返却します。
+親要素がない場合は未定義値を返却します。
+
+  # "<b><i>Test</i></b>"
+  $dom->parse('<p><b><i>Test</i></b></p>')->at('i')->parent;
+
+=head2 parse
+
+  $dom = $dom->parse('<foo bar="baz">I ♥ Mojolicious!</foo>');
+
+[[Mojo::DOM::HTML]]を使って、HTML/XMLの断片を解析します。
+
+  # XMLを解析
+  my $dom = Mojo::DOM->new->xml(1)->parse('<foo>I ♥ Mojolicious!</foo>');
+
+=head2 preceding
+
+  my $collection = $dom->preceding;
+  my $collection = $dom->preceding('div > p');
+
+CSSセレクタにマッチする、このノードの前のすべての兄弟要素を検索し、
+これらの要素を[[Mojo::DOM]]オブジェクトとして含む[[Mojo::Collection]]
+オブジェクトを返却します。
+[[Mojo::DOM::CSS]]のC<SELECTORS>の目次のすべてのセレクタがサポートされています。
+
+  # このノードの前の兄弟要素のタグをリストする
+  say $dom->preceding->map('tag')->join("\n");
+
+=head2 preceding_nodes
+
+  my $collection = $dom->preceding_nodes;
+
+このノードの前のすべての兄弟ノードを[[Mojo::DOM]]として含む[[Mojo::Collection]]
+オブジェクトを返却します。
+
+  # "A"
+  $dom->parse('A<!-- B --><p>C</p>')->at('p')->preceding_nodes->first->content;
+
+=head2 prepend
+
+  $dom = $dom->prepend('<p>I ♥ Mojolicious!</p>');
+  $dom = $dom->prepend(Mojo::DOM->new);
+
+HTML/XMLの断片をこのノードの要素の前に追加します。C<root>を除くすべてのノードタイプ。
+
+  # "<div><h1>Test</h1><h2>123</h2></div>"
+  $dom->parse('<div><h2>123</h2></div>')
+    ->at('h2')->prepend('<h1>Test</h1>')->root;
+
+  # "<p>Test 123</p>"
+  $dom->parse('<p>123</p>')
+    ->at('p')->child_nodes->first->prepend('Test ')->root;
+
+=head2 prepend_content
+
+  $dom = $dom->prepend_content('<p>I ♥ Mojolicious!</p>');
+  $dom = $dom->prepend_content(Mojo::DOM->new);
+
+新しいHTML/XMLの断片(C<root>とC<tag>のノード)あるいは生のコンテンツを、このノードのコンテンツの前に追加します。
+
+  # "<div><h2>Test123</h2></div>"
+  $dom->parse('<div><h2>123</h2></div>')
+    ->at('h2')->prepend_content('Test')->root;
+
+  # "<!-- Test 123 --><br>"
+  $dom->parse('<!-- 123 --><br>')
+    ->child_nodes->first->prepend_content(' Test')->root;
+
+  # "<p><i>123</i>Test</p>"
+  $dom->parse('<p>Test</p>')->at('p')->prepend_content('<i>123</i>')->root;
+
+=head2 previous
+
+  my $sibling = $dom->previous;
+
+要素の前の兄弟を返却します。これは[[Mojo::DOM]]オブジェクトです。
+兄弟がいない場合は、未定義値を返却します。
+
+  # "<h1>Test</h1>"
+  $dom->parse('<div><h1>Test</h1><h2>123</h2></div>')->at('h2')->previous;
+
+=head2 previous_node
+
+  my $sibling = $dom->previous_node;
+
+前の兄弟ノードを[[Mojo::DOM]]として返却し、もし兄弟がいなければC<undef>を返却します。
+
+  # "123"
+  $dom->parse('<p>123<!-- Test --><b>456</b></p>')
+    ->at('b')->previous_node->previous_node;
+
+  # " Test "
+  $dom->parse('<p>123<!-- Test --><b>456</b></p>')
+    ->at('b')->previous_node->content;
+
+=head2 remove
+
+  my $parent = $dom->remove;
+  
+要素を削除して、"root"(C<root>ノードのために)か"parent"を返却します。
+
+  # "<div></div>"
+  $dom->parse('<div><h1>Test</h1></div>')->at('h1')->remove;
+ 
+  # "<p><b>456</b></p>"
+  $dom->parse('<p>123<b>456</b></p>')
+    ->at('p')->child_nodes->first->remove->root;
+
+=head2 replace
+
+  my $parent = $dom->replace('<div>I ♥ Mojolicious!</div>');
+  my $parent = $dom->replace(Mojo::DOM->new);
+
+要素をXML/HTMLフラグメントで置換し、"root"(C<root>ノードのために)か"parent"を返却します。
+
+  # "<div><h2>123</h2></div>"
+  $dom->parse('<div><h1>Test</h1></div>')->at('h1')->replace('<h2>123</h2>');
+ 
+  # "<p><b>B</b></p>"
+  $dom->parse('<p>A</p>')->at('p')->contents->[0]->replace('<b>B</b>')->root;
+
+=head2 root
+
+  my $root = $dom->root;
+
+ルートノードを返却します。これは[[Mojo::DOM]]オブジェクトです。
+
+=head2 selector
+
+  my $selector = $dom->selector;
+
+この要素のためのユニークなCSSセレクタを取得します。
+
+  # "ul:nth-child(1) > li:nth-child(2)"
+  $dom->parse('<ul><li>Test</li><li>123</li></ul>')->find('li')->last->selector;
+
+  # "p:nth-child(1) > b:nth-child(1) > i:nth-child(1)"
+  $dom->parse('<p><b><i>Test</i></b></p>')->at('i')->selector;
+
+=head2 strip
+ 
+  my $parent = $dom->strip;
+ 
+このエレメントを削除しますが、そのコンテンツを保存し、親(parent)を返却します。
+ 
+  # "<div>Test</div>"
+  $dom->parse('<div><h1>Test</h1></div>')->at('h1')->strip;
+
+=head2 tag
+ 
+  my $tag = $dom->tag;
+  $dom    = $dom->tag('div');
+ 
+この要素のタグ名。
+ 
+  # 子供の要素のタグ名の一覧
+  say $dom->children->map('tag')->join("\n");
+
+=head2 tap
+
+  $dom = $dom->tap(sub {...});
+
+[[Mojo::Base]]のC<tab>の別名。
+
+=head2 text
+
+  my $trimmed   = $dom->text;
+
+テキストコンテンツのみ(子要素を含まない)を抽出します。
+
+  # "bar"
+  $dom->parse("<div>foo<p>bar</p>baz</div>")->at('p')->text;
+
+  # "foo\nbaz\n"
+  $dom->parse("<div>foo\n<p>bar</p>baz\n</div>")->at('div')->text;
+
+=head2 to_string
+
+  my $str = $dom->to_string;
+
+このノードとコンテンツをHTML/XMLに描画します。
+
+  # "<b>Test</b>"
+  $dom->parse('<div><b>Test</b></div>')->at('div b')->to_string;
+
+=head2 tree
+
+  my $tree = $dom->tree;
+  $dom     = $dom->tree(['root']);
+
+ドキュメントオブジェクトモデル。
+この構造は、とても動的なものなので、とても慎重に扱うべきです。
+
+=head2 type
+
+  my $type = $dom->type;
+
+このノードのタイプ、通常はC<cdata>, C<comment>, C<doctype>, C<pi>, C<raw>,
+C<root>, C<tag> or C<text>。
+
+  # "cdata"
+  $dom->parse('<![CDATA[Test]]>')->child_nodes->first->type;
+
+  # "comment"
+  $dom->parse('<!-- Test -->')->child_nodes->first->type;
+
+  # "doctype"
+  $dom->parse('<!DOCTYPE html>')->child_nodes->first->type;
+
+  # "pi"
+  $dom->parse('<?xml version="1.0"?>')->child_nodes->first->type;
+
+  # "raw"
+  $dom->parse('<title>Test</title>')->at('title')->child_nodes->first->type;
+
+  # "root"
+  $dom->parse('<p>Test</p>')->type;
+
+  # "tag"
+  $dom->parse('<p>Test</p>')->at('p')->type;
+
+  # "text"
+  $dom->parse('<p>Test</p>')->at('p')->child_nodes->first->type;
+
+=head2 val
+
+  my $value = $dom->val;
+
+C<button>, C<input>, C<option>,
+C<select>,C<textarea>などの要素から値を抽出します。
+この要素が値を持たない場合は、未定義値を返します。
+C<multiple>属性を持つC<select>の場合は、C<selected>が指定されたC<option>を探し、すべての値を配列のリファレンスで返します。
+見つからなければ、未定義値を返します。
+
+  # "a"
+  $dom->parse('<input name=test value=a>')->at('input')->val;
+
+  # "b"
+  $dom->parse('<textarea>b</textarea>')->at('textarea')->val;
+
+  # "c"
+  $dom->parse('<option value="c">Test</option>')->at('option')->val;
+
+  # "d"
+  $dom->parse('<select><option selected>d</option></select>')
+    ->at('select')->val;
+
+  # "e"
+  $dom->parse('<select multiple><option selected>e</option></select>')
+    ->at('select')->val->[0];
+
+  # "on"
+  $dom->parse('<input name=test type=checkbox>')->at('input')->val;
+
+=head2 with_roles
+
+  my $new_class = Mojo::DOM->with_roles('Mojo::DOM::Role::One');
+  my $new_class = Mojo::DOM->with_roles('+One', '+Two');
+  $dom          = $dom->with_roles('+One', '+Two');
+
+[[Mojo::Base]]の「with_roles」のエイリアス。
+
+=head2 wrap
+
+  $dom = $dom->wrap('<div></div>');
+  $dom = $dom->wrap(Mojo::DOM->new);
+
+HTML/XMLの断片をこのノード(C<root>以外のすべてのノード)の周囲にラップします。もっとも内側の要素の最後の子として、それを配置します。
+
+  # "<p>123<b>Test</b></p>"
+  $dom->parse('<b>Test</b>')->at('b')->wrap('<p>123</p>')->root;
+
+  # "<div><p><b>Test</b></p>123</div>"
+  $dom->parse('<b>Test</b>')->at('b')->wrap('<div><p></p>123</div>')->root;
+
+  # "<p><b>Test</b></p><p>123</p>"
+  $dom->parse('<b>Test</b>')->at('b')->wrap('<p></p><p>123</p>')->root;
+
+  # "<p><b>Test</b></p>"
+  $dom->parse('<p>Test</p>')->at('p')->child_nodes->first->wrap('<b>')->root;
+
+=head2 wrap_content
+
+  $dom = $dom->wrap_content('<div></div>');
+
+HTML/XMLの断片をこのノードのコンテンツ(C<root>とC<tag>ノード)の周囲にラップします。もっとも内側の要素の最後の子供として、それを配置します。
+
+  # "<p><b>123Test</b></p>"
+  $dom->parse('<p>Test<p>')->at('p')->wrap_content('<b>123</b>')->root;
+
+  # "<p><b>Test</b></p><p>123</p>"
+  $dom->parse('<b>Test</b>')->wrap_content('<p></p><p>123</p>');
+
+=head2 xml
+
+  my $bool = $dom->xml;
+  $dom     = $dom->xml($bool);
+
+解析において、HTMLセマンティクスを無効にし、
+ケースセンシティブを有効にします。
+デフォルトでは、構築の過程で
+自動的に、検知されます。
+
+=head1 演算子
+
+[[Mojo::DOM]]は次の演算子をオーバーロードしています。
+
+=head2 array
+
+  my @nodes = @$dom;
+
+C<child_nodes>の別名。
+
+  # "<!-- Test -->"
+  $dom->parse('<!-- Test --><b>123</b>')->[0];
+
+=head2 ブール
+
+  my $bool = !!$dom;
+
+いつでも真です。
+
+=head2 hash
+
+  my %attrs = %$dom;
+
+C<attr>の別名。
+
+  # "test"
+  $dom->parse('<div id="test">Test</div>')->at('div')->{id};
+
+=head1 参考
+
+[[Mojolicious]], [[Mojolicious::Guides]], L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月4日)
+
+=cut

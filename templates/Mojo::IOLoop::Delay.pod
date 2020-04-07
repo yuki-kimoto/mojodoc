@@ -1,0 +1,166 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::IOLoop::Delay - Promises/A+とフローコントロールヘルパーのイベントの同期
+
+=head1 使い方
+
+  use Mojo::IOLoop::Delay;
+
+  # 複数のノンブロックオペレーションの同期
+  my $delay = Mojo::IOLoop::Delay->new;
+  $delay->steps(sub { say 'BOOM!' });
+  for my $i (1 .. 10) {
+    my $end = $delay->begin;
+    Mojo::IOLoop->timer($i => sub {
+      say 10 - $i;
+      $end->();
+    });
+  }
+  $delay->wait;
+
+  # 複数のノンブロッキングオペレーションの直列化
+  Mojo::IOLoop::Delay->new->steps(
+
+    # 最初のステップ(タイマーに似ている)
+    sub {
+      my $delay = shift;
+      Mojo::IOLoop->timer(2 => $delay->begin);
+      say 'Second step in 2 seconds.';
+    },
+
+    # 次のステップ (連続したタイマー)
+    sub {
+      my ($delay, @args) = @_;
+      Mojo::IOLoop->timer(1 => $delay->begin);
+      Mojo::IOLoop->timer(3 => $delay->begin);
+      say 'Third step in 3 seconds.';
+    },
+
+    # 三回目のステップ (最後)
+    sub {
+      my ($delay, @args) = @_;
+      say 'And done after 5 seconds total.';
+    }
+  )->wait;
+
+=head1 説明
+
+[[Mojo::IOLoop::Delay]]は、フローコントロールヘルパーを[[Mojo::Promise]]に追加します。
+連続渡しスタイルで深くネストされたクロージャーを避けるのを助けます。
+
+  use Mojo::IOLoop;
+
+  # これらの深いネストのクロージャーは、コールバックヘルとして言及されています。
+  Mojo::IOLoop->timer(3 => sub {
+    my loop = shift;
+
+    say '3 seconds';
+    Mojo::IOLoop->timer(3 => sub {
+      my $loop = shift;
+
+      say '6 seconds';
+      Mojo::IOLoop->timer(3 => sub {
+        my $loop = shift;
+
+        say '9 seconds';
+        Mojo::IOLoop->stop;
+      });
+    });
+  });
+
+  Mojo::IOLoop->start;
+
+=head1 属性
+
+[[Mojo::IOLoop::Delay]]は [[Mojo::Promise]]からすべての属性を継承しています。
+
+=head1 メソッド
+
+[[Mojo::IOLoop::Delay]]は[[Mojo::EventEmitter]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 begin
+
+  my $cb = $delay->begin;
+  my $cb = $delay->begin($offset);
+  my $cb = $delay->begin($offset, $len);
+
+アクティブなイベントのカウンターをインクリメント
+することによって、アクティブなイベントを指示します。
+
+返却されるコールバックは、
+イベントが完了するときに、呼び出される必要があります。
+このとき、アクティブなイベントのカウントを、再びデクリメントします。
+
+すべてのコールバックが呼び出され、アクティブイベントカウンタ
+がゼロに到達したｔき、C<steps>が続きます。
+
+  # 最初のものを除いてすべての引数をキャプチャ(呼び出し)
+  my $delay = Mojo::IOLoop->delay(sub {
+    my ($delay, $err, $stream) = @_;
+    ...
+  });
+  Mojo::IOLoop->client({port => 3000} => $delay->begin);
+  $delay->wait;
+
+返却されるコールバックに渡された引数は、与えられたオフセットと長さで、
+分割されます。デフォルトのオフセットはC<1>で長さは持ちません。
+引数はC<begin>が呼び出されるのと同じ順序で、結び付けられ、
+次のステップかC<finish>イベントへ一緒に渡されます。
+
+  # すべての引数をキャプチャ
+  my $delay = Mojo::IOLoop->delay(sub {
+    my ($delay, $loop, $err, $stream) = @_;
+    ...
+  });
+  Mojo::IOLoop->client({port => 3000} => $delay->begin(0));
+  $delay->wait;
+ 
+  # 二つ目の引数だけをキャプチャ
+  my $delay = Mojo::IOLoop->delay(sub {
+    my ($delay, $err) = @_;
+    ...
+  });
+  Mojo::IOLoop->client({port => 3000} => $delay->begin(1, 1));
+  $delay->wait;
+
+  # キャプチャして、引数を結合する
+  my $delay = Mojo::IOLoop->delay(sub {
+    my ($delay, $three_err, $three_stream, $four_err, $four_stream) = @_;
+    ...
+  });
+  Mojo::IOLoop->client({port => 3000} => $delay->begin);
+  Mojo::IOLoop->client({port => 4000} => $delay->begin);
+  $delay->wait;
+
+=head2 pass
+
+  $delay = $delay->pass;
+  $delay = $delay->pass(@args);
+
+アクティブなイベントカウンタをインクリメントし、次のステップへ値を渡すために、すぐに値をデクリメントします。
+
+  # 長いバージョン
+  $delay->begin(0)->(@args);
+
+=head2 steps
+
+  $delay = $delay->steps(sub {...}, sub {...});
+
+複数のイベントをシーケンシャルに扱います。
+最初のコールバックはすぐに実行されます。
+次のコールバックは、イベントのカウンターが0に到達したときに実行されます。
+このチェーンは、コールバックがなくなるか、
+アクティブイベントカウンターがインクリメントできなくなるまで続きます。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月22日更新)
+
+=cut

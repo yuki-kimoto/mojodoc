@@ -1,0 +1,142 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Base
+
+=head1 名前
+
+Mojo::Base - Mojoプロジェクトのための最小限の基底クラス
+
+=head1 使い方
+
+  package Cat;
+  use Mojo::Base -base;
+
+  has name => 'Nyan';
+  has [qw(age weight)] => 4;
+
+  package Tiger;
+  use Mojo::Base 'Cat';
+
+  has friend  => sub { Cat->new };
+  has stripes => 42;
+
+  package main;
+  use Mojo::Base -strict;
+
+  my $mew = Cat->new(name => 'Longcat');
+  say $mew->age;
+  say $mew->age(3)->weight(5)->age;
+
+  my $rawr = Tiger->new(stripes => 38, weight => 250);
+  say $rawr->tap(sub { $_->friend->name('Tacgnol') })->weight;
+
+=head1 説明
+
+流れるようなインターフェースを持った、
+L<Mojo::Base>は[[Mojo]]プロジェクトのための簡易な基底クラスです。
+
+[[Mojo::Base]]は、C<-base>フラグか基底クラスと一緒にインポートされれば、次の関数をエクスポートします。
+
+  # 自動的に"strict"と"warnings"とPerl 5.10の機能が有効になる
+  use Mojo::Base -strict;
+  use Mojo::Base -base;
+  use Mojo::Base 'SomeBaseClass';
+
+みっつの書き方は多くのタイピングを軽減します。
+
+  # use Mojo::Base -strict;
+  use strict;
+  use warnings;
+  use utf8;
+  use feature ':5.10';
+  use IO::Handle ();
+
+  # use Mojo::Base -base;
+  use strict;
+  use warnings;
+  use utf8;
+  use feature ':5.10';
+  use IO::Handle ();
+  use Mojo::Base;
+  push @ISA, 'Mojo::Base';
+  sub has { Mojo::Base::attr(__PACKAGE__, @_) }
+
+  # use Mojo::Base 'SomeBaseClass';
+  use strict;
+  use warnings;
+  use utf8;
+  use feature ':5.10';
+  use IO::Handle ();
+  require SomeBaseClass;
+  push @ISA, 'SomeBaseClass';
+  use Mojo::Base;
+  sub has { Mojo::Base::attr(__PACKAGE__, @_) }
+
+=head1 関数
+
+[[Mojo::Base]]は次の関数を実装しています。C<-base>フラグか基底クラスを設定することでインポートされます。
+
+=head2 has
+
+  has 'name';
+  has [qw/name1 name2 name3/];
+  has name => 'foo';
+  has name => sub { ... };
+  has [qw/name1 name2 name3/] => 'foo';
+  has [qw/name1 name2 name3/] => sub { ... };
+
+C<attr>メソッドと同じように属性を生成します。
+
+=head1 メソッド
+
+L<Mojo::Base>は次のメソッドを実装しています。
+
+=head2 new
+
+  my $instance = SubClass->new;
+  my $instance = SubClass->new(name => 'value');
+  my $instance = SubClass->new({name => 'value'});
+
+この基底クラスは基本的なオブジェクトコンストラクターを提供します。
+属性値を持ったハッシュかハッシュリファレンスを渡すことができます。
+
+=head2 attr
+
+  $object->attr('name');
+  SubClass->attr('name');
+  SubClass->attr([qw(name1 name2 name3)]);
+  SubClass->attr(name => 'foo');
+  SubClass->attr(name => sub {...});
+  SubClass->attr([qw(name1 name2 name3)] => 'foo');
+  SubClass->attr([qw(name1 name2 name3)] => sub {...});
+
+ハッシュベースのオブジェクトのために、属性へのアクセッサを生成します。
+配列のリファレンスはひとつより多くの属性を生成するのに利用されます。
+オプショナルな第二引数はデフォルト値を設定するのに利用されます。
+この値は、定数かサブルーチンのリファレンスでなければなりません。
+サブルーチンのリファレンスは、設定された値が存在しないならば、アクセッサの読み込み時に実行されます。
+
+=head2 tap
+
+  $object = $object->tap(sub {...});
+  $object = $object->tap($method);
+  $object = $object->tap($method, @args);
+
+K 結合子, メソッドチェーンの中に入り込んで、チェーンの中のオブジェクトに処理を実行します。
+オブジェクトは、クロージャーヘ渡される最初の引数になり、C<$_>として利用することもできます。
+
+  # 長いバージョン
+  $object = $object->tap(sub { $_->$method(@args) });
+
+  # メソッドチェーンにサイドエフェクトを挿入
+  $object->foo('A')->tap(sub { say $_->foo })->foo('B');
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 6.05を反映)
+
+=cut

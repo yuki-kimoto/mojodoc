@@ -1,0 +1,157 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Message::Response
+
+=head1 名前
+
+Mojo::Message::Response - HTTPレスポンス
+
+=head1 使い方
+
+  use Mojo::Message::Response;
+
+  # 解析
+  my $res = Mojo::Message::Reponse->new;
+  $res->parse("HTTP/1.0 200 OK\x0a\x0d");
+  $res->parse("Content-Length: 12\x0a\x0d\x0a\x0d");
+  $res->parse("Content-Type: text/plain\x0a\x0d\x0a\x0d");
+  $res->parse('Hello World!');
+  say $res->code;
+  say $res->headers->content_type;
+  say $res->body;
+
+  # 構築
+  my $res = Mojo::Message::Response->new;
+  $res->code(200);
+  $res->headers->content_type('text/plain');
+  $res->body('Hello World!');
+  say $res->to_string;
+
+=head1 説明
+
+[[Mojo::Message::Response]]は、
+L<RFC 7230|http://tools.ietf.org/html/rfc7230>、
+L<RFC 7231|http://tools.ietf.org/html/rfc7231>
+に基づいた
+HTTPのレスポンスのためのコンテナです。
+
+=head1 属性
+
+[[Mojo::Message::Response]]は[[Mojo::Message]]
+からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 code
+
+  my $code = $res->code;
+  $res     = $res->code(200);
+
+HTTPレスポンスステータスコード。
+
+=head2 max_message_size
+
+  my $size = $res->max_message_size;
+  $res     = $res->max_message_size(1024);
+
+メッセージの最大バイトサイズ。デフォルトはC<MOJO_MAX_MESSAGE_SIZE>環境変数の値かC<2147483648> (2GiB)です。この値を0に設定すると無制限のサイズのメッセージを許可します。
+
+=head2 message
+
+  my $msg = $res->message;
+  $res        = $res->message('OK');
+
+HTTPレスポンスステータスメッセージ。
+
+=head1 メソッド
+
+[[Mojo::Message::Response]]は[[Mojo::Message]]からすべての
+メソッドを継承しており、次の新しいメソッドを
+実装しています。
+
+=head2 cookies
+
+  my $cookies = $res->cookies;
+  $res        = $res->cookies(Mojo::Cookie::Response->new);
+  $res        = $res->cookies({name => 'foo', value => 'bar'});
+
+レスポンスのクッキーにアクセスします。通常は[[Mojo::Cookie::Response]]オブジェクトです。
+
+  # すべてのクッキーの名前
+  say $_->name for @{$res->cookies};
+
+=head2 default_message
+
+  my $msg = $res->default_message;
+  my $msg = $res->default_message(418);
+
+ステータスコードを使って、レスポンスメッセージを生成します。デフォルトは"code"の値です。
+
+=head2 extract_start_line
+
+  my $bool = $res->extract_start_line(\$str);
+
+文字列からスタートラインを抽出します。
+
+=head2 fix_headers
+
+  $res = $res->fix_headers;
+
+メッセージが、現在のHTTPバージョンに必要とされるすべてのヘッダー を持っていることを確かにします。
+
+=head2 get_start_line_chunk
+
+  my $bytes = $res->get_start_line_chunk($offset);
+
+特定の位置からスタートラインのデータのチャンクを取得します。このメソッドは、レスポンスをファイナライズすることに注意してください。
+
+=head2 is_client_error
+
+  my $bool = $res->is_client_error;
+
+このレスポンスがC<4xx>ステータスコードかをチェックします。
+
+=head2 is_empty
+
+  my $bool = $res->is_empty;
+
+これが、C<1xx>, C<204>あるいはC<304>レスポンスかどうかチェックします。
+
+=head2 is_info
+
+  my $bool = $res->is_info;
+
+このレスポンスが、C<1xx>ステータスコードかチェックします。
+
+=head2 is_redirect
+
+  my $bool = $res->is_redirect;
+
+このレスポンスが、C<3xx>ステータスコードかチェックします。
+
+=head2 is_server_error
+
+  my $bool = $res->is_server_error;
+
+このレスポンスが、C<5xx>ステータスコードかチェックします。
+
+=head2 is_success
+
+  my $bool = $res->is_success;
+
+このレスポンスが、C<2xx>ステータスコードかチェックします。
+
+=head2 start_line_size
+
+  my $size = $req->start_line_size;
+
+ステータスラインのバイトサイズ。このメソッドは、レスポンスをファイナライズすることに注意してください。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月23日更新)
+
+=cut

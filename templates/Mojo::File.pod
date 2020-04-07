@@ -1,0 +1,387 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 NAME
+
+Mojo::File - ファイルシステムのパス
+
+=head1 SYNOPSIS
+
+  use Mojo::File;
+
+  # ポータブルにファイルシステムのパスを扱う
+  my $path = Mojo::File->new('/home/sri/.vimrc');
+  say $path->slurp;
+  say $path->dirname;
+  say $path->basename;
+  say $path->sibling('.bashrc');
+
+  # もう一つのコンストラクタを使う
+  use Mojo::File 'path';
+  my $path = path('/tmp/foo/bar')->make_path;
+  $path->child('test.txt')->spurt('Hello Mojo!');
+
+=head1 DESCRIPTION
+
+[[Mojo::File]]は、ファイルシステムのパスのためのスカラベースのコンテナで、異なるオペレーティングシステムのを扱うためのフレンドリーなAPIを提供します。
+
+  # パスを処理するために直接スカラにアクセスする
+  my $path = Mojo::File->new('/home/sri/test');
+  $$path .= '.txt';
+
+=head1 FUNCTIONS
+
+[[Mojo::File]]次の関数を実装しており、個別にインポートできます。
+
+=head2 path
+
+  my $path = path;
+  my $path = path('/home/sri/.vimrc');
+  my $path = path('/home', 'sri', '.vimrc');
+  my $path = path(File::Temp->newdir);
+
+スカラーベースの新しい[[Mojo::File]]オブジェクトを構築します。デフォルトは、現在のワーキングディレクトリです。
+
+  # "foo/bar/baz.txt" (on UNIX)
+  path('foo', 'bar', 'baz.txt');
+
+=head2 tempdir
+
+  my $path = tempdir;
+  my $path = tempdir('tempXXXXX');
+
+L<File::Temp>を使って一時ディレクトリのための、新しいスカラベースの[[Mojo::File]]オブジェクトを構築します。
+
+
+  # 長いバージョン
+  my $path = path(File::Temp->newdir('tempXXXXX'));
+
+=head2 tempfile
+
+  my $path = tempfile;
+  my $path = tempfile(DIR => '/tmp');
+
+L<File::Temp>を使って一時ファイルのための、新しいスカラベースの[[Mojo::File]]オブジェクトを構築します。
+
+  # 長いバージョン
+  my $path = path(File::Temp->new(DIR => '/tmp'));
+
+=head1 METHODS
+
+L<Mojo::File> implements the following methods.
+
+=head2 basename
+
+  my $name = $path->basename;
+  my $name = $path->basename('.txt');
+
+ L<File::Basename>を使って、パスの最後のレベルを返します。
+
+  # ".vimrc" (on UNIX)
+  path('/home/sri/.vimrc')->basename;
+
+  # "test" (on UNIX)
+  path('/home/sri/test.txt')->basename('.txt');
+
+=head2 child
+
+  my $child = $path->child('.vimrc');
+
+パスからの相対を表現する新しい[[Mojo::File]]オブジェクトを返します。
+
+  # "/home/sri/.vimrc" (on UNIX)
+  path('/home')->child('sri', '.vimrc');
+
+=head2 chmod
+
+  $path = $path->chmod(0644);
+
+ファイルのパーミッションを変更します。
+
+=head2 copy_to
+
+  my $destination = $path->copy_to('/home/sri');
+  my $destination = $path->copy_to('/home/sri/.vimrc.backup');
+
+L<File::Copy>を使ってファイルをコピーし、コピー先を[[Mojo::File]]オブジェクトとして返します。
+
+=head2 dirname
+
+  my $name = $path->dirname;
+
+L<File::Basename>を使って、パスの最後のレベルを除いたすべてを、[[Mojo::File]]オブジェクトとして返します。
+
+  # "/home/sri" (on UNIX)
+  path('/home/sri/.vimrc')->dirname;
+
+=head2 is_abs
+
+  my $bool = $path->is_abs;
+
+パスが絶対かチェックします。
+
+  # True (on UNIX)
+  path('/home/sri/.vimrc')->is_abs;
+
+  # False (on UNIX)
+  path('.vimrc')->is_abs;
+
+=head2 list
+
+  my $collection = $path->list;
+  my $collection = $path->list({hidden => 1});
+
+ディレクトリの中にあるすべてのファイルをリストし、[[Mojo::File]]オブジェクトとして結果を含む、[[Mojo::Collection]]オブジェクトを返します。このリストはC<.>を含みません。
+
+  # ファイルをリストする
+  say for path('/home/sri/myapp')->list->each;
+
+次のオプションがが現在利用可能です。
+
+=over 2
+
+=item dir
+
+  dir => 1
+
+ディレクトリを含む
+
+=item hidden
+
+  hidden => 1
+
+隠しファイルを含む
+
+=back
+
+=head2 list_tree
+
+  my $collection = $path->list_tree;
+  my $collection = $path->list_tree({hidden => 1});
+
+ディレクトリの中にあるすべてのファイルを再帰的にリストし、[[Mojo::File]]オブジェクトとして結果を含む、[[Mojo::Collection]]オブジェクトを返します。このリストはC<.>とC<..>を含みません。
+
+  # すべてのテンプレートを取得
+  say for path('/home/sri/myapp/templates')->list_tree->each;
+
+次のオプションがが現在利用可能です。
+
+=over 2
+
+=item dir
+
+  dir => 1
+
+ディレクトリを含む
+
+=item dont_use_nlink
+
+  dont_use_nlink => 1
+
+L<File::Find>がいつでもディレクトリをstatできるように強制します。
+
+=item hidden
+
+  hidden => 1
+
+隠しファイルと隠しディレクトリを含む
+
+=item max_depth
+
+  max_depth => 3
+
+ファイル検索するときに下りてゆく最大のレベル
+
+=back
+
+=head2 lstat
+
+  my $stat = $path->lstat;
+
+シンボリックリンクのためのL<File::stat>オブジェクトを返します。
+
+  # シンボリックリンクのサイズを取得
+  say path('/usr/sbin/sendmail')->lstat->size;
+
+  # シンボリックリンクの修正時刻を取得
+  say path('/usr/sbin/sendmail')->lstat->mtime;
+
+=head2 make_path
+
+  $path = $path->make_path;
+  $path = $path->make_path({mode => 0711});
+
+まだ存在していない場合、複数階層のディレクトリを作成します。追加の引数はL<File::Path>に渡されます。
+
+=head2 move_to
+
+  my $destination = $path->move_to('/home/sri');
+  my $destination = $path->move_to('/home/sri/.vimrc.backup');
+
+L<File::Copy>でファイルを移動し、移動先として[[Mojo::File]]オブジェクトを返します。
+
+=head2 new
+
+  my $path = Mojo::File->new;
+  my $path = Mojo::File->new('/home/sri/.vimrc');
+  my $path = Mojo::File->new('/home', 'sri', '.vimrc');
+  my $path = Mojo::File->new(File::Temp->new);
+  my $path = Mojo::File->new(File::Temp->newdir);
+
+新しい[[Mojo::File]]オブジェクトを返します。デフォルトは、現在のワーキングディレクトリが使われます。
+
+  # "foo/bar/baz.txt" (on UNIX)
+  Mojo::File->new('foo', 'bar', 'baz.txt');
+
+=head2 open
+
+  my $handle = $path->open('+<');
+  my $handle = $path->open('r+');
+  my $handle = $path->open(O_RDWR);
+  my $handle = $path->open('<:encoding(UTF-8)');
+
+L<IO::File>でファイルをオープンします。
+
+  # "fcntl.h" の定数も使う
+  use Fcntl qw(O_CREAT O_EXCL O_RDWR);
+  my $handle = path('/home/sri/test.pl')->open(O_RDWR | O_CREAT | O_EXCL);
+
+=head2 realpath
+
+  my $realpath = $path->realpath;
+
+L<Cwd>でパスを解決し、結果を[[Mojo::File]]オブジェクトとして返します。
+
+=head2 remove
+
+  $path = $path->remove;
+
+ファイルを削除します。
+
+=head2 remove_tree
+
+  $path = $path->remove_tree;
+  $path = $path->remove_tree({keep_root => 1});
+
+ディレクトリとサブディレクトリに含まれるファイルを削除します。追加の引数はL<File::Path>に渡されます。
+
+=head2 sibling
+
+  my $sibling = $path->sibling('.vimrc');
+
+パスのディレクトリの部分への相対で、新しい[[Mojo::Fil]]オブジェクトを返します。
+
+  # "/home/sri/.vimrc" (on UNIX)
+  path('/home/sri/.bashrc')->sibling('.vimrc');
+
+  # "/home/sri/.ssh/known_hosts" (on UNIX)
+  path('/home/sri/.bashrc')->sibling('.ssh', 'known_hosts');
+
+=head2 slurp
+
+  my $bytes = $path->slurp;
+
+ファイルからすべてのデータを読み込みます。
+
+=head2 spurt
+
+  $path = $path->spurt($bytes);
+  $path = $path->spurt(@chunks_of_bytes);
+
+ファイルへすべてのデータを書き出します。
+
+=head2 stat
+
+  my $stat = $path->stat;
+
+パスのためのL<File::stat>オブジェクトを返します。
+
+  # ファイルサイズを取得
+  say path('/home/sri/.bashrc')->stat->size;
+
+  # ファイルの修正時刻を取得
+  say path('/home/sri/.bashrc')->stat->mtime;
+
+=head2 tap
+
+  $path = $path->tap(sub {...});
+
+[[Mojo::Base]]の"tap"のエイリアス。
+
+=head2 to_abs
+
+  my $absolute = $path->to_abs;
+
+絶対パスを[[Mojo::File]]オブジェクトとして返します。パスはファイルシステムに存在する必要はありません。
+
+=head2 to_array
+
+  my $parts = $path->to_array;
+
+ディレクトリセパレータでパスを分割します。
+
+  # "home:sri:.vimrc" (on UNIX)
+  join ':', @{path('/home/sri/.vimrc')->to_array};
+
+=head2 to_rel
+
+  my $relative = $path->to_rel('/some/base/path');
+
+オリジナルパスから行き先のパスへの相対パスを、[[Mojo::File]]オブジェクトとして返します。
+
+  # "sri/.vimrc" (on UNIX)
+  path('/home/sri/.vimrc')->to_rel('/home');
+
+=head2 to_string
+
+  my $str = $path->to_string;
+
+パスを文字列化します。
+
+=head2 touch
+
+  $path = $path->touch;
+
+存在しなければ、ファイルを作成し、そうでない場合は、修正時刻とアクセス時刻を現在の時間に更新します。
+
+  # 安全なファイルの読み込み
+  say path('.bashrc')->touch->slurp;
+
+=head2 with_roles
+
+  my $new_class = Mojo::File->with_roles('Mojo::File::Role::One');
+  my $new_class = Mojo::File->with_roles('+One', '+Two');
+  $path         = $path->with_roles('+One', '+Two');
+
+[[Mojo::Base]]の"with_roles"のエイリアス。
+
+=head1 演算子
+
+[[Mojo::File]]は次の演算子をオーバーライドしています。
+
+=head2 array
+
+  my @parts = @$path;
+
+"to_array"のエイリアス。
+
+=head2 bool
+
+  my $bool = !!$path;
+
+いつでも真。
+
+=head2 stringify
+
+  my $str = "$path";
+
+"to_string"のエイリアス
+
+=head1 SEE ALSO
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<https://mojolicious.org>.
+
+(Mojolicious 8.12。2019年5月16日更新)
+
+=cut

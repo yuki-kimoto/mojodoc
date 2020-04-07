@@ -1,0 +1,404 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Message
+
+=head1 名前
+
+Mojo::Message - HTTPメッセージの基底クラス
+
+=head1 使い方
+
+  package Mojo::Message::MyMessage;
+  use Mojo::Base 'Mojo::Message';
+
+  sub cookies              {...}
+  sub extract_start_line   {...}
+  sub get_start_line_chunk {...}
+  sub start_line_size      {...}
+
+=head1 説明
+
+[[Mojo::Message]]は、
+L<RFC 7230|http://tools.ietf.org/html/rfc7230>、
+L<RFC 7231|http://tools.ietf.org/html/rfc7231>、
+L<RFC 2388|http://tools.ietf.org/html/rfc2388>、
+に基づく、
+[[Mojo::Message::Request]]や
+[[Mojo::Message::Response]]などの
+HTTPメッセージの抽象基底クラスです。
+
+=head1 イベント
+
+[[Mojo::Message]]は[[Mojo::EventEmitter]]からすべてのイベントを継承しており、次のイベントを発行することができます。
+
+=head2 finish
+
+  $msg->on(finish => sub {
+    my $msg = shift;
+    ...
+  });
+
+メッセージが構築され、解析が終了した後に発行されます。
+
+  my $before = time;
+  $msg->on(finish => sub {
+    my $msg = shift;
+    $msg->headers->header('X-Parser-Time' => time - $before);
+  });
+
+=head2 progress
+
+  $msg->on(progress => sub {
+    my $msg = shift;
+    ...
+  });
+
+メッセージが構築され、解析されているときに発行されます。
+
+  # 構築
+  $msg->on(progress => sub {
+    my ($msg, $state, $offset) = @_;
+    say qq{Building "$state" at offset $offset};
+  });
+
+  # 解析
+  $msg->on(progress => sub {
+    my $msg = shift;
+    return unless my $len = $msg->headers->content_length;
+    my $size = $msg->content->progress;
+    say 'Progress: ', $size == $len ? 100 : int($size / ($len / 100)), '%';
+  });
+
+=head1 属性
+
+[[Mojo::Message]]は次の属性を実装しています。
+
+=head2 content
+
+  my $msg = $msg->content;
+  $msg    = $msg->content(Mojo::Content::Single->new);
+
+コンテンツのコンテナ。デフォルトは[[Mojo::Content::Single]]オブジェクトです。
+
+=head2 default_charset
+
+  my $charset = $msg->default_charset;
+  $msg        = $msg->default_charset('UTF-8');
+
+C<text>と、
+C<application/x-www-form-urlencoded>、C<multipart/form-data> message body
+を抽出するときに利用される
+デフォルトの文字セット。
+デフォルトはC<UTF-8>です。
+
+=head2 max_line_size
+
+  my $size = $msg->max_line_size;
+  $msg     = $msg->max_line_size(1024);
+
+スタートラインの最大バイトサイズ。
+デフォルトは、C<MOJO_MAX_LINE_SIZE>環境変数の値、
+あるいはC<8192> (8KB)。
+
+=head2 max_message_size
+
+  my $size = $msg->max_message_size;
+  $msg     = $msg->max_message_size(1024);
+
+最大メッセージバイトサイズ。デフォルトはC<MOJO_MAX_MESSAGE_SIZE>環境変数の値かC<16777216> (16MB)です。
+0に設定する無制限のサイズのメッセージを許可します。
+
+=head2 version
+
+  my $version = $msg->version;
+  $msg    = $msg->version('1.1');
+
+メッセージのHTTPのバージョン。デフォルトはC<1.1>。
+
+=head1 メソッド
+
+[[Mojo::Message]]は[[Mojo::EventEmitter]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 body
+
+  my $bytes = $msg->body;
+  $msg      = $msg->body('Hello!');
+
+C<content>を取得あるいは置換します。
+[[Mojo::Content::MultiPart]]は自動的に[[Mojo::Content::Single]]をダウングレードされます。
+
+=head2 body_params
+
+  my $params = $msg->body_params;
+
+C<x-application-urlencoded>,c<application/x-www-form-urlencoded>,あるいはC<multipart/form-data>
+メッセージボディから展開されたC<POST>パラメーター。通常は[[Mojo::Parameters]]オブジェクトです。
+このメソッドはすべてのデータをキャッシュするので、
+完全なメッセージボディが到着する前に呼び出してはいけないということに
+注意してください。
+メッセージボディの各部分はC<POST>パラメーターを解析するために
+メモリ上にロードされるので、
+大きすぎないようにする必要があります。
+デフォルトで、リクエストに対して16MiBの制限と、レスポンスに対して2GiBの制限があります。
+
+  # POSTパラメーターの値を取得します
+  say $msg->body_params->param('foo');
+
+=head2 body_size
+
+  my $size = $msg->body_size;
+
+コンテンツのバイトサイズ。
+
+=head2 build_body
+
+  my $bytes = $msg->build_body;
+
+"get_body_chunk"で、ボディ全体を描画します。
+
+=head2 build_headers
+
+  my $bytes = $msg->build_headers;
+
+"get_header_chunk"で、すべてのヘッダーを描画します。
+
+=head2 build_start_line
+
+  my $bytes = $msg->build_start_line;
+
+"get_start_line_chunk"で、スタートラインを描画します。
+
+=head2 cookie
+
+  my $cookie = $msg->cookie('foo');
+
+メッセージのクッキーにアクセスします。
+通常は[[Mojo::Cookie::Request]]か[[Mojo::Cookie::Response]]オブジェクトです。
+もし同じ名前で共有されている複数のクッキーがあり、
+最後のひとつより多くの値にアクセスしたい場合は、
+C<every_cookie>を使うことができます。
+このメソッドはすべてのデータをキャッシュするので、
+すべてのヘッダーが到着する前によびだしてはいけない
+ということに注意してください。
+
+  # クッキーの値を取得
+  say $msg->cookie('foo')->value;
+
+=head2 cookies
+
+  my $cookies = $msg->cookies;
+
+メッセージクッキーへのアクセス。
+サブクラスでオーバーロードされます。
+
+=head2 dom
+
+  my $dom        = $msg->dom;
+  my $collection = $msg->dom('a[href]');
+
+C<text>からメッセージボディを取り出し、コンテンツを[[Mojo::DOM]]オブジェクトに変換します。
+オプションでセレクタを与えるとすぐにC<find>を実行し、
+集合を返却します。これは[[Mojo::Collection]]オブジェクトです。
+このメソッドはすべてのデータをキャッシュするので、
+完全なメッセージボディが到着するまで、
+呼び出してはいけません。
+メッセージボデ全体が
+メモリ上にロードされるので、
+大きすぎないようにする必要があります。
+デフォルトで、リクエストに対して16MiBの制限と、レスポンスに対して2GiBの制限があります。
+
+  # "find"をすぐに実行
+  say $msg->dom('h1, h2, h3')->map('text')->join("\n");
+
+  # それ以外はMojo::DOMが提供するものを使う
+  say $msg->dom->at('title')->text;
+  say $msg->dom->at('body')->children->map('tag')->uniq->join("\n");
+
+=head2 error
+
+  my $err = $msg->error;
+  $msg    = $msg->error({message => 'Parser error'});
+
+エラーメッセージを取得、設定します。
+C<undef>という戻り値は、エラーが無かったことを意味します。
+
+  # 接続エラー、あるいは解析エラー
+  $msg->error({message => 'Connection refused'});
+
+  # 4xx/5xx レスポンス
+  $msg->error({message => 'Internal Server Error', code => 500});
+
+=head2 every_cookie
+
+  my $cookies = $msg->every_cookie('foo');
+
+C<cookie>と似ていますが、同じ名前で共有されている、
+すべてのメッセージクッキーを、配列のリファレンスとして
+取得します。
+
+  # 最初のクッキーの値を取得
+  say $msg->every_cookie('foo')->[0]->value;
+
+=head2 every_upload
+
+  my $uploads = $msg->every_upload('foo');
+
+C<upload>と似ていますが、同じ名前で共有されている
+すべてのファイルアップロードを配列のリファレンスとして、
+取得します。
+
+  # 最初にアップロードされたファイルの内容を取得
+  say $msg->every_upload('foo')->[0]->asset->slurp;
+
+=head2 extract_start_line
+
+  my $bool = $msg->extract_start_line(\$str);
+
+文字列からスタートラインを抽出します。
+これはサブクラスでオーバーロードされます。
+
+=head2 finish
+
+  $msg = $msg->finish;
+
+メッセージの解析/生成を終了します。
+
+=head2 fix_headers
+
+  $msg = $msg->fix_headers;
+
+メッセーが現在のHTTPのバージョンに要求されるすべてのヘッダーを持っていることを確かにします。
+
+=head2 get_body_chunk
+
+  my $string = $msg->get_body_chunk($offset);
+
+特定の位置から開始して、ボディのデータの断片を取得します。
+コンテンツが動的に生成されている場合は、同じチャンクを二度取得することはできないことに注意してください。
+
+=head2 get_header_chunk
+
+  my $string = $msg->get_header_chunk($offset);
+
+特定の位置から開始して、ヘッダーのデータの断片を取得します。このメソッドはメッセージをファイナライズすることに注意してください。
+
+=head2 get_start_line_chunk
+
+  my $string = $msg->get_start_line_chunk($offset);
+
+特定の位置から開始して、スタートラインのデータの断片を取得します。サブクラスでオーバーロードされることが予定されています。
+
+=head2 header_size
+
+  # 長いバージョン
+  my $headers = $msg->content->headers;
+
+ヘッダーのバイトサイズ。このメソッドはメッセージをファイナライズすることに注意してください。
+
+=head2 headers
+
+  my $headers = $msg->headers;
+  $msg    = $msg->headers(Mojo::Headers->new);
+
+メッセージのヘッダ。通常は[[Mojo::Headers]]オブジェクト。
+
+  # 長いバージョン
+  my $headers = $msg->content->headers;
+
+=head2 is_finished
+
+  my $bool = $msg->is_finished;
+
+メッセージの解析/生成が終了しているかどうかをチェックします。
+
+=head2 is_limit_exceeded
+
+  my $bool = $msg->is_limit_exceeded;
+
+メッセージがC<max_line_size>あるいはC<max_message_size>、[[Mojo::Content]]の"max_buffer_size"、[[Mojo::Headers]]の"max_line_size"を超えていないかをチェックします。
+
+=head2 json
+
+  my $value = $msg->json;
+  my $value = $msg->json('/foo/bar');
+
+可能であれば[[Mojo::JSON]]を使ってJSONのメッセージボディを直接でコードします。
+C<undef>という戻り値は、生のC<null>あるいは、デコードが失敗したことを意味します。
+オプションとして、[[Mojo::JSON::Pointer]]を使って、JSONポインタで特定の値を抽出することができます。
+
+このメソッドはすべてのデータをキャッシュするので、
+完全なメッセージボディが到着するまで、呼び出してはいけません。
+メッセージボデ全体がメモリ上にロードされるので、
+大きすぎないようにする必要があります。
+デフォルトで、リクエストに対して16MiBの制限と、レスポンスに対して2GiBの制限があります。
+
+  # JSONの値を抽出
+  say $msg->json->{foo}{bar}[23];
+  say $msg->json('/foo/bar/23');
+
+=head2 parse
+
+  $msg = $msg->parse('HTTP/1.1 200 OK...');
+
+メッセージの断片を解析します。
+
+=head2 save_to
+
+  $msg = $msg->save_to('/some/path/index.html');
+
+メッセージボディをファイルに保存します。
+
+=head2 start_line_size
+
+  my $size = $msg->start_line_size;
+
+スタートラインのバイトサイズ。サブクラスでオーバーロードすることが予定されています。
+
+=head2 text
+
+  my $str = $msg->text;
+
+C<body>を取り出して、キャラクターセットが[[Mojo::Content]]のC<charset>で抽出できれば、デコードしようと試みます。
+
+=head2 to_string
+
+  my $string = $msg->to_string;
+
+メッセージ全体を描画します。このメソッドは、メッセージをファイナライズすることと、コンテンツが動的に生成された場合は、同じメッセージを二回描画できないことに注意してください。
+
+=head2 upload
+
+  my $upload = $msg->upload('foo');
+
+C<multipart/form-data>でアップロードされたファイルにアクセスします。
+通常は[[Mojo::Upload]]です。
+もし同じ名前で共有される複数のアップロードがあるなら、
+最後のひとつの値より多くの値にアクセスしたい場合は、
+C<every_upload>を使ってください。
+このメソッドはすべてのデータをキャッシュするので、
+完全なメッセージボディが到着する前に呼び出さないように
+注意する必要があります。
+
+  # アップロードされたファイルのコンテンツを取得
+  say $msg->upload('foo')->asset->slurp;
+
+=head2 uploads
+
+  my $uploads = $msg->uploads;
+
+C<multipart/form-data>アップロードされたすべてのファイル。
+通常は[[Mojo::Upload]]オブジェクトです。
+
+  # すべてのアップロードの名前
+  say $_->name for @{$msg->uploads};
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月23日)
+
+=cut

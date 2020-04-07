@@ -1,0 +1,253 @@
+h2. Mojolicious8の主な機能追加(8.12)
+
+<b>機能追加</b>
+
+* サブプロセス
+* Unixドメインソケット
+* プロミス
+* Mojo::Baseでロールとウィークリファレンスのサポート
+* Cpanel::JSON::XSによるJSONの高速化
+
+<b>互換性のない変更</b>
+
+* Mojo::URLのqueryメソッドの置換と追加の入れ替え(query([])とquery({})が入れ替わった)
+* Mojolicious::Plugin::PODRendererが削除されました。CPANからインストール可能。
+
+
+h2. Mojolicious6の変更については、以下のChangesの5.0から6.04の部分を見てください。
+
+"Mojolicious 6.05 Changes":https://github.com/kraih/mojo/blob/v6.05/Changes
+
+h2. 2013年6月追記(主に4.0での変更点が記述されています)
+
+h3. 機能の追加
+
+* Mojolicious::Commandにメソッドがいつくか追加されています。
+* Mojo::Collectionで正規表現がgrepメソッドなどで使えるようになっています。
+* Mojo::Collectionに操作用のメソッドがいくつか追加されています。
+* Mojo::DOMにplack,next, previous, remove,メソッドが追加されました。
+* Mojo::Headersにaccept_encoding, accept_charset, allow,append, content_encoding,origin, sec_websocket_extensions, te, varyメソッドが追加されました。
+* Mojo::IOLoopがTime::HiResでモノトニック時刻が利用可能であれば、それを利用するようになり、タイムジャンプに対して回復力を持つようになりました。
+* Mojo::IOLoopにmulti_accepts属性が追加されました。
+* Mojo::IOLoop::Streamにtimeoutメソッドが追加されました。
+* Mojo::Loaderにdataメソッドが追加されました。
+* MOJO_MAX_MESSAGE_SIZEの値が10MBに増加しています。
+* Mojo::Message::Requestにextract_start_line,get_start_line_chunkメソッドが追加されました。
+* Mojo::Message::Responseにextract_start_line, get_start_line_chunk, is_emptyメソッドが追加されました。
+* Mojo::Pathにto_dir,to_routeメソッドが追加されました。
+* Mojo::Reactorにagainメソッドが追加されました。
+* Mojo::Reactor::EVにagainメソッドが追加されました。
+* Mojo::Reactor::Pollにagainメソッドが追加されました。
+* Mojo::Serverにbuild_appメソッドが追加されました。
+* Mojo::Server::Hypnotoadにaccept_intervalの設定が追加されました。
+* Mojo::Templateにcompiled,escape属性が追加されました。
+* Mojo::Transaction::HTTPにunexpectedイベントが追加されました。
+* Mojo::Transaction::HTTPにis_emptyメソッド追加されました。
+* Mojo::Transaction::WebSocketにbinary,finish,json,textイベントが追加されました。
+* Mojo::Transaction::WebSocketにkept_alive, server_closeメソッドが追加されました。
+* Mojo::URLにprotocolメソッドが追加されました。
+* Mojo::UserAgent::Transactorにgeneratorsメソッドが追加されました。
+* Mojo::Utilクラスにclass_to_file,class_to_path, monkey_patch,slurp,split_header,spurt,squish,steady_timeメソッドが追加されました。
+* Mojoliciousにafter_dispatch,after_render,before_routesフックが追加されました。
+* Mojolicious::Controllerのsendメソッドでjsonのメッセージが送信できるようになりました。
+* Mojolicious::Plugin::DefaultHelperにuaヘルパーが追加されました。
+* Mojolicious::Plugin::TagHelperにcolor_field,date_field,datetime_field,email_field,month_field,number_field,range_field,search_field,time_field,url_field,week_fieldヘルパーが追加されました。
+* Mojolicious::Routesにis_hidden,looiupメソッドが追加されました。
+* Mojolicious::Staticにfile,serve_assetが追加されました。
+* Test::Mojoにmessage属性が追加されました。
+* Test::Mojoにjson_message_has, json_message_hasnt,json_message_is,message_ok,orが追加されました。
+
+h3. 互換性のない変更、削除など
+
+* Mojolicious::Controllerのrender_textメソッドが廃止されました。代わりにrender(text => ...)を使ってください。
+* Mojolicious::Controllerのrender_jsonメソッドが廃止されました。代わりにrender(json => ...)を使ってください。
+* Mojolicious::Controllerのrender_dataメソッドが廃止されました。代わりにrender(data => ...)を使ってください。
+* Mojo::CommandはMojolicious::Commandに変更されています。
+* Mojolicious::Comanndからmessage属性が削除されています。
+* Mojolicious::Commandからclass_to_path, class_to_file, get_data, get_all_data, detectメソッドが削除されています。* Mojo::Contentからhas_leftover,parse_until_body,parse_body_onceが削除されています。
+* Mojo::CookieJarはMojo::UserAgent::CookieJarに変更されました。
+* Mojo::DOMからcharset属性が削除されました。
+* Mojo::Headersからcontent_transfer_encoding, sec_websocket_origin, set_cookie2メソッドが削除されました。
+* Mojo::Homeからapp_class属性が削除されました。
+* Mojo::Homeからslurp_rel_fileメソッドが削除されました。
+* Mojo::IOLoopからclient_class, accept_timeout, server_class, stream_class属性が削除されました。
+* Mojo::IOLoop::Delayからendメソッドが削除されbeginメソッドが終了のためのコールバックを返却するようになりました。
+* Mojo::IOLoop::Serverのaccepts属性はmulti_acceptsに名前が変更されました。
+* Mojo::Messageからjson_class,dom_class属性が削除されました。
+* Mojo::Messageからat_least_versionが削除されました。
+* Mojo::Headerからhas_leftovers, is_dynamic, is_chunked,is_multipart,leftovers,max_line_size,parse_until_body,write_chunk,writeメソッドが削除されました。
+* Mojo::Parametersからpair_separator属性が削除されました。
+* Mojo::Pathからleading_slash属性が削除されました。
+* Mojo::Serverからapp_class属性が削除されました。
+* Mojo::Server::Daemonからwebsocket_timeout属性が削除されました。
+* Mojo::Server::HypnotoadがMojo::Server::Preforkの上に構築されるようになりました。
+* Mojo::Templateからrender_file_to_fileメソッドが削除されました。
+* Mojo::HTTP::Transactionからserver_leftoversメソッドが削除されました。
+* Mojo::UserAgentからbuild_form_txメソッドが削除されbuild_txメソッドにformオプションが追加されました。
+* Mojo::UserAgentからpost_formメソッドが削除され、postメソッドにformオプションが追加されました。
+* Mojo::UserAgent::Transactorからformメソッドが削除されました。
+* Mojo::Utilからhmac_md5_sum,html_escape,qp_encode,qp_decode関数が削除されました。
+* Mojoliciousからafter_static_dispatchフックが削除されました。
+* Mojolicious::Controllerからrender_content,render_json,render_text,render_data,uaメソッドが削除されました。
+* Mojolicious::Plugin::DefaultHelperのmemorizeヘルパーが削除されました。
+* Mojolicious::Plugin::RequestTimerは削除されました。 
+* Mojolicious::Plugin::PoweredByは削除されました。
+* Mojolicious::Plugin:::TagHelperからbase_tagヘルパーが削除されました。
+* Mojolicious::Routes::Matchからcaptures属性が削除されました。
+* Mojolicious::Routes::Patternのformatメソッドはformat_regexに変更されました。
+* Mojolicious::Routes::Patternのsymbol_startメソッドはplaceholder_startに変更されました。
+* Mojolicious::Routes::Patternのsymbolsメソッドはplaceholdersに変更されました。
+* Mojolicious::Routes::Patternからreqsメソッドが削除されました。
+* Mojolicious::Routes::Patternのshape_matchメソッドはmatch_partialに変更されました。
+* Test::Mojoのjson_content_isは削除されjson_isに統合されました。
+
+h2. 2012/6/7追記
+
+h3. 変更など
+* Mojoクラスにconfigメソッドが追加されました。
+* Mojo::Asset::Memoryにupgradeイベントが追加されました。
+* Mojo::Asset::Memoryにauto_upgrade属性が追加されました。
+* MOJO_BASE_DEBUG環境変数が追加されました。
+* Mojo::Contentクラスにdrainイベントが追加されました。
+* Mojo::IOLoop::Serverのresumeメソッドがstartにリネームされました。
+* Mojo::IOLoop::Serverのpauseメソッドがstopにリネームされました。
+* Mojo::IOLoop::Streamのresumeメソッドがstartにリネームされました。
+* Mojo::IOLoop::Streamのpauseメソッドがstopにリネームされました。
+* 各モジュールのioloop属性はreactorにリネームされました。
+* Mojo::IOWatcher, Mojo::IOWatcher::EVはMojo::Reactor, Mojo::Reactor::Poll, Mojo::Reactor::EVに
+* 機能が移行しました。
+* 環境変数MOJO_IOWACHTERがMOJO_REACTORに変更されました。
+* Mojo::Transaction::WebSocketのsend_frameメソッドとsend_messageメソッドは、sendメソッドに統合されました。
+* Mojo::UserAgentにoptionメソッドとpatchメソッドが追加されました。
+* IPV6のサポートのためにはNet::Socket::IPではなくて、Net::Socket::INET6が必要になりました。
+* Mojo::Pathにmergeメソッドが追加されました。
+* Bonjourのサポートが取り除かれました。
+* TLSのサーバー証明書ファイル、TLSのキーファイル、認証局ファイルをlinstenオプションで指定できるようになりました。listen => ['https://*:3000?cert=/x/server.crt&key=/y/server.key&ca=/z/ca.crt']
+* Mojo::Server::Daemonのprepare_ioloopメソッドはstartにリネームされました。
+* Mojo::Server::PSGIにto_psgi_appメソッドが追加されました。
+* Mojoliciousにcommands属性が追加されました。
+* Mojolicious::Plugin::DefaultHelperにurl_withメソッドが追加されました。
+* Mojolicious::Plugin::DefaultHelperにconfigメソッドが追加されました。
+* Mojolicious::Plugin::DefaultHelperにcurrent_routeメソッドが追加されました。
+* Mojolicious::Rendererのdefault_template_classはclassesに置き換えられました。
+* Mojolicious::Rendererのrootはpathsに置き換えられました。
+* Mojolicious::Routesの一部の機能はMojolicious::Routes::Routeに移動しました。
+
+h2. 2012/12/3追記
+
+h3. 機能追加
+* morboと呼ばれるスクリプトが追加されました。これは自動再起動する開発用サーバーを起動できとても便利です。
+* コマンドのモジュール名が小文字になりました。(Mojolicious::Command::Cgi -> Mojolicious::Command::cgiなど)
+* プラグインで連続する大文字が利用できるようになり、プラグイン名が変更されました。 Mojolicious::Plugin::JsonConfig -> Mojolicious::Plugin::JSONConfigなど
+* プラグインがモジュール名のままで指定できるようになりました。plugin 'JSONConfig'
+* Mojo::TestにJSON関連のテストの関数やWebSocketのテストの関数などが追加されました。
+* その他多くのモジュールでイベントを放出するようになりました。
+* Mojo::IOLoop::Delayが追加され、並列のHTTPリクエストを実行できるようになりました。
+* コントローラーにrespond_toメソッドが追加されました。リソースに応じた応答が簡単に書けるようになりました。
+* Mojolicious::Plugin::Mountが追加され、アプリケーション全体を別のアプリケーションに組み込むことができるようになりました。
+* イベントループとしてEVが利用できるようになりました。
+
+h3. 後方互換性が維持されない変更
+* Mojo::IOLoopの内部実装がかなり変更されています。Mojo::IOLoopを利用しているモジュールは動かなくなる可能性があります。
+* WebSocket関連のモジュールもonでイベントを放射するようになり、on_xxxのようなメソッドはすべて廃止されました。
+* フックもイベントとして実装されなおされたので、run_hookなどのメソッドを利用していた場合は、emit_hookに変更する必要があります。
+* Mojo::Pathのparts属性は廃止されました。直接操作してください。
+* Mojo::Utilのメソッドが、変更した後の戻り値を返すようになりました。その場で値を変更しなくなったので注意してください。
+* Mojolicious::Plugin::AgentConditionがMojolicious::Plugin::HeaderConditionに変更されました。
+* イベントループとしてEPollとKQueueが削除されました。代わりにEVを利用してください。
+
+h2. 機能追加(2011/12/1以前)
+
+(2011/12/1追記)
+* Mojoliciousがよりイベント駆動なフレームワークに発展しました。
+* Mojo::Contentにbodyとreadイベントが追加されました。
+* Mojo::Contentにboundaryメソッドが追加されました。
+* Mojo::ByteStreamにsecure_compareメソッドが追加されました。
+* Mojo::Commandにapp属性が追加されました。
+* Mojo::Content::Multipartにpartイベントが追加されました。
+* Mojo::Content::Singleにupgradeイベントが追加されました。
+* Mojo::Content::Singleにauto_upgrade属性が追加されました。
+* Mojo::Content::Singleにcloneメソッドが追加されました。
+* Mojo::Content::Singleにcloneメソッドが追加されました。
+
+(2011/6/3 追記)
+* 実験的なMojo::DOMに属性と子要素へのアクセッサがサポートされました
+* 実験的なchildrenメソッドがMojo::DOMに追加
+* 実験的なMojo::DOMにto_xml
+* 実験的なevalコマンドがMojo::DOMに追加
+* 実験的なload_appメソッドがMojo::DOMに追加
+* append_contentメソッドとprepend_contentメソッドがMojo::DOMに追加
+* HTTPメソッドがroutesコマンドで表示されるようになりました
+* ロングポーリングのサポートの改善
+* セッションのシリアライズをStorableからJSONに変更
+* 実験的なhelper関数がMojolicious::Liteに追加
+* jQueryが1.6.1にバージョンアップされました。
+* MOJO_CERT_FILEとMOJO_KEY_FILE環境変数が追加されました
+* 実験的なxml属性がMojo::DOMに追加されました。
+* 実験的なbuild_urlメソッドがTest::Mojoに追加されました
+* 実験的なdntメソッドがMojo::Headersに追加されました
+* Mojolicious::Plugin::Configが追加されました。
+* さまざまなバグが修正されました
+* 例外のテンプレートが見やすくなりました。
+* ルート名のデフォルトが自動で設定されるようになりました。
+* Mojo::Baseに継承機能が加わり、hasメソッドが追加されました。
+* タグヘルパーにimage関数が追加されました。
+
+(2011/2/12 追記)
+* mojo getコマンドでCSS3セレクタが利用できるようになりました。
+* デフォルトでルート名が指定されるようになりルート名での*の使用は非推奨になりました。*の機能は将来的に削除されます。
+* JSONが高速になりました。
+* ルート名のキャッシュ管理機能のためのMojo::Cacheが追加されました。
+* 例外画面が美しくなりました。
+* 組み込みのjQueryが1.5にバージョンアップされました。
+* Mojo::Baseにhasメソッドと、新しい継承の仕組みが追加されました。
+* Hypnotoad Webサーバが追加されました。
+* Mojo::IOLoopで非同期のDNSがサポートされるようになりました。
+* パフォーマンスの改善が行われました。
+
+(2010/10/4 追記)
+* DATAセクションにBase64でエンコードされたデータを指定することができるようになりました。
+* インラインテンプレートを描画することができるようになりました。
+* -app->helperという記述でヘルパを追加することができるようになりました。
+* WebをスクレイピングするためにMojo::DOMというモジュールが追加されました。
+
+h2. 後方互換性が維持されない変更(2-11/12/1以前)
+
+(2011/12/1 追記)
+* Mojo::Contentのon_readは削除されました。代わりにreadイベントを使用してください。
+* Mojo::Contentのis_doneはis_finishedに変更されました。
+* Mojo::Content::Multipartからparseメソッドが削除されました。
+
+(2011/11/7 追記)
+* FastCGIのサポートがなくなりました。CPANにあるMojo::Server::FastCGIを代わりに使用してください。
+* on_transactionが廃止されました。代わりにon('transaction', ...)を使用してください。
+* on_websocketは廃止されました。代わりにon('websocket', ...)を使用してください。
+
+(2011/6/3 追記)
+
+* Mojo::DOMのadd_afterはappendに名前が変更されました
+* Mojo::DOMのadd_beforeはappendに名前が変更されました
+* innerを含んでいるすべてのメソッドはinnerの部分がcontentに変更されました
+* Mojolicious::Rendererのget_inline_templateメソッドはget_data_templateに変更されました
+* Mojo::IOLoopのon_tickメソッドはrecurringに変更されました
+* Mojo::IOLoopのon_hupメソッドはon_closeに変更されました
+* on_build_txメソッドはon_transactionメソッドに変更されました。
+* on_handlerメソッドはon_requestメソッドに変更されました
+* Mojoliciousのprocessメソッドはon_processに変更されました
+* Mojo::ClientはMojo::UserAgentに変更されました。
+* MOJO_JSON_CONFIG環境変数はMOJO_CONFIGに変更されました。
+
+(2011/2/12 追記)
+* MojoXのネームスペースが廃止されました。
+* Mojolicious::Rendereのhelperはhelpersに、handlerはhandlersに変更されました。しばらくhelperとhandlerは残されますが、helpersとhandlersを使用してください。
+* Mojoliciousのsessionはsessionsに変更されました。しばらくsessionは残されますがsessionsを使用してください。
+* IISのサポートが打ち切られました。メンテナを申し出れば打ち切らないようです。
+
+(2010/10/4 追記)
+* Mojo::ClientのAPIに多くの変更が加えられました。(processがstartに変更されたなどです)
+* -IPv6のサポートにはIO::Socket::INET6ではなくIO::Socket::IPが必要になりました。
+* *_cbというメソッド名はon_*という名前にすべて変更されました。(しばらくは*_cbはしばらくは残されますが、on_*を使用してください)
+* receive_message()はon_message()に変更されました。(receive_message()はしばらく残されますが、on_message()を使用してください)
+* finished()はon_finish()に変更されました。(finishedはしばらく残されますが、on_finish()を使用してください。)
+* テンプレートのコンテントブロックが {} ではなく、begen end で表現されるようになりました。
+* Mojolicious::Liteのladder()はunder()に変更されました。(ladderはしばらく残されますが、underを使ってください。)

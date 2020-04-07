@@ -1,0 +1,64 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::test - 試験コマンド
+
+=head1 使い方
+
+  Usage: APPLICATION test [OPTIONS] [TESTS]
+
+    ./myapp.pl test -v
+    ./myapp.pl test t/foo.t
+    ./myapp.pl test t/foo/*.t
+
+  Options:
+    -v, --verbose   詳細なデバッグ情報をSTDERRに出力
+
+=head1 説明
+
+[[Mojolicious::Command::test]]はtディレクトリにあるアプリケーションの試験を実行します。
+
+これはコアのコマンドです。いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::test]]は[[Mojo::Command]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $test->description;
+  $test           = $test->description('Foo');
+
+このコマンドの短い説明。コマンドの一覧表示に利用されます。
+
+=head2 usage
+
+  my $usage = $test->usage;
+  $test     = $test->usage('Foo');
+
+このコマンドの使用方法の情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::test]]は[[Mojo::Command]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $test = $test->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 6.05を反映)
+
+=cut

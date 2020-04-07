@@ -1,0 +1,555 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Headers - ヘッダ
+
+=head1 使い方
+
+  use Mojo::Headers;
+
+  # 解析
+  my $headers = Mojo::Headers->new;
+  $headers->parse("Content-Length: 42\x0d\x0a");
+  $headers->parse("Content-Type: text/html\x0d\x0a\x0d\x0a");
+  say $headers->content_length;
+  say $headers->content_type;
+
+  # 構築
+  my $headers = Mojo::Headers->new;
+  $headers->content_length(42);
+  $headers->content_type('text/plain');
+  say $headers->to_string;
+
+=head1 説明
+
+[[Mojo::Headers]] は
+L<RFC 7230|http://tools.ietf.org/html/rfc7230>と
+L<RFC 7231|http://tools.ietf.org/html/rfc7231>
+に基づいたHTTPヘッダのコンテナです。
+
+=head1 属性
+
+[[Mojo::Headers]]は次の属性を実装しています。
+
+=head2 max_line_size
+
+  my $size = $headers->max_line_size;
+  $headers = $headers->max_line_size(1024);
+
+最大ラインバイトサイズ。デフォルトはC<MOJO_MAX_LINE_SIZE>の値か、C<8192> (8KB)です。
+
+=head2 max_lines
+
+  my $num  = $headers->max_lines;
+  $headers = $headers->max_lines(200);
+
+ヘッダーの行の最大数。デフォルトは、
+C<MOJO_MAX_LINES>環境変数の値、
+あるいはC<100>。
+
+=head1 メソッド
+
+[[Mojo::Headers]] は [[Mojo::Base]] の全てのメソッドを継承しており、
+以下の新しいメソッドを実装しています。
+
+=head2 accept
+
+  my $accept = $headers->accept;
+  $headers   = $headers->accept('application/json');
+
+ヘッダの値を取得あるいは置換します。C<Accept>ヘッダのショートカット
+
+=head2 accept_charset
+
+  my $charset = $headers->accept_charset;
+  $headers    = $headers->accept_charset('UTF-8');
+
+ヘッダの値を取得あるいは置換します。C<Accept-Charset>ヘッダのショートカット。
+
+=head2 accept_encoding
+
+  my $encoding = $headers->accept_encoding;
+  $headers     = $headers->accept_encoding('gzip');
+
+ヘッダの値を取得あるいは置換します。C<Accept-Encoding>ヘッダのショートカット。
+
+=head2 accept_language
+
+  my $accept_language = $headers->accept_language;
+  $headers            = $headers->accept_language('de, en');
+
+ヘッダの値を取得あるいは置換します。C<Accept-Language> ヘッダへのショートカット。
+
+=head2 accept_ranges
+
+  my $ranges = $headers->accept_ranges;
+  $headers   = $headers->accept_ranges('bytes');
+
+ヘッダの値を取得あるいは置換します。C<Accept-Ranges> ヘッダへのショートカット。
+
+=head2 access_control_allow_origin
+
+  my $origin = $headers->access_control_allow_origin;
+  $headers   = $headers->access_control_allow_origin('*');
+
+ヘッダの値を取得あるいは置換します。C<Access-Control-Allow-Origin>ヘッダのショートカット。
+L<Cross-Origin Resource Sharing|http://www.w3.org/TR/cors/>より。
+
+=head2 add
+
+  $headers = $headers->add(Foo => 'one value');
+  $headers = $headers->add(Foo => 'first value', 'second value');
+
+1行または複数のヘッダ行を追加します。
+
+  # "Vary: Accept"
+  # "Vary: Accept-Encoding"
+  $headers->vary('Accept')->add(Vary => 'Accept-Encoding')->to_string;
+
+=head2 allow
+
+  my $allow = $headers->allow;
+  $headers  = $headers->allow('GET, POST');
+
+ヘッダの値を取得あるいは置換します。C<Allow>ヘッダのショートカット。
+
+=head2 append
+
+  $headers = $headers->append(Vary => 'Accept-Encoding');
+
+値をヘッダに追加して、必要であればフラットにします。
+
+  # "Vary: Accept"
+  $headers->append(Vary => 'Accept')->to_string;
+ 
+  # "Vary: Accept, Accept-Encoding"
+  $headers->vary('Accept')->append(Vary => 'Accept-Encoding')->to_string;
+
+=head2 append
+
+  $headers = $headers->append(Vary => 'Accept-Encoding');
+
+値をヘッダに追加して、必要であれば平らにします。
+
+  # "Vary: Accept"
+  $headers->append(Vary => 'Accept')->to_string;
+
+  # "Vary: Accept, Accept-Encoding"
+  $headers->vary('Accept')->append(Vary => 'Accept-Encoding')->to_string;
+
+=head2 authorization
+
+  my $authorization = $headers->authorization;
+  $headers          = $headers->authorization('Basic Zm9vOmJhcg==');
+
+ヘッダの値を取得あるいは置換します。C<Authorization>ヘッダへのショートカット。
+
+=head2 cache_control
+
+  my $cache_control = $headers->cache_control;
+  $headers          = $headers->cache_control('max-age=1, no-cache');
+
+ヘッダの値を取得あるいは置換します。C<Cache-Control>ヘッダへのショートカット。
+
+=head2 clone
+
+ヘッダを複製します。
+
+=head2 connection
+
+  my $connection = $headers->connection;
+  $headers       = $headers->connection('close');
+
+ヘッダの値を取得あるいは置換します。C<Connection> ヘッダへのショートカット。
+
+=head2 content_disposition
+
+  my $content_disposition = $headers->content_disposition;
+  $headers                = $headers->content_disposition('foo');
+
+ヘッダの値を取得あるいは置換します。C<Content-Disposition> ヘッダへのショートカット。
+
+=head2 content_encoding
+
+  my $encoding = $headers->content_encoding;
+  $headers     = $headers->content_encoding('gzip');
+
+ヘッダの値を取得あるいは置換します。C<Content-Encoding>ヘッダのショートカット。
+
+=head2 content_language
+
+  my $language = $headers->content_language;
+  $headers     = $headers->content_language('en');
+
+ヘッダの値を取得あるいは置換します。C<Content-Language>ヘッダのショートカット.
+
+=head2 content_length
+
+  my $content_length = $headers->content_length;
+  $headers           = $headers->content_length(4000);
+
+ヘッダの値を取得あるいは置換します。C<Content-Length> ヘッダへのショートカット。
+
+=head2 content_location
+
+  my $location = $headers->content_location;
+  $headers     = $headers->content_location('http://127.0.0.1/foo');
+
+ヘッダの値を取得あるいは置換します。C<Content-Location>ヘッダのショートカット.
+
+=head2 content_range
+
+  my $range = $headers->content_range;
+  $headers  = $headers->content_range('bytes 2-8/100');
+
+ヘッダの値を取得あるいは置換します。C<Content-Range> ヘッダへのショートカット。
+
+=head2 content_security_policy
+
+  my $policy = $headers->content_security_policy;
+  $headers   = $headers->content_security_policy('default-src https:');
+
+ヘッダの値を取得あるいは置換します。C<Content-Security-Policy>ヘッダのショートカット。
+L<Content Security Policy 1.0|http://www.w3.org/TR/CSP/>より。
+
+=head2 content_type
+
+  my $content_type = $headers->content_type;
+  $headers = $headers->etag('"abc321"');
+
+ヘッダの値を取得あるいは置換します。C<Content-Type> ヘッダへのショートカット。
+
+=head2 cookie
+
+  my $cookie = $headers->cookie;
+  $headers   = $headers->cookie('$Version=1; f=b; $Path=/');
+
+ヘッダの値を取得あるいは置換します。RFC 6265のC<Cookie>ヘッダへのショートカット。
+
+=head2 date
+
+  my $date = $headers->date;
+  $headers = $headers->date('Sun, 17 Aug 2008 16:27:35 GMT');
+
+ヘッダの値を取得あるいは置換します。C<Date>ヘッダへのショートカット。
+
+=head2 dnt
+
+  my $dnt  = $headers->dnt;
+  $headers = $headers->dnt(1);
+
+C<DNT>(Do Not Track)ヘッダへのショートカット。
+これは仕様に規定されていませんが、
+一般的に利用されています。
+
+=head2 etag
+
+  my $etag = $headers->etag;
+  $headers = $headers->etag('abc321');
+
+ヘッダの値を取得あるいは置換します。C<ETag>ヘッダのショートカット。
+
+=head2 every_header
+
+  my $all = $headers->every_header('Location');
+
+「header」と似ていますが、同じ名前で共有しているすべてのヘッダを、配列のリファレンスで返します。
+
+  # 最初のヘッダの値を取得
+  say $headers->every_header('Location')->[0];
+
+=head2 expect
+
+  my $expect = $headers->expect;
+  $headers   = $headers->expect('100-continue');
+
+ヘッダの値を取得あるいは置換します。C<Expect> ヘッダへのショートカット。
+
+=head2 expires
+
+  my $expires = $headers->expires;
+  $headers    = $headers->expires('Thu, 01 Dec 1994 16:00:00 GMT');
+
+ヘッダの値を取得あるいは置換します。C<Expires>ヘッダへのショートカット。
+
+=head2 from_hash
+
+  $headers = $headers->from_hash({'Cookie' => 'a=b'});
+  $headers = $headers->from_hash({'Cookie' => ['a=b', 'c=d']});
+  $headers = $headers->from_hash({});
+  
+ハッシュからヘッダを解析します。
+空のタグはすべてのヘッダを削除します。
+
+=head2 header
+
+my $value = $headers->header('Foo');
+$headers  = $headers->header(Foo => 'one value');
+$headers  = $headers->header(Foo => 'first value', 'second value');
+
+現在のヘッダの値を取得または置換します。
+
+=head2 host
+
+  my $host = $headers->host;
+  $headers = $headers->host('127.0.0.1');
+
+ヘッダの値を取得あるいは置換します。C<Host> ヘッダへのショートカット。
+
+=head2 if_modified_since
+
+  my $m    = $headers->if_modified_since;
+  $headers = $headers->if_modified_since('Sun, 17 Aug 2008 16:27:35 GMT');
+
+ヘッダの値を取得あるいは置換します。C<If-Modified-Since> ヘッダへのショートカット。
+
+=head2 if_none_match
+
+  my $etag = $headers->if_none_match;
+  $headers = $headers->if_none_match('"abc321"');
+
+ヘッダの値を取得あるいは置換します。C<If-None-Match>ヘッダのショートカット。
+
+=head2 is_finished
+
+  my $bool = $headers->is_finished;
+
+ヘッダの解析が終了したかどうかをチェックします。
+
+=head2 is_limit_exceeded
+
+  my $bool = $headers->is_limit_exceeded;
+
+ヘッダがC<max_line_size>あるいはC<max_lines>を超えたかどうかをチェックします。
+
+=head2 last_modified
+
+  my $m    = $headers->last_modified;
+  $headers = $headers->last_modified('Sun, 17 Aug 2008 16:27:35 GMT');
+
+ヘッダの値を取得あるいは置換します。C<Last-Modified> ヘッダへのショートカット。
+
+=head2 leftovers
+
+  my $leftovers = $headers->leftovers;
+
+ヘッダーパーサーが、レフトオーバーしたデータを取得し、取り除きます。
+
+=head2 link
+
+  my $link = $headers->link;
+  $headers = $headers->link('<http://127.0.0.1/foo/3>; rel="next"');
+
+ヘッダの値を取得あるいは置換します。RFC 5988のC<Link>ヘッダのショートカット。
+
+=head2 link
+
+  my $link = $headers->link;
+  $headers = $headers->link('<http://127.0.0.1/foo/3>; rel="next"');
+
+ヘッダの値を取得あるいは置換します。C<RFC 5988>のC<Link>ヘッダへのショートカット。
+
+=head2 location
+
+  my $location = $headers->location;
+  $headers     = $headers->location('http://127.0.0.1/foo');
+
+ヘッダの値を取得あるいは置換します。C<Location> ヘッダへのショートカット。
+
+=head2 names
+
+  my $names = $headers->names;
+
+すべての現在定義されているヘッダの一覧を返却します。
+
+  # すべてのヘッダの名前
+  say for @{$headers->names};
+
+=head2 origin
+
+  my $origin = $headers->origin;
+  $headers   = $headers->origin('http://example.com');
+
+ヘッダの値を取得あるいは置換します。RFC 6454のC<Origin>ヘッダのショートカット。
+
+=head2 parse
+
+  $headers = $headers->parse("Content-Type: text/plain\x0d\x0a\x0d\x0a");
+
+整形されたヘッダを解析します。
+
+=head2 proxy_authenticate
+
+  my $authenticate = $headers->proxy_authenticate;
+  $headers         = $headers->proxy_authenticate('Basic "realm"');
+
+ヘッダの値を取得あるいは置換します。C<Proxy-Authenticate> ヘッダへのショートカット。
+
+=head2 proxy_authorization
+
+  my $proxy_authorization = $headers->proxy_authorization;
+  $headers = $headers->proxy_authorization('Basic Zm9vOmJhcg==');
+
+ヘッダの値を取得あるいは置換します。C<Proxy-Authorization> ヘッダへのショートカット。
+
+=head2 range
+
+  my $range = $headers->range;
+  $headers  = $headers->range('bytes=2-8');
+
+ヘッダの値を取得あるいは置換します。C<Range> ヘッダへのショートカット。
+
+=head2 referrer
+
+  my $referrer = $headers->referrer;
+  $headers     = $headers->referrer('http://mojolicio.us');
+
+C<Referer> ヘッダへのショートカット。RFC 2068 には誤植があり、
+その結果 C<Referer> が公式なヘッダとなっています。
+
+=head2 remove
+
+  $headers = $headers->remove('Foo');
+
+ヘッダを除去します。
+
+=head2 sec_websocket_accept
+
+  my $accept = $headers->sec_websocket_accept;
+  $headers   = $headers->sec_websocket_accept('s3pPLMBiTxaQ9kYGzzhZRbK+xOo=');
+
+ヘッダの値を取得あるいは置換します。C<Sec-WebSocket-Accept>ヘッダへのショートカット。
+
+=head2 sec_websocket_extensions
+
+  my $extensions = $headers->sec_websocket_extensions;
+  $headers       = $headers->sec_websocket_extensions('foo');
+
+ヘッダの値を取得あるいは置換します。RFC 6455のC<Sec-WebSocket-Extensions>ヘッダのショートカット。
+
+=head2 sec_websocket_key
+
+  my $key  = $headers->sec_websocket_key;
+  $headers = $headers->sec_websocket_key('dGhlIHNhbXBsZSBub25jZQ==');
+
+ヘッダの値を取得あるいは置換します。RFC 6455のC<Sec-WebSocket-Key>ヘッダへのショートカット。
+
+=head2 sec_websocket_protocol
+
+  my $protocol = $headers->sec_websocket_protocol;
+  $headers     = $headers->sec_websocket_protocol('sample');
+
+ヘッダの値を取得あるいは置換します。RFC 6455のC<Sec-WebSocket-Protocol>ヘッダへのショートカット。
+
+=head2 sec_websocket_version
+
+  my $version = $headers->sec_websocket_version;
+  $headers    = $headers->sec_websocket_version(13);
+
+ヘッダの値を取得あるいは置換します。RFC 6455のC<Sec-WebSocket-Version>ヘッダへのショートカット。
+
+=head2 server
+
+  my $server = $headers->server;
+  $headers   = $headers->server('Mojo');
+
+ヘッダの値を取得あるいは置換します。C<Server> ヘッダへのショートカット。
+
+=head2 set_cookie
+
+  my $set_cookie = $headers->set_cookie;
+  $headers       = $headers->set_cookie('f=b; Version=1; Path=/');
+
+ヘッダの値を取得あるいは置換します。C<Set-Cookie> ヘッダへのショートカット。
+
+=head2 status
+
+  my $status = $headers->status;
+  $headers   = $headers->status('200 OK');
+
+ヘッダの値を取得あるいは置換します。RFC 3875のC<Status> ヘッダへのショートカット。
+
+=head2 strict_transport_security
+
+  my $policy = $headers->strict_transport_security;
+  $headers   = $headers->strict_transport_security('max-age=31536000');
+
+ヘッダの値を取得あるいは置換します。C<Strict-Transport-Security>ヘッダのショートカット。
+L<RFC 6797|http://tools.ietf.org/html/rfc6797>より。
+
+=head2 te
+
+  my $te   = $headers->te;
+  $headers = $headers->te('chunked');
+
+ヘッダの値を取得あるいは置換します。C<TE>ヘッダのショートカット。
+
+=head2 to_hash
+
+  my $single = $headers->to_hash;
+  my $multi  = $headers->to_hash(1);
+
+ヘッダをハッシュとして整形します。
+複数行の値を、配列リファレンスをとして
+出力することはデフォルトでは、無効になっています。
+
+  say $headers->to_hash->{DNT};
+
+=head2 to_string
+
+  my $string = $headers->to_string;
+
+ヘッダを、HTTPメッセージに適切に整形します。
+
+=head2 trailer
+
+  my $trailer = $headers->trailer;
+  $headers    = $headers->trailer('X-Foo');
+
+ヘッダの値を取得あるいは置換します。C<Trailer> ヘッダへのショートカット。
+
+=head2 transfer_encoding
+
+  my $transfer_encoding = $headers->transfer_encoding;
+  $headers              = $headers->transfer_encoding('chunked');
+
+ヘッダの値を取得あるいは置換します。C<Transfer-Encoding> ヘッダへのショートカット。
+
+=head2 upgrade
+
+  my $upgrade = $headers->upgrade;
+  $headers    = $headers->upgrade('WebSocket');
+
+ヘッダの値を取得あるいは置換します。C<Upgrade> ヘッダへのショートカット。
+
+=head2 user_agent
+
+  my $user_agent = $headers->user_agent;
+  $headers       = $headers->user_agent('Mojo/1.0');
+
+ヘッダの値を取得あるいは置換します。C<User-Agent> ヘッダへのショートカット。
+
+=head2 vary
+
+  my $vary = $headers->vary;
+  $headers = $headers->vary('*');
+
+ヘッダの値を取得あるいは置換します。C<Vary>ヘッダのショートカット。
+
+=head2 www_authenticate
+
+  my $authenticate = $headers->www_authenticate;
+  $headers         = $headers->www_authenticate('Basic "realm"');
+
+ヘッダの値を取得あるいは置換します。C<WWW-Authenticate> ヘッダへのショートカット。
+
+=head1 参考
+
+[[Mojolicious]], [[Mojolicious::Guides]], L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月16日更新)
+
+=cut

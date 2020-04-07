@@ -1,0 +1,167 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Transaction::HTTP - HTTPトランザクション
+
+=head1 使い方
+
+  use Mojo::Transaction::HTTP;
+
+  # クライアント
+  my $tx = Mojo::Transaction::HTTP->new;
+  $tx->req->method('GET');
+  $tx->req->url->parse('http://example.com');
+  $tx->req->headers->accept('application/json');
+  say $tx->res->code;
+  say $tx->res->headers->content_type;
+  say $tx->res->body;
+  say $tx->remote_address;
+
+  # サーバー
+  my $tx = Mojo::Transaction::HTTP->new;
+  say $tx->req->method;
+  say $tx->req->url->to_abs;
+  say $tx->req->headers->accept;
+  say $tx->remote_address;
+  $tx->res->code(200);
+  $tx->res->headers->content_type('text/plain');
+  $tx->res->body('Hello World!');
+
+=head1 説明
+
+[[Mojo::Transaction::HTTP]]は、
+L<RFC 7230|http://tools.ietf.org/html/rfc7230>、
+L<RFC 7231|http://tools.ietf.org/html/rfc7231>
+に基づく
+HTTPトランザクションのコンテナです。
+
+=head1 イベント 
+
+[[Mojo::Transaction::HTTP]]は[[Mojo::Transaction]]からすべてのイベントを継承しており、
+次の新しいイベントを発行することができます。
+
+=head2 request
+
+  $tx->on(request => sub {
+    my $tx = shift;
+    ...
+  });
+
+リクエストが準備され、処理可能になったときに発行されます。
+
+  $tx->on(request => sub {
+    my $tx = shift;
+    $tx->res->on(finish => sub { say 'Follow-up response is finished.' });
+  });
+
+=head2 resume
+
+  $tx->on(resume => sub {
+    my $tx = shift;
+    ...
+  });
+
+トランザクションが再開されたときに発行されます。
+
+=head2 unexpected
+
+  $tx->on(unexpected => sub {
+    my ($tx, $res) = @_;
+    ...
+  });
+
+無視される予期しないC<1xx>レスポンスの場合に発行されます。
+
+  $tx->on(unexpected => sub {
+    my $tx = shift;
+    $tx->res->on(finish => sub { say 'Followup response is finished.' });
+  });
+
+=head1 属性
+
+[[Mojo::Transaction::HTTP]]は[[Mojo::Transaction]]から
+すべての属性を継承しており、次の新しい属性を
+実装しています。
+
+=head2 previous
+
+  my $previous = $tx->previous;
+  $tx          = $tx->previous(Mojo::Transaction::HTTP->new);
+
+この後に続いて起こったトランザクションの引きがねとなった
+以前のトランザクション。通常は[[Mojo::Transaction::HTTP]] オブジェクト。
+
+  # 前のリクエストのパス
+  say $tx->previous->previous->req->url->path;
+  say $tx->previous->req->url->path;
+
+=head1 メソッド
+
+[[Mojo::Transaction::HTTP]]は[[Mojo::Transaction]]からすべての
+メソッドを継承しており、次の新しいメソッドを実装しています。
+
+=head2 client_read
+
+  $tx = $tx->client_read($bytes);
+
+クライアントのデータを読み込み、処理します。
+エージェントの実装に利用されます。
+
+=head2 client_write
+
+  my $bytes = $tx->client_write;
+
+クライアントのデータを書き込みます。
+エージェントの実装に利用されます。
+
+=head2 is_empty
+
+  my $bool = $tx->is_empty;
+
+ヘッダリクエストあるいは、C<1xx>, C<204>,C<304>レスポンスかどうかをチェックします。
+
+=head2 keep_alive
+
+  my $bool = $tx->keep_alive;
+
+接続がキープアライブかどうかをチェックします。
+
+=head2 redirects
+
+  my $redirects = $tx->redirects;
+
+この後に続いて起こったトランザクションの引きがねとなった、すべての前のトランザクションのリストを返却します。
+
+  # すべての以前のリクエストのパス
+  say $_->req->url->path for @{$tx->redirects};
+
+=head2 resume
+
+  $tx = $tx->resume;
+
+トランザクションを再開する。
+
+=head2 server_read
+
+  $tx = $tx->server_read($chunk);
+
+サーバーのデータを読み込み、処理する。
+Webサーバーの実装に利用されます。
+
+=head2 server_write
+
+  my $chunk = $tx->server_write;
+
+サーバーのデータを書き込む。
+Webサーバーの実装に利用されます。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月29日更新)
+
+=cut

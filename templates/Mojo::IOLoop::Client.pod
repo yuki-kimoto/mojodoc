@@ -1,0 +1,186 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::IOLoop::Client - 非同期のTCP/IPとUNIXドメインソケットのクライアント
+
+=head1 使い方
+
+  use Mojo::IOLoop::Client;
+
+  # ソケット接続を生成する
+  my $client = Mojo::IOLoop::Client->new;
+  $client->on(connect => sub {
+    my ($client, $handle) = @_;
+    ...
+  });
+  $client->on(error => sub {
+    my ($client, $err) = @_;
+    ...
+  });
+  $client->connect(address => 'example.com', port => 80);
+
+  # 必要であればリアクターを開始
+  $client->reactor->start unless $client->reactor->is_running;
+
+=head1 説明
+
+[[Mojo::IOLoop::Client]]は[[Mojo::IOLoop]]のためにTCP接続をオープンします。
+
+=head1 イベント
+
+[[Mojo::IOLoop::Client]]は[[Mojo::EventEmitter]]からすべての
+イベントを継承しており、次の新しいイベントを発行します。
+
+=head2 connect
+
+  $client->on(connect => sub {
+    my ($client, $handle) = @_;
+  });
+
+接続が確立されたとき一度だけ発行されます。
+
+=head2 error
+
+  $client->on(error => sub {
+    my ($client, $err) = @_;
+    ...
+  });
+
+コネクション時にエラーが発生したときに発行されます。処理されなければ、致命的です。
+
+=head1 属性
+
+[[Mojo::IOLoop::Client]]は次の属性を実装しています。
+
+=head2 reactor
+
+  my $reactor = $client->reactor;
+  $client     = $client->reactor(Mojo::Reactor::Poll->new);
+
+低レベルのイベントウオッチャーです。
+デフォルトは、グローバルな[[Mojo::IOLoop]]シングルトンのC<reactor>属性の値です。
+
+=head1 メソッド
+
+[[Mojo::IOLoop::Client]]は[[Mojo::EventEmitter]]からすべてのメソッドを
+継承しており、次の新しいメソッドを実装しています。
+
+=head2 can_nnr
+
+  my $bool = Mojo::IOLoop::Client->can_nnr;
+
+[[Net::DNS::Native]]が0.15以上でインストールされていて、ノンブロッキング名前解決が有効になっていれば、真になります。
+
+=head2 can_socks
+
+  my $bool = Mojo::IOLoop::Client->can_socks;
+
+[[IO::Socket::SOCKS]]が0.64以上でインストールされており、SOCK5のサポートが有効であれば、真になります。
+
+=head2 connect
+
+  $client->connect(address => '127.0.0.1', port => 3000);
+  $client->connect({address => '127.0.0.1', port => 3000});
+
+リモートホストに対してTCPコネクションを開きます。 
+ノンブロッキングの名前解決は、L<Net::DNS::Native> (0.15+)と
+L<IO::Socket::Socks> (0.64)のSOCKS5に
+、IPv6のサポートはL<IO::Socket::INET6>(0.20+) に、
+TLSのサポートはL<IO::Socket::SSL> (2.009+)に
+依存していることに注意してください。
+
+下記のオプションが現在利用できます。
+
+=over 4
+
+=item address
+
+  address => 'mojolicio.us'
+
+接続先のアドレス、あるいはホスト名。デフォルトは、C<127.0.0.1>。
+
+=item handle
+
+  handle => $handle
+
+すでに準備されているハンドルを使用します。
+
+=item local_address
+
+  local_address => '127.0.0.1'
+
+バインドされるローカルアドレス
+
+=item port
+
+  port => 80
+
+接続先のポート。デフォルトはC<80>。C<tls>オプションがあればC<443>。
+
+=item socks_address
+
+  socks_address => '127.0.0.1'
+
+コネクションが利用するSOCKS5プロキシサーバーのアドレス、あるいはホスト名。
+
+=item socks_pass
+
+  socks_pass => 'secr3t'
+
+SOCKS5認証が利用するパスワード。
+
+=item socks_port
+
+  socks_port => 9050
+
+接続に利用するSOCKS5プロキシサーバーのポート。
+
+=item socks_user
+
+  socks_user => 'sri'
+
+SOCKS5認証が利用するユーザー名。
+
+=item timeout
+
+  timeout => 15
+
+確立されつつある接続がキャンセルされるまでの最大の秒数。
+デフォルトはC<10>。
+
+=item tls
+
+  tls => 1
+
+TLSを有効にする。
+
+=item tls_ca
+
+  tls_ca => '/etc/tls/ca.crt'
+
+TLS認証局ファイルへのパス。 ホスト名の検査も有効になります。
+
+=item tls_cert
+
+  tls_cert => '/etc/tls/client.crt'
+
+TLS証明書ファイルへのパス。
+
+=item tls_key
+
+  tls_key => '/etc/tls/client.key'
+
+TLSキーファイルへのパス。
+
+=back
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。5月22日更新)
+
+=cut

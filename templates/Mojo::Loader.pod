@@ -1,0 +1,111 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Loader
+
+=head1 名前
+
+Mojo::Loader - あらゆる種類のものをロードする
+
+=head1 使い方
+
+  use Mojo::Loader qw(data_section find_modules load_class);
+
+  # 名前空間の中のモジュールを探す
+  for my $module (find_modules 'Some::Namespace') {
+
+    # 安全にロードする
+    my $e = load_class $module;
+    warn qq/Loading "$module" failed: $e/ if ref $e;
+
+    # DATAセクションからファイルを抽出する
+    say data_section($module, 'some_file.txt');
+  }
+
+=head1 説明
+
+[[Mojo::Loader]]はクラスのローダーとプラグインのフレームワークです。
+モジュールの探索とクラスのロードとは別に、
+複数のファイルを、クラスのC<DATA>セクションに保存することもできます。
+これは、個別にアクセス可能です。
+
+  package Foo;
+
+  1;
+  __DATA__
+
+  @@ test.txt
+  This is the first file.
+
+  @@ test2.html (base64)
+  VGhpcyBpcyB0aGUgc2Vjb25kIGZpbGUu
+
+  @@ test
+  This is the
+  third file.
+
+それぞれのファイルはC<@@>で始まるヘッダを持ち、
+その後にファイル名と、そのコンテンツのデコードのためのオプションの指示が続きます。
+現在はBase64エンコーディングがサポートされています。
+これはバイナリデータの保存のためにとても便利です。
+
+=head1 関数
+
+[[Mojo::Loader]]は[[Mojo::Base]]の関数を実装しており、
+個別にインポート可能です。
+
+=head2 data_section
+
+  my $all   = data_section 'Foo::Bar';
+  my $index = data_section 'Foo::Bar', 'index.html';
+
+クラスのC<DATA>セクションから埋め込まれたファイルを抽出します。
+最初にアクセスされたときに、すべてのファイルがキャッシュされます。
+
+  say for keys %{data_section 'Foo::Bar'};
+
+=head2 file_is_binary
+
+  my $bool = file_is_binary 'Foo::Bar', 'test.png';
+
+クラスのC<DATA>セクション埋め込まれたファイルがBase64エンコードされているかをチェックします。
+
+=head2 find_modules
+
+  my @modules = find_modules 'MyApp::Namespace';
+
+再起せずに、名前空間の中にあるモジュールを検索します。
+
+=head2 find_packages
+
+  my @pkgs = find_packages 'MyApp::Namespace';
+
+再帰せずに名前空間からパッケージを検索します。
+
+=head2 load_class
+
+  my $e = load_class 'Foo::Bar';
+
+クラスをロードし、例外をキャッチします。
+すでにロードされているかを見るためにC<new>によってチェックされることに注意してください。
+
+
+クラスをロードして例外をキャッチし、ロードが失敗した場合は偽を返します。
+成功した場合、クラスが見つからなかった場合は真の値、ロードに失敗した場合は[[Mojo::Exception]]を返します。
+オブジェクトクラスはC <new>メソッドをチェックして
+それらがすでにロードされているかどうかを確認します。そのため、同じクラスを複数回ロードしようとします。
+異なる結果が生じる可能性があります。
+
+  # 例外を処理する
+  if (my $e = load_class 'Foo::Bar') {
+    die ref $e ? "Exception: $e" : 'Not found!';
+  }
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月22日更新)
+
+=cut

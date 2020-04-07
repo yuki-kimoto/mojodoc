@@ -1,0 +1,126 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Asset::Memory
+
+=head1 名前
+
+Mojo::Asset::Memory - HTTPコンテンツのメモリストレージ
+
+=head1 使い方
+
+  use Mojo::Asset::Memory;
+
+  my $mem = Mojo::Asset::Memory->new;
+  $mem->add_chunk('foo bar baz');
+  say $mem->slurp;
+
+=head1 説明
+
+[[Mojo::Asset::Memory]]はHTTPコンテンツのためのメモリストレージのバックエンドです。
+
+=head1 イベント
+
+[[Mojo::Asset::Memory]]は[[Mojo::Asset]]からのすべてのイベントを継承し、次のイベントを発行します。
+
+=head2 upgrade
+
+  $mem->on(upgrade => sub {
+    my ($mem, $file) = @_;
+    ...
+  });
+
+[[Mojo::Asset::File]]オブジェクトにアップグレードするときに発行されます。
+
+  $mem->on(upgrade => sub {
+    my ($mem, $file) = @_;
+    $file->tmpdir('/tmp');
+  });
+
+=head1 属性
+
+[[Mojo::Asset::Memory]]は[[Mojo::Asset]]のすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 auto_upgrade
+
+  my $bool = $mem->auto_upgrade;
+  $mem     = $mem->auto_upgrade($bool);
+
+コンテンツのサイズがC<max_memory_size>の限界を超えたときに
+自動的に[[Mojo::Asset::File]]オブジェクトにアップロードするかどうかを設定。
+
+=head2 max_memory_size
+
+  my $size = $mem->max_memory_size;
+  $mem     = $mem->max_memory_size(1024);
+
+メモリ上に保存できる最大の資源バイトサイズ、この限界に達成した後にのみ、
+[[Mojo::Asset::File]]へのアップグレードが試みられます。
+デフォルトはC<MOJO_MAX_MEMORY_SIZE>の値か、C<262144>(256KB)です。
+
+=head2 mtime
+
+  my $mtime = $mem->mtime;
+  $mem      = $mem->mtime(1408567500);
+
+資源の修正時刻。デフォルトは、C<$^T>の値です。
+
+=head1 メソッド
+
+[[Mojo::Asset::Memory]]は[[Mojo::Asset]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 add_chunk
+
+  $mem     = $mem->add_chunk('foo bar baz');
+  my $file = $mem->add_chunk('abc' x 262144);
+
+データのチャンクを資源に追加し、必要であれば[[Mojo::Asset::File]]にアップグレードします。
+
+=head2 contains
+
+  my $position = $mem->contains('bar');
+
+資源が、指定した文字列を含んでいるかをチェックします。
+
+=head2 get_chunk
+
+  my $bytes = $mem->get_chunk($offset);
+  my $bytes = $mem->get_chunk($offset, $max);
+
+指定した位置から始まる、データのチャンクを取得します。
+最大チャンクサイズのデフォルトはC<131072>バイト(128KB)です。
+
+=head2 move_to
+
+   $mem = $mem->move_to('/home/sri/foo.txt');
+
+資源データを指定したファイルに移動します。
+
+=head2 size
+
+  my $size = $mem->size;
+
+資源データのバイトサイズです。
+
+=head2 slurp
+
+  my $string = $mem->slurp;
+
+一度にすべての資源データを読み込みます。
+
+=head2 to_file
+
+  my $file = $mem->to_file;
+
+資源を[[Mojo::Asset::File]]オブジェクトに変換します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(2019/03/16 Mojolicious 8.12)
+
+=cut

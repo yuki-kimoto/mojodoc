@@ -1,0 +1,639 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious - リアルタイムWebフレームワーク
+
+=head1 使い方
+
+  # アプリケーション
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  # ルート(Route)
+  sub startup {
+    my $self = shift;
+    $self->routes->get('/hello')->to('foo#hello');
+  }
+
+  # コントローラー
+  package MyApp::Controller::Foo;
+  use Mojo::Base 'Mojolicious::Controller';
+
+  # アクション
+  sub hello {
+    my $self = shift;
+    $self->render(text => 'Hello World!');
+  }
+
+=head1 説明
+
+強力なL <Mojo> Web上に構築された素晴らしいリアルタイムWebフレームワーク
+開発ツールキット。 RESTfulなルート、プラグイン、コマンドをサポート
+Perl風のテンプレート、コンテンツネゴシエーション、セッション管理、フォーム検証、
+テストフレームワーク、静的ファイルサーバ、C<CGI>/C<PSGI>検出、ファーストクラス
+のUnicodeサポート。より多くは、新名が発見してください。
+
+素晴らしいドキュメントである[[Mojolicious::Guides]]を見てください。
+
+=head1 フック
+
+[[Mojolicious]]は並べられた順で次のフックを発行します。
+
+  $app->hook(after_dispatch => sub {...});
+
+=head2 before_server_start
+
+アプリケーションサーバーが起動する直前に発行されます。
+L<Mojo::Server::CGI>を除くすべてのビルトインサーバーを含むサポートがあります。
+
+  $app->hook(before_server_start => sub {
+    my ($server, $app) = @_;
+    ...
+  });
+
+アプリケーションサーバーを動的に再構成したり、サーバー診断情報を収集したりするのに便利です。
+（サーバーとアプリケーションオブジェクトを渡します）
+
+=head2 after_build_tx
+
+トランザクションが構築された直後、かつ HTTP リクエストが解析される前に
+発生します。
+
+  $app->hook(after_build_tx => sub {
+    my ($tx, $app) = @_;
+    ...
+  });
+
+これはとても強力なフックで簡単には利用されるべきではないでしょう。より進んだ機能としてアップロードの
+進捗バーなどに利用できますが、埋め込まれたアプリケーションでは、
+ホストアプリケーションだけが、トランザクションをビルドできるので、
+機能しないということに
+注意してください。
+(トランザクションとアプリケーションのインスタンスが渡されます。)
+
+=head2 around_dispatch
+
+新しいリクエストを受信した直後に発行され、ディスパッチプロセス全体をラップします。
+ですので、チェーンを継続するためには、次のフックに手動で転送する必要があります。
+。[[Mojolicious::Plugin::DefaultHelpers]]の"reply-E<gt>exception"は、チェーンにおける最初のフックで、
+"reply-E<gt>exception"の呼び出しが最後です。あなたのディスパッチは、この間に入ります。
+
+  $app->hook(around_dispatch => sub {
+    my ($next, $c) = @_;
+    ...
+    $next->();
+    ...
+  });
+
+これは非常に強力なフックであり、安易に使用してはいけません。
+たとえば、アプリケーション全体の例外処理をカスタマイズします。
+あなたのツールボックスの中のハンマーと考えてください。 （次のフックにつながるコールバックと
+デフォルトのコントローラオブジェクトを渡します）
+
+=head2 before_dispatch
+
+静的ファイルサーバーとルーターが仕事を開始する直前に発生します。
+
+  $app->hook(before_dispatch => sub {
+    my $c = shift;
+    ...
+  });
+
+入ってくるリクエストや、その他の前処理タスクを書き換えるのにとても有用です。
+(デフォルトのコントローラオブジェクトが渡されます)
+
+=head2 after_static
+
+静的ファイルサーバーが生成した静的ファイルの応答の後に発生します。
+
+  $app->hook(after_static => sub {
+    my $c = shift;
+    ...
+  });
+
+ほとんどの場合は静的ファイルのレスポンスの後処理のために利用されます。
+(デフォルトのコントローラーオブジェクトを渡されます。)
+
+=head2 before_routes
+
+静的ファイルサーバーが静的ファイルをサーブすべきかどうか決定した後、
+ルーターが仕事を開始する前に発生します。
+
+  $app->hook(before_routes => sub {
+    my $c = shift;
+    ...
+  });
+
+ほとんどの場合はカスタムディスパッチャーのためか、
+メトリクスを収集するために利用されます。
+(デフォルトのコントローラーオブジェクトが渡されます。)
+
+=head2 around_action
+
+アクションが実行されたすぐ後にフックが発行され、それをラップします。
+チェーンを続けたい場合は、次のフックヘ手動で進めなければなりません。
+デフォルトのアクションのディスパッチはチェーンの最後のフックです。
+あなたのものは、その前に実行されます。
+
+  $app->hook(around_action => sub {
+    my ($next, $c, $action, $last) = @_;
+    ...
+    return $next->();
+  });
+
+これはとても強力なフックで、軽い気持ちで利用されるべきではありません。
+たとえば、追加の引数をアクションに渡したり、
+戻り値を違った方法で処理したりすることができます。
+(次のフックに導くコールバック、現在のコントローラーオブジェクト、
+アクションコールバック、このアクションがエンドポイントである場合の
+フラグが渡されます。)
+
+=head2 before_render
+
+レンダラーによって生成されたコンテンツの前に、フックが発行されます。
+このフックは動的な性質のために、順序がばらばらで呼びだれることに
+注意してください。
+埋め込みのアプリケーションでは、描画しているアプリケーションでだけ
+動くでしょう。
+
+  $app->hook(before_render => sub {
+    my ($c, $args) = @_;
+    ...
+  });
+
+ほとんどの場合、レンダラーに渡される引数を
+事前に処理するために利用されます。
+(現在のコントローラーオブジェクトと描画の引数が渡されます。)
+
+=head2 after_render
+
+部分的ではないコンテンツがレンダラーによって生成された後に発生します。
+このフックは動的な性質のために、適切でなく実行される可能性があり、
+埋め込みのアプリケーションの場合はレンダリングしているアプリケーションのため
+だけに働くことに注意してください。
+
+  $app->hook(after_render => sub {
+    my ($c, $output, $format) = @_;
+    ...
+  });
+
+ほとんどの場合は、動的に生成されたコンテンツの後処理に利用されます。
+(現在のコントローラーオブジェクト、コンテンツへのリファレンス、フォーマットが渡されます。)
+
+=head2 after_dispatch
+
+描画されたコンテンツの後に、逆順で発生します。
+このフックは動的な性質のために、適切でなく実行される可能性があり、
+埋め込みのアプリケーションの場合はレンダリングしているアプリケーションのため
+だけに働くことに注意してください。
+
+  $app->hook(after_dispatch => sub {
+    my $c = shift;
+    ...
+  });
+
+外にでていくレスポンスを再編集し、タスクを後処理するのに便利です。
+(コントローラーオブジェクトが渡されます。)
+
+=head2 around_dispatch
+
+C<before_dispatch>の直前に発生し、ディスパッチプロセス全体をラップします。
+ですので、チェーンを続けたいときは手動でC<next>フックを進めなければなりません。
+[[Mojolicious::Plugin::DefaultHelpers]]のC<reply-E<gt>exception>によるデフォルトの例外処理は、
+チェーンの最初フックと最後のディスパッチの呼び出しです。
+あなたのものはその間にあります。
+
+  $app->hook(around_dispatch => sub {
+    my ($next, $c) = @_;
+    $next->();
+  });
+
+これはとても強力なフックで簡単には利用されるべきではありませんが、
+たとえば、アプリケーションの広い例外をカスタマイズすることができます。
+ツールボックスの中でとても強力なものと考えられます。
+(次のフックに続くクロージャーと現在のコントローラーのオブジェクトが渡されます。)
+
+=head1 属性
+
+[[Mojolicious]] は [[Mojo]] から全ての属性を継承しており、 以下の新しい
+属性を実装しています。
+
+=head2 commands
+
+  my $commands = $app->commands;
+  $app         = $app->commands(Mojolicious::Commands->new);
+
+アプリケーションのためのコマンドラインインターフェース。
+デフォルトは[[Mojolicious::Commands]]オブジェクト。
+
+  # コマンドをロードするための他の名前空間
+  push @{$app->commands->namespaces}, 'MyApp::Command';
+
+=head2 controller_class
+
+  my $class = $app->controller_class;
+  $app      = $app->controller_class('Mojolicious::Controller');
+
+デフォルトのコントローラーとして利用されるクラスで、
+デフォルトは [[Mojolicious::Controller]] です。
+
+=head2 home
+
+  my $home = $app->home;
+  $app     = $app->home(Mojo::Home->new);
+
+アプリケーションのホームディレクトリで、デフォルトでは[[Mojo::Home]]オブジェクトです。
+このオブジェクトは実際のパスに文字列化することができます。
+
+  # ホームディレクトリを基準にしたポータブルなパスを生成
+  my $path = $app->home->child('data', 'important.txt');
+
+=head2 log
+
+  my $log = $app->log;
+  $app    = $app->log(Mojo::Log->new);
+    
+アプリケーションのロギング層です。デフォルトでは[[Mojo::Log]]オブジェクトです。
+レベルはデフォルトでC<MOJO_LOG_LEVEL>環境変数か、モードがC<development>ならC<debug>、そうでない場合は、C<info>になります。
+すべてのメッセージは、C<STDERR>か、C<log>が存在していた場合は、C<log/$mode.log>に出力されます。
+
+ # debugメッセージをログに出力
+  $app->log->debug('It works!');
+
+=head2 max_request_size
+
+  my $max = $app->max_request_size;
+  $app    = $app->max_request_size(16777216);
+
+リクエストの最大バイトサイズ。デフォルトは[[Mojo::Message]]の値です。値をC<0>に設定すると、
+リクエストに無限のサイズを許可します。この値を大きくすると劇的に、メモリ使用が増えることに注意してください。
+たとえば、とても大きなリクエストボディをL<Mojo::Message>の"dom"かL<Mojo::Message>の"json"で解析を試みようとする場合などです。
+
+=head2 mode
+
+  my $mode = $app->mode;
+  $app     = $app->mode('production');
+
+アプリケーションのオペレーションモード、
+デフォルトは、C<MOJO_MODE>とC<PLACK_ENV>からの値、
+あるいはC<development>です。
+
+=head2 moniker
+
+  my $moniker = $app->moniker;
+  $app        = $app->moniker('foo_bar');
+
+このアプリケーションのモニカー。設定ファイルのためのデフォルトの
+ファイル名としてしばしば利用されます。
+[[Mojo::Util]]のC<decamelize>でアプリケーションクラスを
+デキャメライズしたものがデフォルトの値です。
+
+=head2 plugins
+
+  my $plugins = $app->plugins;
+  $app        = $app->plugins(Mojolicious::Plugins->new);
+
+プラグインマネージャー。デフォルトは L<Mojolicious::Plugins> オブジェクトです。
+通常はこれを気にしなくても構いません。
+
+プラグインをロードしたいのであればC<plugin>メソッドを利用してください。
+
+  # プラグインをロードするための他の名前空間を追加
+  push @{$app->plugins->namespaces}, 'MyApp::Plugin';
+
+=head2 renderer
+
+  my $renderer = $app->renderer;
+  $app         = $app->renderer(Mojolicious::Renderer->new);
+
+アプリケーションで内容を表示するのに使用され、デフォルトは
+[[Mojolicious::Renderer]]オブジェクトです。
+コンテンツの生成に関するより多くの情報を得るには、
+[[Mojolicious::Guides::Rendering]]
+を見てください。
+
+  # 圧縮を有効にする
+  $app->renderer->compress(1);
+
+  # 他の"templates"ディレクトリを追加
+  push @{$app->renderer->paths}, '/home/sri/templates';
+
+  # 優先順位の高い他の"templates"ディレクトリを追加
+  unshift @{$app->renderer->paths}, '/home/sri/themes/blue/templates';
+
+  # DATAセクションのテンプレートのための他のクラスを追加
+  push @{$app->renderer->classes}, 'Mojolicious::Plugin::Fun';
+
+=head2 routes
+
+  my $routes = $app->routes;
+  $app       = $app->routes(Mojolicious::Routes->new);
+
+ルートディスパッチャ。デフォルトは L<Mojolicious::Routes> オブジェクトです。
+startup メソッドの中で、アプリケーションに URL のエンドポイントを
+定義するために使用します。
+
+  # ルートの追加
+  my $r = $app->routes;
+  $r->get('/foo/bar')->to('test#foo', title => 'Hello Mojo!');
+  $r->post('/baz')->to('test#baz');
+
+  # コントローラーをロードするために他の名前空間を追加
+  push @{$app->routes->namespaces}, 'MyApp::MyController';
+
+=head2 secrets
+
+  my $secrets = $app->secrets;
+  $app        = $app->secrets(['passw0rd']);
+
+署名付きクッキーのための秘密のパスフレーズで、
+デフォルトはこのアプリケーションのC<moniker>の値です。
+これはあまりセキュアではありませんので、変更すべきです。
+セキュアではないデフォルトを使っている限り、
+ログファイルの中に、パスフレーズを変えるように思い起こさせる
+デバッグメッセージが出力されます。
+けれども、それらすべては確認のためです。
+パスフレーズを回転させることによって存在しているすべての書名つきクッキーを
+無効にすることなしに、セキュリティを向上させることができます。
+新しいものは先頭に追加し、後ろから取り除いてください。
+
+  # パスフレーズをローテーションさせる。
+  $app->secrets(['new_passw0rd', 'old_passw0rd', 'very_old_passw0rd']);
+
+=head2 sessions
+
+  my $sessions = $app->sessions;
+  $app         = $app->sessions(Mojolicious::Sessions->new);
+
+簡単な署名付きクッキーに基いたセッションで、デフォルトは
+L<Mojolicious::Sessions> オブジェクトです。
+通常はこれは無視してください。
+セッションのデータを利用するための情報としては[[Mojolicious::Controller]]のC<session>を見てください。
+
+  # すべてのセッションのために利用されるクッキー名を変更する
+  $app->sessions->cookie_name('mysession');
+
+  # 同じサイトの機能を無効にする
+  $app->sessions->samesite(undef);
+
+=head2 static
+
+  my $static = $app->static;
+  $app       = $app->static(Mojolicious::Static->new);
+
+C<public> ディレクトリから静的資源を提供するためのもので、デフォルトは
+L<Mojolicious::Static> オブジェクトです。
+
+  # 他の"public"ディレクトリを追加
+  push @{$app->static->paths}, '/home/sri/public';
+
+  # 高い優先順位で、他の"public"ディレクトリを追加
+  unshift @{$app->static->paths}, '/home/sri/themes/blue/public';
+
+  # DATAセクションにおける静的ファイルのためのクラスを追加
+  push @{$app->static->classes}, 'Mojolicious::Plugin::Fun';
+
+  # ビルトインのファビコンを削除
+  delete $app->static->extra->{'favicon.ico'};
+
+=head2 types
+
+  my $types = $app->types;
+  $app      = $app->types(Mojolicious::Types->new);
+
+MIMEタイプをファイル拡張子に紐づけるための割り当て。デフォルトは[[Mojolicious::Types]]オブジェクト。
+
+  # カスタムのMIMEタイプを追加
+  $app->types->type(twt => 'text/tweet');
+
+=head2 types
+
+  my $types = $app->types;
+  $app      = $app->types(Mojolicious::Types->new);
+
+ファイル拡張子に関連付けられるMIMEタイプ。
+
+  $app->types->type(twt => 'text/tweet');
+
+=head2 ua
+
+  my $ua = $app->ua;
+  $app   = $app->ua(Mojo::UserAgent->new);
+
+アプリケーションで利用するための完全な機能を持つHTTP1.1ユーザーエージェント。
+デフォルトは[[Mojo::UserAgent]]オブジェクトです。
+
+  # ブロッキングなリクエストを実行
+  say $app->ua->get('example.com')->result->body;
+
+=head2 validator
+
+  my $validator = $app->validator;
+  $app          = $app->validator(Mojolicious::Validator->new);
+
+パラメーターを検証する。
+デフォルトは、[[Mojolicious::Validator]]オブジェクトです。
+
+  # バリデーションのチェックを追加
+  $app->validator->add_check(foo => sub {
+    my ($v, $name, $value) = @_;
+    return $value ne 'foo';
+  });
+
+  # バリデーションのフィルターを追加
+  $app->validator->add_filter(quotemeta => sub {
+    my ($v, $name, $value) = @_;
+    return quotemeta $value;
+  });
+
+=head1 メソッド
+
+[[Mojolicious]] は [[Mojo]] から全てのメソッドを継承しており、以下の新しい
+メソッドを実装しています。
+
+=head2 build_controller
+
+  my $c = $app->build_controller;
+  my $c = $app->build_controller(Mojo::Transaction::HTTP->new);
+  my $c = $app->build_controller(Mojolicious::Controller->new);
+
+デフォルトコントローラーオブジェクトを"controller_class"で構築する。
+
+  # アプリケーションからテンプレートを描画
+  my $foo = $app->build_controller->render_to_string(template => 'foo');
+
+=head2 build_tx
+
+  my $tx = $app->build_tx;
+
+[[Mojo::Transaction::HTTP]]オブジェクトを構築し、"after_build_tx"フックを発生させます。
+
+=head2 config
+
+  my $hash = $app->config;
+  my $foo  = $app->config('foo');
+  $app     = $app->config({foo => 'bar'});
+  $app     = $app->config(foo => 'bar');
+
+アプリケーションの設定。
+
+  # 値の削除
+  my $foo = delete $app->config->{foo};
+
+  # 複数の値を一度に代入する
+  $app->config(foo => 'test', bar => 23);
+
+=head2 defaults
+
+  my $hash = $app->defaults;
+  my $foo  = $app->defaults('foo');
+  $app     = $app->defaults({foo => 'bar'});
+  $app     = $app->defaults(foo => 'bar');
+
+[[Mojolicious::Controller]]のC<stash>のための
+デフォルト値です。新しいリクエストのたびに設定されます。
+
+  # 値を取り除く
+  my $foo = delete $app->defaults->{foo};
+
+  # 複数の値を一度に代入
+  $app->defaults(foo => 'test', bar => 23);
+
+=head2 dispatch
+
+  $app->dispatch(Mojolicious::Controller->new);
+
+[[Mojolicious]]アプリケーションの心臓部で、リクエストごとに静的ディスパッチャ、
+ルートディスパッチャを呼び出し、それらに [[Mojolicious::Controller]]
+オブジェクトを渡します。
+
+=head2 handler
+
+  $app->handler(Mojo::Transaction::HTTP->new);
+  $app->handler(Mojolicious::Controller->new);
+
+デフォルトのコントローラーをセットアップし、すべてのリクエストに対し"around_dispatch"フックを発生させます。
+
+=head2 handler
+
+  $app->handler(Mojo::Transaction::HTTP->new);
+  $app->handler(Mojolicious::Controller->new);
+
+デフォルトコントローラを準備し、リクエストごとにC<around_dispatch>フックを発行します。
+
+=head2 helper
+
+  $app->helper(foo => sub {...});
+
+コントローラオブジェクトとアプリケーションオブジェクトのメソッドとして、
+また、 C<ep> テンプレートの関数として利用できる新しいヘルパーを追加します。
+
+デフォルトで利用可能な、すべてのヘルパーのリストは[[Mojolicious::Plugin::DefaultHelpers]]と[[Mojolicious::Plugin::TagHelpers]]を見てください。
+
+  # ヘルパー
+  $app->helper(cache => sub { state $cache = {} });
+
+  # アプリケーション
+  $app->cache->{foo} = 'bar';
+  my $result = $app->cache->{foo};
+
+  # コントローラー
+  $c->cache->{foo} = 'bar';
+  my $result = $c->cache->{foo};
+
+  # テンプレート
+  % cache->{foo} = 'bar';
+  %= cache->{foo}
+
+=head2 hook
+
+  $app->hook(after_dispatch => sub {...});
+
+フックで[[Mojolicious]]を拡張します。
+すべてのリクエストで無差別にコードを共有することを可能にします。
+利用できるフックのすべてのリストはC<フック>を見てください。
+
+  # すでに定義されているレスポンスコードがあれば、ディスパッチャーは実行されません
+  $app->hook(before_dispatch => sub {
+    my $c = shift;
+    $c->render(text => 'Skipped static file server and router!')
+      if $c->req->url->path->to_route =~ /do_not_dispatch/;
+  });
+
+=head2 new
+
+  my $app = Mojolicious->new;
+  my $app = Mojolicious->new(moniker => 'foo_bar');
+  my $app = Mojolicious->new({moniker => 'foo_bar'});
+
+新しい [[Mojolicious]] アプリケーションを構築し、C<startup>を呼び出します。
+ホームディレクトリを自動的に検知し、現在の実行モードに基いてロギングを
+準備します。
+レンダラ、静的ディスパッチャ、プラグインのデフォルトセット、
+デフォルトの例外を処理するC<around_dispatch>フックを発生準備します。
+
+=head2 plugin
+
+  $app->plugin('some_thing');
+  $app->plugin('some_thing', foo => 23);
+  $app->plugin('some_thing', {foo => 23});
+  $app->plugin('SomeThing');
+  $app->plugin('SomeThing', foo => 23);
+  $app->plugin('SomeThing', {foo => 23});
+  $app->plugin('MyApp::Plugin::SomeThing');
+  $app->plugin('MyApp::Plugin::SomeThing', foo => 23);
+  $app->plugin('MyApp::Plugin::SomeThing', {foo => 23});
+
+[[Mojolicious::Plugins]]のC<register_plugin>を使ってプラグインをロードします。
+すべての
+
+[[Mojolicious]]に含まれているすべてのサンプルプラグインのリストは[[Mojolicious::Plugins]]の
+C<プラグイン>の項目で見ることができます。
+
+=head2 start
+
+  $app->start;
+  $app->start(@ARGV);
+
+アプリケーションのために[[Mojolicious::Commands]]のC<start>でコマンドライン
+インターフェースを開始します。
+
+C<-h>/C<--help>, C<--home>とC<-m>/C<--mode>のオプションは、
+すべてのコマンドで共有され、コンパイルタイムの間に、
+C<@ARGV>から解析されることに注意してください。
+
+  # いつもデーモンを開始
+  $app->start('daemon', '-l', 'http://*:8080');
+
+=head2 startup
+
+  $app->startup;
+
+これはアプリケーションにおけるあなたの主要フックです。アプリケーション開始時に
+呼び出されます。サブクラスでオーバーロードされます。
+
+  sub startup {
+    my $self = shift;
+  }
+
+=head1 ヘルパー
+
+上記の属性とメソッドに加えて、Mojoliciousのインスタンスにおいてヘルパーを呼び出すことができます。
+これは[[Mojolicious::Plugin::DefaultHelpers]]と[[Mojolicious::Plugin::TagHelpers]]からすべての
+ヘルパーを含んでいます。
+アプリケーションのヘルパーはいつでも新しいC<controller_class>インスタンスから呼び出されることに
+注意してください。ですのでそれらは、リクエストやレスポンスやスタッシュを含むコントローラーの状態に依存したり、
+コントローラの状態を変更することはできません。
+
+  # ヘルパーを呼ぶ
+  say $app->dumper({foo => 'bar'});
+
+  # 長いバージョン
+  say $app->build_controller->helpers->dumper({foo => 'bar'});
+
+(Mojolicious 8.12を反映。2019年6月3日更新)
+
+=cut

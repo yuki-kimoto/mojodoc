@@ -1,0 +1,68 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::psgi - PSGIコマンド
+
+=head1 使い方
+
+  Usage: APPLICATION psgi [OPTIONS]
+
+    ./myapp.pl psgi
+
+  Options:
+    -h, --help          Show this summary of available options
+        --home <path>   Path to home directory of your application, defaults to
+                        the value of MOJO_HOME or auto-detection
+    -m, --mode <name>   Operating mode for your application, defaults to the
+                        value of MOJO_MODE/PLACK_ENV or "development"
+
+=head1 説明
+
+[[Mojolicious::Command::psgi]]は
+[[Mojo::Server::PSGI]]をバックエンドとするアプリケーション
+を開始します。
+
+これはコアのコマンドです。いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+=head1 属性
+
+[[Mojolicious::Command::psgi]]は[[Mojo::Command]]
+からすべての属性を
+継承しており、次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $psgi->description;
+  $psgi           = $psgi->description('Foo');
+
+このコマンドの短い説明。コマンド一覧のために利用されます。
+
+=head2 usage
+
+  my $usage = $psgi->usage;
+  $psgi     = $psgi->usage('Foo');
+
+このコマンドの使用情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::psgi]]は[[Mojo::Command]]
+のすべてのメソッドを実装しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  my $app = $psgi->run;
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

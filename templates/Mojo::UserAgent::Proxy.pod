@@ -1,0 +1,75 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::UserAgent::Proxy - ユーザーエージェントのプロキシマネージャー
+
+=head1 使い方
+
+  use Mojo::UserAgent::Proxy;
+
+  my $proxy = Mojo::UserAgent::Proxy->new;
+  $proxy->detect;
+  say $proxy->http;
+
+=head1 説明
+
+[[Mojo::UserAgent::Proxy]]は[[Mojo::UserAgent]]のためのプロキシサーバーを管理します。
+
+=head1 ATTRIBUTES
+
+[[Mojo::UserAgent::Proxy]]は次の属性を実装しています。
+
+=head2 http
+
+  my $http = $proxy->http;
+  $proxy   = $proxy->http('socks://sri:secret@127.0.0.1:8080');
+
+HTTPとWebSocketリクエストのために利用するプロキシサーバー。
+
+=head2 https
+
+  my $https = $proxy->https;
+  $proxy    = $proxy->https('http://sri:secret@127.0.0.1:8080');
+
+HTTPSとWebSocketリクエストのために利用するプロキシサーバー。
+
+=head2 not
+
+  my $not = $proxy->not;
+  $proxy  = $proxy->not([qw(localhost intranet.mojolicio.us)]);
+
+プロキシサーバーを利用することを必要としないドメイン。
+
+=head1 メソッド
+
+[[Mojo::UserAgent::Proxy]]は[[Mojo::Base]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 detect
+
+  $proxy = $proxy->detect;
+
+プロキシ情報のために環境変数C<HTTP_PROXY>, C<http_proxy>, C<HTTPS_PROXY>,
+C<https_proxy>, C<NO_PROXY>とC<no_proxy>をチェックします。
+jC<MOJO_PROXY>環境変数で、自動的なプロキシの検知が有効になります。
+
+=head2 is_needed
+
+  my $bool = $proxy->is_needed('intranet.example.com');
+
+ドメインのためのリクエストがプロキシサーバーを使っているかをチェックします。
+
+=head2 prepare
+
+  $proxy->prepare(Mojo::Transaction::HTTP->new);
+
+トランザクションのために、プロキシサーバー情報を準備します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月30日更新)

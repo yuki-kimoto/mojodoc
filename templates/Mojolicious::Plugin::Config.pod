@@ -1,0 +1,124 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojolicious::Plugin::Config
+
+=head1 名前
+
+Mojolicious::Plugin::Config - Perl的なコンフィグプラグイン
+
+=head1 使い方
+
+  # myapp.conf (it's just Perl returning a hash)
+  {
+    # Just a value
+    foo => "bar",
+
+    # Nested data structures are fine too
+    baz => ['♥'],
+
+    # You have full access to the application
+    music_dir => app->home->child('music')
+  };
+
+  # Mojolicious
+  my $config = $self->plugin('Config');
+  say $config->{foo};
+
+  # Mojolicious::Lite
+  my $config = plugin 'Config';
+  say $config->{foo};
+
+  # foo.html.ep
+  %= $config->{foo}
+
+  # 設定はアプリケーション全体で利用可能
+  my $config = app->config;
+  say $config->{foo};
+
+  # オプションですべてがカスタマイズ可能
+  my $config = plugin Config => {file => '/etc/myapp.stuff'};
+
+=head1 説明
+
+L<Mojolicious::Plugin::Config>はPerl的なコンフィグプラグインです。
+
+C<$app>変数かC<app>関数を通して、アプリケーションオブジェクトにアクセスできます。
+L<strict>, L<warnings>, L<utf8>と Perl 5.10 L<features>が自動的に
+有効になっています。
+通常のコンフィグファイルC<myapp.conf>をC<myapp.$mode.conf>のように
+C<mode>を指定して拡張することができます。
+デフォルトのコンフィグのファイル名はアプリケーションクラスは
+[[Mojolicious]]のC<moniker>メソッドの値から生成されます。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 オプション
+
+=head2 default
+
+  # Mojolicious::Lite
+  plugin Config => {default => {foo => 'bar'}};
+
+デフォルトの設定。設定ファイルをオプショナルなものにします。
+
+=head2 ext
+
+  # Mojolicious::Lite
+  plugin Config => {ext => 'stuff'};
+
+コンフィグファイルのファイル拡張子です。デフォルトはC<conf>。
+
+=head2 file
+
+  # Mojolicious::Lite
+  plugin Config => {file => 'myapp.conf'};
+  plugin Config => {file => '/etc/foo.stuff'};
+
+コンフィグファイル。デフォルトはC<MOJO_CONFIG>の値かアプリケーションのホームディレクトリの中のC<$moniker.conf>
+です。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::Config]]は[[Mojolicious::Plugin]]
+のすべてのメソッドを継承しており、次の新しいメソッドを実装しています。
+
+=head2 load
+
+  $plugin->load($file, $conf, $app);
+
+コンフィグファイルをロードし、コンテンツをC<parse>に渡します。
+
+  sub load {
+    my ($self, $file, $conf, $app) = @_;
+    ...
+    return $self->parse($content, $file, $conf, $app);
+  }
+
+=head2 parse
+
+  $plugin->parse($content, $file, $conf, $app);
+
+コンフィグファイルを解析します。
+
+  sub parse {
+    my ($self, $content, $file, $conf, $app) = @_;
+    ...
+    return $hash;
+  }
+
+=head2 register
+
+  my $config = $plugin->register(Mojolicious->new);
+  my $config = $plugin->register(Mojolicious->new, {file => '/etc/app.conf'});
+
+[[Mojolicious]]アプリケーションにプラグインを登録し、設定をマージします。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月12日更新)
+
+=cut

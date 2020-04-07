@@ -1,0 +1,69 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::routes - ルートコマンド
+
+=head1 使い方
+
+  Usage: APPLICATION routes [OPTIONS]
+
+    ./myapp.pl routes
+    ./myapp.pl routes -v
+
+  Options:
+    -h, --help          Show this summary of available options
+        --home <path>   Path to home directory of your application, defaults to
+                        the value of MOJO_HOME or auto-detection
+    -m, --mode <name>   Operating mode for your application, defaults to the
+                        value of MOJO_MODE/PLACK_ENV or "development"
+    -v, --verbose       Print additional details about routes, flags indicate
+                        C=Conditions, D=Detour, U=Under and W=WebSocket
+
+=head1 説明
+
+[[Mojolicious::Command::routes]]はすべてのアプリケーションのルートを出力します。
+
+いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::routes]]は[[Mojo::Command]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $routes->description;
+  $routes         = $routes->description('Foo');
+
+このコマンドの短い説明。コマンドの一覧表示に利用されます。
+
+=head2 usage
+
+  my $usage = $routes->usage;
+  $routes   = $routes->usage('Foo');
+
+このコマンドの使用方法の情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::routes]]は[[Mojo::Command]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $routes = $routes->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

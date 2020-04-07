@@ -1,0 +1,358 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::ByteStream
+
+=head1 NAME
+
+Mojo::ByteStream - バイトストリーム
+
+=head1 使い方
+
+  use Mojo::ByteStream;
+
+  # バイトストリームの操作
+  my $stream = Mojo::ByteStream->new('foo_bar_baz');
+  say $stream->camelize;
+
+  # チェーンメソッド
+  my $stream = Mojo::ByteStream->new('foo bar baz')->quote;
+  $stream = $stream->unquote->encode('UTF-8')->b64_encode('');
+  say "$stream";
+
+  # もうひとつのコンストラクタを使用
+  use Mojo::ByteStream 'b';
+  my $stream = b('foobarbaz')->b64_encode('')->say;
+
+=head1 説明
+
+[[Mojo::ByteStream]]は、[[Mojo::Util]]の多くの関数に対してより便利なAPIを提供するための、バイトストリームのためのスカラのコンテナです。
+
+  # Access scalar directly to manipulate bytestream
+  my $stream = Mojo::ByteStream->new('foo');
+  $$stream .= 'bar';
+
+=head1 関数
+
+[[Mojo::ByteStream]]は次の関数を実装しています。個々にインポートすることも可能です。
+
+=head2 b
+
+  my $stream = b('test123');
+
+新しい[[Mojo::ByteStream]]オブジェクトを生成します。
+
+=head1 メソッド
+
+[[Mojo::ByteStream]]は次のメソッドを実装しています。
+
+=head2 b64_decode
+
+  $stream = $stream->b64_decode;
+
+[[Mojo::Util]]のC<b64_decode>を使って、バイトストリームをBase64デコードします。
+
+=head2 b64_encode
+
+  $stream = $stream->b64_encode;
+  $stream = $stream->b64_encode('');
+
+[[Mojo::Util]]のC<b64_encode>を使って、バイトストリームをBase64エンコードします。
+
+  b('foo bar baz')->b64_encode('');
+
+=head2 camelize
+
+  $stream = $stream->camelize;
+
+[[Mojo::Util]]のC<camelize>を使って、バイトストリームをキャメライズします。
+
+=head2 clone
+
+  my $stream2 = $stream->clone;
+
+バイトストリームを複製します。
+
+=head2 decamelize
+
+  $stream = $stream->decamelize;
+
+[[Mojo::Util]]のC<decamelize>を使って、バイトストリームをデキャメライズします。
+
+=head2 decode
+
+  $stream = $stream->decode;
+  $stream = $stream->decode('iso-8859-1');
+
+[[Mojo::Util]]のC<decode>を使ってバイトストリームをデコードします。
+デフォルトはC<UTF-8>です。
+
+  # "♥"
+  b('%E2%99%A5')->url_unescape->decode;
+
+
+=head2 encode
+
+  $stream = $stream->encode;
+  $stream = $stream->encode('iso-8859-1');
+
+[[Mojo::Util]]のC<encode>を使って、バイトストリームをエンコードします。
+デフォルトはC<UTF-8>です。
+
+  # "%E2%99%A5"
+  b('♥')->encode->url_escape;
+
+=head2 gunzip
+
+  $stream = $stream->gunzip;
+
+ [[Mojo::Util]]の「gunzip」を使って、バイトストリームを展開します。
+
+=head2 gzip
+
+  stream = $stream->gzip;
+
+[[Mojo::Util]]の「gzip」を使って、バイトストリームを圧縮します。
+
+=head2 hmac_sha1_sum
+
+  $stream = $stream->hmac_sha1_sum($secret);
+
+[[Mojo::Util]]のC<hmac_sha1_sum>を使って、
+バイトストリームのためにHMAC-SHA1チェックサムを生成します。
+
+  # "7fbdc89263974a89210ea71f171c77d3f8c21471"
+  b('foo bar baz')->hmac_sha1_sum('secr3t');
+
+=head2 html_unescape
+
+  $stream = $stream->html_unescape;
+
+[[Mojo::Util]]のC<html_unescape>を使って、
+すべてのHTMLエンティティをアンエスケープします。
+
+  # "%3Chtml%3E"
+  b('&lt;html&gt;')->html_unescape->url_escape;
+
+=head2 md5_bytes
+
+  $stream = $stream->md5_bytes;
+
+[[Mojo::Util]]のC<md5_bytes>を使って、
+バイトストリームのためにバイナリのMD5を生成します。
+
+=head2 md5_sum
+
+  $stream = $stream->md5_sum;
+
+[[Mojo::Util]]のC<md5_sum>を使って、
+バイトストリームのためにMD5を生成します。
+
+=head2 new
+
+  my $stream = Mojo::ByteStream->new('test123');
+
+新しい[[Mojo::ByteStream]]オブジェクトを生成します。
+
+=head2 punycode_decode
+
+  $stream = $stream->punycode_decode;
+
+[[Mojo::Util]]のC<punycode_decode>を使って、
+バイトストリームをPunycodeデコードします。
+
+=head2 punycode_encode
+
+  $stream = $stream->punycode_encode;
+
+[[Mojo::Util]]のC<punycode_encode>を使って、
+バイトストリームをPunycodeエンコードします。
+
+=head2 quote
+
+  $stream = $stream->quote;
+
+[[Mojo::Util]]のC<quote>を使って、
+バイトストリームをクォートします。
+
+=head2 say
+
+  $stream = $stream->say;
+  $stream = $stream->say(*STDERR);
+
+バイトストリームをハンドルかC<STDOUT>に出力し、新しい改行を追加します。
+
+=head2 secure_compare
+
+  my $bool = $stream->secure_compare($str);
+
+[[Mojo::Util]]のC<secure_compare>を使って、
+バイトストリームを比較します。
+
+=head2 sha1_bytes
+
+  $stream = $stream->sha1_bytes;
+
+[[Mojo::Util]]のC<sha1_bytes>を使って、バイトストリームのためにバイナリのSHA1チェックサム
+を生成します。
+
+=head2 sha1_sum
+
+  $stream = $stream->sha1_sum;
+
+[[Mojo::Util]]のC<sha1_sum>を使って、バイトストリームのためにSHA1チェックサム
+を生成します。
+
+=head2 size
+
+  my $size = $stream->size;
+
+バイトストリームのサイズです。
+
+=head2 slugify
+
+  $stream = $stream->slugify;
+  $stream = $stream->slugify($bool);
+
+[[Mojo::Util]]の「slugify」を使って、バイトストリームのためのURLのスラグを生成します。
+
+=head2 split
+
+  my $collection = $stream->split(',');
+  my $collection = $stream->split(',', -1);
+
+バイトストリームを、複数の[[Mojo::ByteStream]]オブジェクトを含む[[Mojo::Collection]]オブジェクトに変換します。
+
+  # "One,Two,Three"
+  b("one,two,three")->split(',')->map('camelize')->join(',');
+
+  # "One,Two,Three,,,"
+  b("one,two,three,,,")->split(',', -1)->map('camelize')->join(',');
+
+=head2 split
+
+  my $collection = $stream->split(',');
+  my $collection = $stream->split(',', -1);
+
+バイトストリームを[[Mojo::ByteStream]]オブジェクトを含んだ[[Mojo::Collection]]オブジェクトに変換します。
+
+  # "One,Two,Three"
+  b("one,two,three")->split(',')->map('camelize')->join(',');
+
+  # "One,Two,Three,,,"
+  b("one,two,three,,,")->split(',', -1)->map('camelize')->join(',');
+
+=head2 tap
+
+  $stream = $stream->tap(sub {...});
+
+[[Mojo::Base]]のC<tap>の別名。
+
+=head2 term_escape
+
+  $stream = $stream->term_escape;
+
+[[Mojo::Util]]のC<term_escape>を使って、
+バイトストリームの中のPOSIXのコントロール文字をエスケープ
+
+  # バイナリチェックサムをターミナルに出力
+  b('foo')->sha1_bytes->term_escape->say;
+
+=head2 to_string
+
+  # "%E2%98%83"
+  b('☃')->encode->url_escape;
+
+バイトストリームを文字列化します。
+
+=head2 trim
+
+  $stream = $stream->trim;
+
+[[Mojo::Util]]のC<trim>を使って、
+バイトストリームの両端から空白を取り除きます。
+
+=head2 unindent
+
+  $stream = $stream->unindent;
+
+[Mojo::Util]]のC<unindent>を使って、バイトストリームをアンインデントします。
+
+=head2 unquote
+
+  $stream = $stream->unquote;
+
+[[Mojo::Util]]のC<unquote>を使って、バイトストリームを
+アンクォートします。
+
+=head2 url_escape
+
+  $stream = $stream->url_escape;
+  $stream = $stream->url_escape('^A-Za-z0-9\-._~');
+
+[[Mojo::Util]]のC<url_escape>を使って、
+バイトストリームの中のすべての安全でない
+文字をパーセントエンコードします。
+
+  b('foo bar baz')->url_escape->say;
+
+=head2 url_unescape
+
+  $stream = $stream->url_unescape;
+
+[[Mojo::Util]]のC<url_unescape>を使って、
+パーセントエンコードされた文字をデコードします。
+
+  # "&lt;html&gt;"
+  b('%3Chtml%3E')->url_unescape->xml_escape;
+
+=head2 with_roles
+
+  my $new_class = Mojo::ByteStream->with_roles('Mojo::ByteStream::Role::One');
+  my $new_class = Mojo::ByteStream->with_roles('+One', '+Two');
+  $stream       = $stream->with_roles('+One', '+Two');
+
+[[Mojo::Base]]の「with_roles」のエイリアス。
+
+=head2 xml_escape
+
+  $stream = $stream->xml_escape;
+
+[[Mojo::Util]]のC<xml_escape>を使って、
+バイトストリームの中の
+C<&>, C<E<lt>>, C<E<gt>>, C<'>
+という文字だけをエスケープします。
+
+=head2 xor_encode
+
+  $stream = $stream->xor_encode($key);
+
+[[Mojo::Util]]のC<xor_encode>を使って、バイトストリームをXORエンコードします。
+
+  # "%04%0E%15B%03%1B%10"
+  b('foo bar')->xor_encode('baz')->url_escape;
+
+=head1 演算子
+
+[[Mojo::ByteStream]]は次の演算子をオーバーロードしています。
+
+=head2 bool
+
+  my $bool = !!$bytestream;
+
+いつでも真です。
+
+=head2 stringify
+
+  my $str = "$bytestream";
+
+C<to_string>の別名。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映)
+
+=cut

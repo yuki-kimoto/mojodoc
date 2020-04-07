@@ -1,0 +1,82 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::JSON::Pointer - JSONポインタ
+
+=head1 使い方
+
+  use Mojo::JSON::Pointer;
+
+  my $pointer = Mojo::JSON::Pointer->new({foo => [23, 'bar']});
+  say $pointer->get('/foo/1');
+  say 'Contains "/foo".' if $pointer->contains('/foo');
+
+=head1 説明
+
+[[Mojo::JSON::Pointer]]は、RFC 6901の緩やかな実装です。
+
+=head1 属性
+
+L<Mojo::JSON::Pointer>は次の属性を実装しています。
+
+=head2 data
+
+  my $data = $pointer->data;
+  $pointer = $pointer->data({foo => 'bar'});
+
+処理されるデータ構造。
+
+=head1 メソッド
+
+=head2 contains
+
+  my $bool = $pointer->contains('/foo/1');
+
+データ(C<data>)がJSONポインタで識別される値を含んでいるかをチェックします。
+
+  # 真
+  Mojo::JSON::Pointer->new('just a string')->contains('');
+  Mojo::JSON::Pointer->new({'♥' => 'mojolicious'})->contains('/♥');
+  Mojo::JSON::Pointer->new({foo => 'bar', baz => [4, 5]})->contains('/foo');
+  Mojo::JSON::Pointer->new({foo => 'bar', baz => [4, 5]})->contains('/baz/1');
+
+  # 偽
+  Mojo::JSON::Pointer->new({'♥' => 'mojolicious'})->contains('/☃');
+  Mojo::JSON::Pointer->new({foo => 'bar', baz => [4, 5]})->contains('/bar');
+  Mojo::JSON::Pointer->new({foo => 'bar', baz => [4, 5]})->contains('/baz/9');
+
+=head2 get
+
+  my $value = $pointer->get($data, '/foo/bar');
+
+与えられたJSONポインタによって識別されるデータ(C<data>)から値を抽出します。
+
+  # "mojolicious"
+  Mojo::JSON::Pointer->new({'♥' => 'mojolicious'})->get('/♥');
+
+  # "bar"
+  Mojo::JSON::Pointer->new({foo => 'bar', baz => [4, 5, 6]})->get('/foo');
+
+  # "4"
+  Mojo::JSON::Pointer->new({foo => 'bar', baz => [4, 5, 6]})->get('/baz/0');
+
+  # "6"
+  Mojo::JSON::Pointer->new({foo => 'bar', baz => [4, 5, 6]})->get('/baz/2');
+
+=head2 new
+
+  my $pointer = Mojo::JSON::Pointer->new;
+  my $pointer = Mojo::JSON::Pointer->new({foo => 'bar'});
+
+新しい[[Mojo::JSON::Pointer]]オブジェクトを生成します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月22日更新)
+
+=cut

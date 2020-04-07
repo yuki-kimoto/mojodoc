@@ -1,0 +1,744 @@
+=encoding utf8
+
+=head1 名前
+
+Mojolicious::Guides::Growing - Mojoliciousアプリケーションを育てる
+
+=head1 概要
+
+スクラッチから[[Mojolicious::Lite]]のプロトタイピングをはじめて、よく構成された[[Mojolicious]]アプリケーションに育てる手順を説明します。
+
+=head1 概念
+
+すべての[[Mojolicious]]開発者が知るべき本質
+
+=head2 モデル　ビュー　コントローラー
+
+MVCはSmalltalk-80におけるGUI(graphical user interface)プログラミングのソフトウェアアーキテクチャパターンです。アプリケーションロジックと表現と入力とを分離する考え方です。
+
+           '------------'    '-------'    '------'
+  .------.Input -> | Controller | -> | Model | -> | View | -> Output
+           '------------'    '-------'    '------'
+
+アプリケーションロジックをいくらかI<controller>に移動するようにしてパターンを多少改造したバージョンは、[[Mojolicious]]を含む近年のほとんどすべてのWebフレームワークの基盤となっています。
+
+              '----------------'     '-------'
+  Request  -> |                | <-> | Model |
+              |                |     .-------.
+              # コントローラー
+              |                |     .-------.
+  Response <- |                | <-> | View  |
+              '----------------'     '-------'
+
+コントローラはユーザからのリクエストを受け取り、入ってきたデータをモデルに渡し、モデルからデータを取り出します。このデータはビューによって実際のレスポンスの中に埋め込まれます。ただし、このパターンは、多くの場合にコードをクリーンでメンテナンス性よくするためのガイドラインにすぎません。必ず従うべき規則というわけではないのです。
+
+=head2 REST（Representational State Transfer）
+
+RESTはWebのような分散ハイパーメディアシステムのためのソフトウェアアーキテクチャスタイルです。多くのプロトコルに適用できますが、今日ではほとんどがHTTPと利用されます。RESTの用語で言えば、ブラウザでhttp://mojolicio.us/fooのようなURLを開くとき、基本的にはWebサーバにhttp://mojolicio.us/fooリソースのHTML表現を依頼していることになります。
+
+  +--------+                                  +--------+
+  |        | -> http://mojolicious.org/foo -> |        |
+  | Client |                                  | Server |
+  |        | <-  <html>Mojo rocks!</html>  <- |        |
+  +--------+                                  +--------+
+
+ここで基礎となる考え方は、すべてのリソースがURLによって一意に識別され、リソースごとにHTML、RSS、JSONといった異なる表現形式を持てるということです。ユーザインターフェイスの関心はデータストレージの関心から分離されています。すべてのセッションの状態はクライアントサイドで保持されます。
+
+  '---------'                        '------------'
+  |         | ->    PUT /foo      -> |            |
+  Hello World!-> |            |
+  |         |                        |            |
+  |         | <-    201 CREATED   <- |            |
+  |         |                        |            |
+  |         | ->    GET /foo      -> |            |
+  | Browser |                        | Web Server |
+  |         | <-    200 OK        <- |            |
+  Hello World!<- |            |
+  |         |                        |            |
+  |         | ->    DELETE /foo   -> |            |
+  |         |                        |            |
+  |         | <-    200 OK        <- |            |
+  '---------'                        '------------'
+
+C<PUT>やC<GET>やC<DELETE>のようなHTTPメソッドは直接的にはRESTの一部ではありませんが、相性がとてもよく、リソースを操作するために広く利用されています。
+
+=head2 セッション
+
+HTTPはステートレスなプロトコルとして設計されています。Webサーバは以前のリクエストについては何も知りません。このため、ユーザフレンドリーなログインシステムはとてもトリッキーなものになります。
+セッションは、ウェブアプリケーションに複数のHTTPリクエストをまたいだ状態の情報を保持させることによってこの問題を解決します。
+
+  GET /login?user=sebastian&pass=s3cret HTTP/1.1
+  Host: mojolicious.org
+
+  HTTP/1.1 200 OK
+  Set-Cookie: sessionid=987654321
+  Content-Length: 10
+  Hello sebastian.
+
+  GET /protected HTTP/1.1
+  Host: mojolicious.org
+  Cookie: sessionid=987654321
+
+  HTTP/1.1 200 OK
+  Set-Cookie: sessionid=987654321
+  Content-Length: 16
+  Hello again sebastian.
+
+伝統的にセッションデータはすべてサーバサイドに保存され、セッションIDだけがクッキーを通じてブラウザとWebサーバの間で交換されます。
+
+  Set-Cookie: session=hmac-sha1(base64(json($session)))
+
+しかし、[[Mojolicious]]ではすべてをC<JSON>でシリアライズしC<Base64>でエンコードして、HMAC-SHA1による署名つきのクッキーに保存することによって、この概念を一歩前に進めています。これは、RESTの哲学により適合していて、インフラの要件を減らします。
+
+=head2 テスト駆動開発
+
+TDDとは、開発者が要求された機能を定義した失敗するテストケースから書き始めて、次にこのテストにパスするコードを書くことに移行するソフトウェア開発プロセスです。この手法の利点はたくさんあります。常にテストカバレッジがよくなったり、コードがテスト可能なように設計されたりします。これは、将来の変更時に古いコードが壊れることを防いでくれるでしょう。[[Mojolicious]]のほとんどはTDDを使って開発されています。
+
+=head1 プロトタイプ
+
+[[Mojolicious]]とその他のウェブフレームワークの主な違いのひとつは、[[Mojolicious::Lite]]という、高速プロトタイピングのためのマイクロWebフレームワークを含んでいることです。
+
+=head2 違い
+
+あなたはきっとこの気持ちを知っているでしょう。本当にクールなアイディアがあって、できるだけ早くそれ試してみたい。それこそが[[Mojolicious::Lite]]アプリケーションがたったひとつのファイルだけしか必要としない理由です。
+
+  myapp.pl   # テンプレートと静的ファイルがインライン化されます
+
+一方、フル[[Mojoliciou]]アプリケーションは保守性を最大化するために、よく整理されたCPANディストリビューションにとても近いです。
+
+  myapp                      # アプリケーションディレクトリ
+  |- script                  # スクリプトディレクトリ
+  |  +- my_app               # アプリケーションスクリプト
+  |- lib                     # ライブラリディレクトリ
+  |  |- MyApp.pm             # アプリケーションクラス
+  |  +- MyApp                # アプリケーション名前空間
+  |     +- Controller        # コントローラーネームスペース
+  |        +- Example.pm     # コントローラークラス
+  |- my_app.conf             # 設定ファイル
+  |- t                       # テストディレクトリ
+  |  +- basic.t              # ランダムテスト
+  |- log                     # ログディレクトリ
+  |  +- development.log      # 開発モードのログファイル
+  |- public                  # 静的ファイルのディレクトリ(自動的にサーブされる)
+  |  +- index.html           # 静的なHTMLファイル
+  +- templates               # テンプレートディレクトリ
+     |- layouts              # レイアウトのためのテンプレートディレクトリ
+     |  +- default.html.ep   # レイアウトテンプレート
+     +- example              # Exampleコントローラーのためのテンプレートディレクトリ
+        +- welcome.html.ep   # "welcome"アクションのためのテンプレート
+
+両方のアプリケーションでスケルトンは、次のコマンドで自動的に生成できます。
+[[Mojolicious::Command::Author::generate]]のC<lite_app>、[[Mojolicious::Command::Author::generate]]のC<app>
+
+  $ mojo generate lite_app myapp.pl
+  $ mojo generate app MyApp
+
+機能的には両者はほぼ同じです。実質的な違いは構成だけなので、それぞれを徐々に他方へと変換できます。
+
+=head2 基礎
+
+わたしたちは新しいアプリケーションをひとつの実行可能なPerlスクリプトからスタートします。
+
+  $ mkdir myapp
+  $ cd myapp
+  $ touch myapp.pl
+  $ chmod 744 myapp.pl
+
+これはログインマネージャのサンプルアプリケーションの基礎になります。
+```perl
+  #!/usr/bin/env perl
+  use Mojolicious::Lite;
+
+  get '/' => sub {
+    my $c = shift;
+    $c->render(text => 'Hello World!');
+  };
+
+  app->start;
+```
+組み込みの開発用Webサーバは自動リロードしてくれるため、楽しくWebアプリケーションを作成できます。
+
+  $ morbo myapp.pl
+  Server available at http://127.0.0.1:3000.
+
+変更を保存するだけで、ブラウザを次回リフレッシュしたときに自動的に変更が反映されます。
+
+=head2 概観
+
+すべては、ブラウザが送信するこのようなHTTPリクエストからはじまります。
+
+  GET / HTTP/1.1
+  Host: localhost:3000
+
+リクエストがイベントループを通してWebサーバーによって受け取られると、[[Mojolicious]]に渡されていくつかの簡単な手順で処理されます。
+
+=over 2
+
+=item  1.
+
+リクエストに合致する静的ファイルが存在するかをチェック
+
+=item 2.
+
+リスエストに合致するルートを探す
+
+=item 3.
+
+合致したルートにリクエストをディスパッチする。通常は、ひとつ、あるいは複数のアクションに到達する。
+
+=item 4.
+
+リクエストを処理する。レンダラーでレスポンスを描画することが多い。
+
+=item 5.
+
+Webサーバーに制御を戻し、レスポンスがまだ生成されていない場合は、イベントループを通じてノンブロック処理の実行を待つ。
+
+=back
+
+アプリケーションでは、ルーターは、ステップ2においてアクションを見つけ、
+ステップ4において、何らかのテキストを描画し、以下のようなHTTPレスポンス
+をブラウザーに返します。
+
+  HTTP/1.1 200 OK
+  Content-Length: 12
+  Hello World!
+
+=head2 モデル
+
+[[Mojolicious]]では、Webアプリケーションを、存在するビジネスロジックのシンプルなフロントエンドであると考えます。つまりこれは、[[Mojolicious]]は完全にモデルレイヤーと独立して設計されていて、あなたがもっとも好きなPerlモジュールを利用すればよいということです。
+
+  $ mkdir -p lib/MyApp/Model
+  $ touch lib/MyApp/Model/Users.pm
+  $ chmod 644 lib/MyApp/Model/Users.pm
+
+わたしたちのログインマネージャーでは、ユーザー名とパスワードのマッチングに関連したすべてのロジックを抽象化する昔ながらのPerlモジュールを利用します。名前C<MyApp::Model::Users>は任意の選択であり、関心の分離をより見やすくするために使用しています。
+```perl
+  package MyApp::Model::Users;
+
+  use strict;
+  use warnings;
+
+  use Mojo::Util 'secure_compare';
+
+  my $USERS = {
+    joel      => 'las3rs',
+    marcus    => 'lulz',
+    sebastian => 'secr3t'
+  };
+
+  sub new { bless {}, shift }
+
+  sub check {
+    my ($self, $user, $pass) = @_;
+
+    # 成功
+    return 1 if $USERS->{$user} && secure_compare $USERS->{$user}, $pass;
+
+    # 失敗
+    return undef;
+  }
+
+  1;
+```
+シンプルなヘルパーは、[[Mojolicious]]のC<helper>関数で登録すると、すべてのアクションとテンプレートで利用できるモデルを作成できます。
+```perl
+  #!/usr/bin/env perl
+  use Mojolicious::Lite;
+
+  use lib 'lib';
+  use MyApp::Model::Users;
+
+  # 初期化を遅延させ、モデルオブジェクトを保存するヘルパー
+  helper users => sub { state $users = MyApp::Model::Users->new };
+
+  # /?user=sebastian&pass=secr3t
+  any '/' => sub {
+    my $c = shift;
+
+    # クエリパラメーター
+    my $user = $c->param('user');
+    my $pass = $c->param('pass') || '';
+
+    # パスワードのチェック
+    return $c->render(text => "Welcome $user.")
+      if $c->users->check($user, $pass);
+
+    # 失敗
+    $c->render(text => 'Wrong username or password.');
+  };
+
+  app->start;
+```
+[[Mojolicious::Controller]]のC<param>メソッドを利用すると、クエリパラメーター、C<POST>パラメーター、ファイルアップロード、ルーティングプレースホルダのすべてにアクセスできます。
+
+=head2 テスト
+
+[[Mojolicious]]は、テストをとても大切に考えていて、快適にテストを行えるように取り組んでいます。
+
+  $ mkdir t
+  $ touch t/login.t
+  $ chmod 644 t/login.t
+
+[[Test::Mojo]]はスクリプト化可能なHTTPユーザーエージェントです。テスト用に特別にデザインされていて、[[Mojo::DOM]]にもとづくCSSセレクタのような楽しくて最新の機能がたくさん盛り込まれています。
+```perl
+  use Test::More tests => 16;
+  use Test::Mojo;
+
+  # アプリケーションの取り込み
+  use FindBin;
+  require "$FindBin::Bin/../myapp.pl";
+
+  # 302リダイレクトレスポンスの許可
+  my $t = Test::Mojo->new;
+  $t->ua->max_redirects(1);
+
+  # HTMLログインフォームが存在するかのテスト
+  $t->get_ok('/')
+    ->status_is(200)
+    ->element_exists('form input[name="user"]')
+    ->element_exists('form input[name="pass"]')
+    ->element_exists('form input[type="submit"]');
+
+  # 正しい認証情報でログインしたかのテスト
+  $t->post_ok('/' => form => {user => 'sebastian', pass => 'secr3t'})
+    ->status_is(200)
+    ->text_like('html body' => qr/Welcome sebastian/);
+
+  # 保護されたベージへのアクセスのテスト
+  $t->get_ok('/protected')->status_is(200)->text_like('a' => qr/Logout/);
+
+  # HTMLフォームがログアウトした後に表示されるかどうかのテスト
+  $t->get_ok('/logout')
+    ->status_is(200)
+    ->element_exists('form input[name="user"]')
+    ->element_exists('form input[name="pass"]')
+    ->element_exists('form input[type="submit"]');
+
+  done_testing();
+```
+あなたのアプリケーションはこれらのテストに合格しないでしょう。しかしこれからは進捗をチェックするためにこのテストが使えます。
+
+  $ prove -l
+  $ prove -l t/login.t
+  $ prove -l -v t/login.t
+
+あるいは、[[Mojolicious::Command::get]]を使ってコマンドラインから素早くリクエストを実行できます。
+
+  $ ./myapp.pl get /
+  Wrong username or password.
+
+  $ ./myapp.pl get -v '/?user=sebastian&pass=secr3t'
+  GET /?user=sebastian&pass=secr3t HTTP/1.1
+  User-Agent: Mojolicious (Perl)
+  Accept-Encoding: gzip
+  Content-Length: 0
+  Host: localhost:59472
+
+  HTTP/1.1 200 OK
+  Date: Sun, 18 Jul 2010 13:09:58 GMT
+  Server: Mojolicious (Perl)
+  Content-Length: 12
+  Content-Type: text/plain
+
+  Welcome sebastian.
+
+=head2 ステートの維持
+
+[[Mojolicious]]のセッションは、[[Mojolicious::Controller]]のC<session>メソッドからすぐに使え、しっかり機能しますし、セットアップの必要もありません。しかし、[[Mojolicious]]のC<secrets>を使ってより安全なパスフレーズを設定することをお勧めします。
+```perl
+  $app->secrets(['Mojolicious rocks']);
+```
+このパスフレーズはHMAC-SHA1アルゴリズムによって利用され、署名つきクッキーに改ざん耐性が付与されます。また既存のすべてのセッションを無効化するためにいつでも変更できます。
+```perl
+  $c->session(user => 'sebastian');
+  my $user = $c->session('user');
+```
+デフォルトではすべてのセッションの期限は一時間です。さらに調整したい場合は、セッションのC<expiration>の値を使って、有効期限の日付を現在から秒で指定できます。
+```perl
+  $c->session(expiration => 3600);
+```
+すべてのセッションはセッションのC<expires>に過去の期限日を設定することで削除できます。
+```perl
+  $c->session(expires => 1);
+```
+[[Mojolicious::Plugin::DefaultHelpers]]のC<redirect_to>によって実行されるC<302>リダイレクト後の確認メッセージのような、次のリクエストに現れるはずのデータのために、
+[[Mojolicious::Plugin::DefaultHelpers]]のC<flash>を使用できます。
+```perl
+  $c->flash(message => 'Everything is fine.');
+  $c->redirect_to('goodbye');
+```
+すべてのセッションデータは[[Mojo::JSON]]によってシリアライズされ、
+C<HMAC-SHA1>による署名つきクッキーに保存されることを思い出してください。ですのでブラウザーに依存して、通常は4096バイト(4KB)の限界があります。
+
+=head2 最終的なプロトタイプ
+
+上記すべての単体テストを通過した最終的なmyapp.plプロトタイプは次のようになります。
+```perl
+  #!/usr/bin/env perl
+  use Mojolicious::Lite;
+
+  use lib 'lib';
+  use MyApp::Model::Users;
+
+  # 署名付きクッキーを改ざんできないようにする
+  app->secrets(['Mojolicious rocks']);
+
+  helper users => sub { state $users = MyApp::Model::Users->new };
+
+  # メインのログインアクション
+  any '/' => sub {
+    my $c = shift;
+
+    # クエリかPOSTパラメーター
+    my $user = $c->param('user');
+    my $pass = $c->param('pass') || '';
+
+    # パスワードをチェックして、必要ならば"index.html.ep"を描画
+    return $c->render unless $c->users->check($user, $pass);
+
+    # セッションにユーザー名を保存
+    $c->session(user => $user);
+
+    # フラッシュに次のページのための親切なメッセージを保存
+    $c->flash(message => 'Thanks for logging in.');
+
+    # 302レスポンスで保護されたページにリダイレクト
+    $c->redirect_to('protected');
+  } => 'index';
+
+  # このグループに属するアクションのためにユーザーがログインしていることを確認する
+  group {
+    # すべてのルートで共有されるグローバルなロジック
+      my $c = shift;
+
+      # ユーザーがログインしていない場合は302レスポンスでメインページにリダイレクト
+      return 1 if $c->session('user');
+      $c->redirect_to('index');
+      return undef;
+    };
+
+    # "protected.html.ep"を自動的に描画する保護されたページ
+    get '/protected';
+  };
+
+  # ログアウトアクション
+  get '/logout' => sub {
+    my $c = shift;
+
+    # 有効期限切れにして自動的にセッションをクリアする
+    $c->session(expires => 1);
+
+    # 302レスポンスでメインページにリダイレクト
+    $c->redirect_to('index');
+  };
+
+  app->start;
+  __DATA__;
+
+  __DATA__;
+  % layout 'default';
+  %= form_for index => begin
+    % if (param 'user') {
+      <b>Wrong name or password, please try again.</b><br>
+    % }
+    Name:<br>
+    %= text_field 'user'
+    <br>Password:<br>
+    %= password_field 'pass'
+    <br>
+    %= submit_button 'Login'
+  % end
+
+  @@ protected.html.ep
+  % layout 'default';
+  % if (my $msg = flash 'message') {
+    <b><%= $msg %></b><br>
+  % }
+  Welcome <%= session 'user' %>.<br>
+  %= link_to Logout => 'logout'
+
+  @@ layouts/default.html.ep
+  <!DOCTYPE html>
+  <html>
+    <head><title>Login Manager</title></head>
+    <body><%= content %></body>
+  </html>
+```
+ディレクトリの構造は、以下のようになっているはずです。
+
+  myapp
+  |- myapp.pl
+  |- lib
+  |  +- MyApp
+  |     +- Model
+  |        +- Users.pm
+  +- t
+     +- login.t
+
+私たちのテンプレートはレンダラーのかなりの数の機能を使っています。[[Mojolicious::Guides::Rendering]]ではそれらすべてを詳細に説明しています。
+
+=head1 よく構成されたアプリケーション
+
+[[Mojolicious]]の柔軟性のために、実際の拡張には多くのバリエーションがあります。しかし、以上の説明から可能性の見通しがよく得られたことでしょう。
+
+=head2 テンプレートのインフレート
+
+DATAセクションの中のインライン化されたすべてのテンプレートと静的ファイルは、[[Mojolicious::Command::inflate]]を使って、templatesとpublicディレクトリの中に独立したファイルとして自動的に変換できます。
+
+  $ ./myapp.pl inflate...
+
+これらのディレクトリはより高い優先度をもちます。ですので、インフレートはユーザーがアプリケーションをカスタマイズできるようにするのにも素晴らしい方法です。
+
+=head2 簡素化されたアプリケーションクラス
+
+これはすべての完全なMojoliciousアプリケーションの心臓で、いつもサーバのスタートアップの間にインスタンス化されます。
+
+  $ touch lib/MyApp.pm
+  $ chmod 644 lib/MyApp.pm
+
+私たちはすべてのアクションをmyapp.plから展開することによってはじめ、それらをMojoliciousのルーターにおける簡素化されたハイブリッドなルートに変換します。実際のアクションのコードは何も変更する必要がありません。
+```perl
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  use MyApp::Model::Users;
+
+  sub startup {
+    my $self = shift;
+
+    $self->secrets(['Mojolicious rocks']);
+    $self->helper(users => sub { state $users = MyApp::Model::Users->new });
+
+    my $r = $self->routes;
+
+    $r->any('/' => sub {
+      my $c = shift;
+
+      my $user = $c->param('user');
+      my $pass = $c->param('pass') || '';
+      return $c->render unless $c->users->check($user, $pass);
+
+      $c->session(user => $user);
+      $c->flash(message => 'Thanks for logging in.');
+      $c->redirect_to('protected');
+    } => 'index');
+
+    my $logged_in = $r->under(sub {
+      my $c = shift;
+      return 1 if $c->session('user');
+      $c->redirect_to('index');
+      return undef;
+    });
+    $logged_in->get('/protected');
+
+    $r->get('/logout' => sub {
+      my $c = shift;
+      $c->session(expires => 1);
+      $c->redirect_to('index');
+    });
+  }
+
+  1;
+```
+[[Mojolicious]]のC<startup>メソッドはインスタンス化された直後に呼び出され、
+アプリケーション全体がセットアップされる場所です。完全な[[Mojolicious]]アプリケーションではネストしたルーティングが使えるので、C<group>ブロックは必要ありません。
+
+=head2 簡易化されたアプリケーションスクリプト
+
+さて、C<myapp.pl>そのものを、再びテストが実行できるように、簡素化したアプリケーションスクリプトに変換できるようになりました。
+```perl
+  #!/usr/bin/env perl
+
+  use strict;
+  use warnings;
+
+  use lib 'lib';
+  use Mojolicious::Commands;
+
+  # アプリケーションのためにコマンドラインインターフェイスを開始する
+  Mojolicious::Commands->start_app('MyApp');
+```
+ハイブリッドアプリケーションのディレクトリ構造は、以下のようになっています。
+
+  myapp
+  |- myapp.pl
+  |- lib
+  |  |- MyApp.pm
+  |  +- MyApp
+  |     +- Model
+  |        +- Users.pm
+  |- t
+  |  +- login.t
+  +- templates
+     |- layouts
+     |  +- default.html.ep
+     |- index.html.ep
+     +- protected.html.ep
+
+=head2 コントローラークラス
+
+ハイブリッドなルーティングはよい中間的なステップですが、メンテナンス性を最大化するにはルート情報からアクションのコードを分離するのがよいでしょう。
+
+  $ mkdir lib/MyApp/Controller
+  $ touch lib/MyApp/Controller/Login.pm
+  $ chmod 644 lib/MyApp/Controller/Login.pm
+
+実際のアクションのコードにはまったく変更はありません。コントローラーが今度はインボカントになるので、C<$c>をC<$self>に変更するだけです。
+```perl
+  package MyApp::Controller::Login;
+  use Mojo::Base 'Mojolicious::Controller';
+
+  sub index {
+    my $self = shift;
+
+    my $user = $self->param('user') || '';
+    my $pass = $self->param('pass') || '';
+    return $self->render unless $self->users->check($user, $pass);
+
+    $self->session(user => $user);
+    $self->flash(message => 'Thanks for logging in.');
+    $self->redirect_to('protected');
+  }
+
+  sub logged_in {
+    my $self = shift;
+    return 1 if $self->session('user');
+    $self->redirect_to('index');
+    return undef;
+  }
+
+  sub logout {
+    my $self = shift;
+    $self->session(expires => 1);
+    $self->redirect_to('index');
+  }
+
+  1;
+```
+すべての[[Mojolicious::Controller]]はふつうのPerlのクラスで、必要に応じてインスタンス化されます。
+
+=head2 アプリケーションクラス
+
+アプリケーションクラスC<lib/MyApp.pm>は、モデルとルーティング情報だけに小さくできるようになりました。
+```perl
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  use MyApp::Model::Users;
+
+  sub startup {
+    my $self = shift;
+
+    $self->secrets(['Mojolicious rocks']);
+    $self->helper(users => sub { state $users = MyApp::Model::Users->new });
+
+    my $r = $self->routes;
+    $r->any('/')->to('login#index')->name('index');
+
+    my $logged_in = $r->under('/')->to('login#logged_in');
+    $logged_in->get('/protected')->to('login#protected');
+
+    $r->get('/logout')->to('login#logout');
+  }
+
+  1;
+```
+[[Mojolicious::Routes]]を使うとさまざまなルーティングが構築できます。詳しくは[[Mojolicious::Guides::Routing]]で説明しています。
+
+=head2 テンプレート
+
+テンプレートはビューになります。通常、コントローラーに束縛されるため、適切なディレクトリに移動する必要があります。
+
+  $ mkdir templates/login
+  $ mv templates/index.html.ep templates/login/index.html.ep
+  $ mv templates/protected.html.ep templates/login/protected.html.ep
+
+=head2 スクリプト
+
+最後に、C<myapp.pl>がC<script>ディレクトリに移動できるようになり、
+CPANスタンダードにしたがってC<my_app>にリネームします。
+
+  $ mkdir script
+  $ mv myapp.pl script/my_app
+
+ほんの少し変更を加えます。[[lib]]の代わりに[[FindBin]]とC<@INC>を使うことにしましょう。こうすることで、アプリケーションをホームディレクトリの外から開始できるようになります。
+```perl
+  #!/usr/bin/env perl
+
+  use strict;
+  use warnings;
+
+  use FindBin;
+  BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
+  use Mojolicious::Commands;
+
+  # アプリケーションのためにコマンドラインインターフェイスを開始する
+  Mojolicious::Commands->start_app('MyApp');
+```
+
+=head2 簡易化されたテスト
+
+通常の[[Mojolicious]]アプリケーションはテストが少し簡単で、ホームディレクトリの検知は必要ありません。ですので、C<t/login.t>は簡易化されます。
+```perl
+  use Test::More tests => 16;
+  use Test::Mojo;
+
+  # Load application class
+  my $t = Test::Mojo->new('MyApp');
+  $t->ua->max_redirects(1);
+
+  $t->get_ok('/')
+    ->status_is(200)
+    ->element_exists('form input[name="user"]')
+    ->element_exists('form input[name="pass"]')
+    ->element_exists('form input[type="submit"]');
+
+  $t->post_ok('/' => form => {user => 'sebastian', pass => 'secr3t'})
+    ->status_is(200)
+    ->text_like('html body' => qr/Welcome sebastian/);
+
+  $t->get_ok('/protected')->status_is(200)->text_like('a' => qr/Logout/);
+
+  $t->get_ok('/logout')
+    ->status_is(200)
+    ->element_exists('form input[name="user"]')
+    ->element_exists('form input[name="pass"]')
+    ->element_exists('form input[type="submit"]');
+
+  done_testing();
+```
+完成したディレクトリ構造は、以下のようになるはずです。
+
+  myapp
+  |- script
+  |  +- my_app
+  |- lib
+  |  |- MyApp.pm
+  |  +- MyApp
+  |     |- Controller
+  |     |  +- Login.pm
+  |     +- Model
+  |        +- Users.pm
+  |- t
+  |  +- login.t
+  +- templates
+     |- layouts
+     |  +- default.html.ep
+     +- login
+        |- index.html.ep
+        +- protected.html.ep
+
+テスト駆動開発は少し慣れが必要ですが、やる価値は大いにあります。
+
+=head1 もっと学ぶには
+
+さあ、[[Mojolicious::Guides]] を続けるか、[[Mojolicious wiki|http://github.com/mojolicious/mojo/wiki]]を見てみましょう。多くの著者がドキュメントやサンプルをたくさん書いています。
+
+=head1 サポート
+
+このドキュメントでわからない部分があれば、
+[[mailing list|http://groups.google.com/group/mojolicious]] かC<irc.freenode.net> (L<chat
+now!|https://kiwiirc.com/nextclient/#irc://irc.freenode.net/mojo?nick=guest-?>)の公式IRCチャンネル C<#mojo> まで気軽に質問してください。   
+(2019/04/29 Mojolicious 8.12を反映)
+=cut

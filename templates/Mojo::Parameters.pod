@@ -1,0 +1,224 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Parameters
+
+=head1 名前
+
+Mojo::Parameters - パラメーター
+
+=head1 使い方
+
+  use Mojo::Parameters;
+
+  # 解析
+  my $params = Mojo::Parameters->new('foo=bar&baz=23');
+  say $params->param('baz');
+
+  # 構築
+  my $params = Mojo::Parameters->new(foo => 'bar', baz => 23);
+  push @$params, i => '♥ mojolicious';
+  say "$params";
+
+=head1 説明
+
+[[Mojo::Parameters]]は
+L<RFC 3986|http://tools.ietf.org/html/rfc3986>、
+L<HTML Living Standard|https://html.spec.whatwg.org>
+に基づいた
+[[Mojo::URL]]で利用される、フォームパラメーターのためのコンテナです。
+
+=head1 属性
+
+[[Mojo::Parameters]]は次の属性を実装しています。
+
+=head2 charset
+
+  my $charset = $params->charset;
+  $params     = $params->charset('UTF-8');
+
+パラメーターをデコードするために利用されるキャラクターセット。
+デフォルトはC<UTF-8>です。
+
+  # エンコードとデコードを無効にします
+  $params->charset(undef);
+
+=head1 メソッド
+
+[[Mojo::Parameters]]は[[Mojo::Base]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 append
+
+  $params = $params->append(foo => 'ba&r');
+  $params = $params->append(foo => ['ba&r', 'baz']);
+  $params = $params->append(foo => ['bar', 'baz'], bar => 23);
+  $params = $params->append(Mojo::Parameters->new);
+
+パラメーターを追加します。
+
+  # "foo=bar&foo=baz"
+  Mojo::Parameters->new('foo=bar')->append(Mojo::Parameters->new('foo=baz'));
+
+  # "foo=bar&foo=baz"
+  Mojo::Parameters->new('foo=bar')->append(foo => 'baz');
+
+  # "foo=bar&foo=baz&foo=yada"
+  Mojo::Parameters->new('foo=bar')->append(foo => ['baz', 'yada']);
+
+  # "foo=bar&foo=baz&foo=yada&bar=23"
+  Mojo::Parameters->new('foo=bar')->append(foo => ['baz', 'yada'], bar => 23);
+
+=head2 clone
+
+  my $params2 = $params->clone;
+
+パラメーターを複製します。
+
+=head2 every_param
+
+  my $values = $params->every_param('foo');
+
+c<param>に似ていますが、
+同じ名前で共有されているすべての値を、
+配列のリファレンスで返却します。
+このメソッドは、パラメーターを正規化することに注意してください。
+
+  # 最初の値を取得
+  say $params->every_param('foo')->[0];
+
+=head2 merge
+
+  $params = $params->merge(foo => 'ba&r');
+  $params = $params->merge(foo => ['ba&r', 'baz']);
+  $params = $params->merge(foo => ['bar', 'baz'], bar => 23);
+  $params = $params->merge(Mojo::Parameters->new);
+
+パラメーターをマージします。
+このメソッドはパラメーターを正規化することに注意してください。
+
+  # "foo=baz"
+  Mojo::Parameters->new('foo=bar')->merge(Mojo::Parameters->new('foo=baz'));
+
+  # "yada=yada&foo=baz"
+  Mojo::Parameters->new('foo=bar&yada=yada')->merge(foo => 'baz');
+
+  # "yada=yada"
+  Mojo::Parameters->new('foo=bar&yada=yada')->merge(foo => undef);
+
+=head2 names
+
+  my $names = $params->names;
+
+すべてのパラメーター名のリストを返却します。
+
+  # すべてのパラメーターの名前
+  say for @{$params->names};
+
+=head2 new
+
+  my $params = Mojo::Parameters->new;
+  my $params = Mojo::Parameters->new('foo=b%3Bar&baz=23');
+  my $params = Mojo::Parameters->new(foo => 'b;ar');
+  my $params = Mojo::Parameters->new(foo => ['ba;r', 'b;az']);
+  my $params = Mojo::Parameters->new(foo => ['ba;r', 'b;az'], bar => 23);
+
+新しい[[Mojo::Parameters]]オブジェクトを生成するか、
+必要であれば、パラメーターを解析します。
+
+=head2 pairs
+
+  my $array = $params->pairs;
+  $params   = $params->pairs([foo => 'b&ar', baz => 23]);
+
+パラメーターのペアを解析します。
+このメソッドはパラメーターを正規化することに注意してください。
+
+=head2 param
+
+  my $value = $params->param('foo');
+  $params   = $params->param(foo => 'ba&r');
+  $params   = $params->param(foo => qw(ba&r baz));
+  $params   = $params->param(foo => ['ba;r', 'baz']);
+
+パラメーターの値にアクセスします。
+同じ名前で共有する複数の値があり、
+最後のひとつより多い値を取得したい場合は、
+C<every_param>を使用することができます。
+このメソッドはパラメーターを正規化することに注意してください。
+
+=head2 params
+
+  my $array = $params->params;
+  $params   = $params->params([foo => 'b&ar', baz => 23]);
+
+解析されたパラメーター。
+このメソッドはパラメーターをノーマライズすることに注意してください。
+
+=head2 parse
+
+  $params = $params->parse('foo=b%3Bar&baz=23');
+
+パラメーターを解析します。
+
+=head2 remove
+
+  $params = $params->remove('foo');
+
+パラメーターを取り除きます。
+
+  # "bar=yada"
+  Mojo::Parameters->new('foo=bar&foo=baz&bar=yada')->remove('foo');
+
+=head2 to_hash
+
+  my $hash = $params->to_hash;
+
+パラメーターをハッシュに変換します。
+このメソッドはパラメーターをノーマライズすることに注意してください。
+
+  # "baz"
+  Mojo::Parameters->new('foo=bar&foo=baz')->to_hash->{foo}[1];
+
+=head2 to_string
+
+  my $str = $params->to_string;
+
+パラメーターを文字列に変換します。
+
+  # "foo=bar&baz=23"
+  Mojo::Parameters->new->pairs([foo => 'bar', baz => 23])->to_string;
+
+=head1 演算子
+
+[[Mojo::Parameters]]は次の演算子をオーバーロードしています。
+
+=head2 配列
+
+  my @pairs = @$params;
+
+C<pairs>のエイリアス。これはパラメーターを正規化することに注意していください。
+
+  say $params->[0];
+  say for @$params;
+
+=head2 真偽値
+
+  my $bool = !!$params;
+
+いつでも真です。
+
+=head2 文字列化
+
+  my $str = "$params";
+
+C<to_string>のエイリアス。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月23日更新)
+
+=cut

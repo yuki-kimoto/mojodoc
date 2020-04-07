@@ -1,0 +1,34 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+hypnotoad - Hypnotoad HTTP 1.1 and WebSocket サーバー
+
+=head1 使い方
+
+  使用方法: hypnotoad [OPTIONS] [APPLICATION]
+
+    hypnotoad ./script/my_app
+    hypnotoad ./myapp.pl
+    hypnotoad -f ./myapp.pl
+
+  オプション:
+    -f, --foreground   マネージャープロセスをフォアグランドに保つ
+    -h, --help         このメッセージを表示
+    -s, --stop         サーバーを緩やかに停止
+    -t, --test         アプリケーションをテストして、終了する
+
+=head1 説明
+
+[[Mojolicious]]と[[Mojolicious::Lite]]アプリケーションを
+[[Mojo::Server::Hypnotoad]]Webサーバーで開始します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月17日更新)
+
+=cut

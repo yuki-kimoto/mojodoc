@@ -1,0 +1,47 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojolicious::Plugin
+
+=head1 名前
+
+Mojolicious::Plugin - プラグイン基底クラス
+
+=head1 使い方
+
+  # キャメルケースのプラグイン名
+  package Mojolicious::Plugin::MyPlugin;
+  use Mojo::Base 'Mojolicious::Plugin';
+
+  sub register {
+    my ($self, $app, $conf) = @_;
+
+    # Magic here! :)
+  }
+
+=head1 説明
+
+[[Mojolicious::Plugin]]は、[[Mojolicious]]プラグインの抽象基底クラスです。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin]]は、[[Mojo::Base]]のすべてのメソッドと以下の新しいメソッドを実装しています。
+
+=head2 register
+
+  $plugin->register(Mojolicious->new);
+  $plugin->register(Mojolicious->new, {foo => 'bar'});
+
+このメソッドはスタートアップ時に[[Mojolicious::Plugins]]から呼び出されます。
+このメソッドはサブクラスでオーバーロードされます。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月12日更新)
+
+=cut

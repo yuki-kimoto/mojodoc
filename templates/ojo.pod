@@ -1,0 +1,189 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+ojo - Mojo と共にワンライナーをお楽しみ下さい!
+
+=head1 使い方
+
+  $ perl -Mojo -E 'say g("mojolicio.us")->dom->at("title")->text'
+
+=head1 説明
+
+Perl ワンライナーを楽しむために自動的にエクスポートしている関数のコレクション。
+
+10リダイレクトがデフォルトです。
+この動きは、C<MOJO_MAX_REDIRECTS>環境変数で変更することができます。
+
+  $ MOJO_MAX_REDIRECTS=0 perl -Mojo -E 'say g("mojolicio.us")->code'
+
+プロキシの検知はデフォルトで有効になっていますが、
+C<MOJO_PROXY>環境変数で無効にすることもできます。
+
+  $ MOJO_PROXY=0 perl -Mojo -E 'say g("mojolicio.us")->body'
+
+すべてのL<ojo>ワンライナーは[[Mojolicious::Lite]]アプリケーションです。
+
+  $ perl -Mojo -E 'get "/" => {inline => "%= time"}; app->start' get /
+
+Perl 5.20+であればL<subroutine signatures|perlsub/"Signatures">が自動的に有効になります。
+
+  $ perl -Mojo -E 'a(sub ($c) { $c->render(text => 'Hello!') })->start' get /
+
+まだ定義されていなければ、C<MOJO_LOG_LEVEL>環境変数はC<fatal>に設定されます。
+
+=head1 関数
+
+[[ojo]] は以下の機能を実装します。これらは自動的にエクスポートされます。
+
+=head2 a
+
+  my $app = a('/hello' => sub { $_->render(json => {hello => 'world'}) });
+
+[[Mojolicious::Lite]]のC<any>を使ってルートを生成し、
+現在の[[Mojolicious::Lite]]オブジェクトを返します。
+現在のコントローラーオブジェクトは$_として利用可能です。
+引数のバリエーションについては[[Mojolicious::Lite]]の
+チュートリアルを見てください。
+
+  $ perl -Mojo -E 'a("/" => {text => "Hello Mojo!"})->start' daemon
+
+=head2 b
+
+  my $stream = b('lalala');
+
+入力を [[Mojo::ByteStream]] オブジェクトに変換します。
+
+  $ $ perl -Mojo -E 'say g("mojolicio.us")->dom("h1, h2, h3")->text'
+
+=head2 c
+
+  my $collection = c(1, 2, 3);
+
+リストを[[Mojo::Collection]]オブジェクトに変換します。
+
+=head2 d
+
+  my $res = d('mojolicio.us');
+  my $res = d('http://example.com' => {Accept => '*/*'} => 'Hi!');
+  my $res = d('http://example.com' => {Accept => '*/*'} => form => {a => 'b'});
+  my $res = d('http://example.com' => {Accept => '*/*'} => json => {a => 'b'});
+
+[[Mojo::UserAgent]]のC<delete>を使って、C<DELETE> 要求を実行し、結果として
+[[Mojo::Message::Response]]を返却します。
+
+=head2 f
+
+  my $path = f('/home/sri/foo.txt');
+
+文字列を[[Mojo::File]]オブジェクトに変換します。
+
+  $ perl -Mojo -E 'say r j f("hello.json")->slurp'
+
+=head2 g
+
+  my $res = g('mojolicio.us');
+  my $res = g('http://example.com' => {Accept => '*/*'} => 'Hi!');
+  my $res = g('http://example.com' => {Accept => '*/*'} => form => {a => 'b'});
+  my $res = g('http://example.com' => {Accept => '*/*'} => json => {a => 'b'});
+
+[[Mojo::UserAgent]]のC<get>を使って、C<GET> 要求を実行し、結果として
+[[Mojo::Message::Response]]を返却します。
+
+  $ perl -Mojo -E 'say g("mojolicio.us")->dom("h1")->map("text")->join("\n")'
+
+=head2 h
+
+  my $res = h('mojolicio.us');
+  my $res = h('http://example.com' => {Accept => '*/*'} => 'Hi!');
+  my $res = h('http://example.com' => {Accept => '*/*'} => form => {a => 'b'});
+  my $res = h('http://example.com' => {Accept => '*/*'} => json => {a => 'b'});
+
+[[Mojo::UserAgent]]のC<head>を使って、C<HEAD> 要求を実行し、結果として
+[[Mojo::Message::Response]]を返却します。
+
+=head2 j
+
+  my $bytes = j([1, 2, 3]);
+  my $bytes = j({foo => 'bar'});
+  my $value = j($bytes);
+
+Perlデータ構造を[[Mojo::JSON]]のC<j>を使ってJSONにエンコードあるいはデコードします。
+
+  $ perl -Mojo -E 'b(j({hello => "world!"}))->spurt("hello.json")'
+
+=head2 n
+
+  n {...};
+  n {...} 100;
+
+ブロックをベンチマークし、結果を出力します。
+イテレーションのデフォルトの回数は、C<1>です。
+
+  $ perl -Mojo -E 'n { say g("mojolicio.us")->code }'
+
+=head2 o
+
+  my $res = o('mojolicio.us');
+  my $res = o('http://example.com' => {Accept => '*/*'} => 'Hi!');
+  my $res = o('http://example.com' => {Accept => '*/*'} => form => {a => 'b'});
+  my $res = o('http://example.com' => {Accept => '*/*'} => json => {a => 'b'});
+
+[[Mojo::UserAgent]]のC<options>を使って、C<OPTIONS> 要求を実行し、結果として
+[[Mojo::Message::Response]]を返却します。
+
+=head2 p
+
+  my $res = p('mojolicio.us');
+  my $res = p('http://example.com' => {Accept => '*/*'} => 'Hi!');
+  my $res = p('http://example.com' => {Accept => '*/*'} => form => {a => 'b'});
+  my $res = p('http://example.com' => {Accept => '*/*'} => json => {a => 'b'});
+
+[[Mojo::UserAgent]]のC<post>を使って、C<POST> 要求を実行し、結果として
+[[Mojo::Message::Response]]を返却します。
+
+=head2 r
+
+  my $perl = r({data => 'structure'});
+
+Perlのデータ構造を[[Mojo::Util]]のC<dumper>を使ってダンプします。
+
+  perl -Mojo -E 'say r(g("example.com")->headers->to_hash)'
+
+=head2 t
+
+  my $res = t('mojolicio.us');
+  my $res = t('http://example.com' => {Accept => '*/*'} => 'Hi!');
+  my $res = t('http://example.com' => {Accept => '*/*'} => form => {a => 'b'});
+  my $res = t('http://example.com' => {Accept => '*/*'} => json => {a => 'b'});
+
+[[Mojo::UserAgent]]のC<patch>を使って、C<PATCH> 要求を実行し、結果として
+[[Mojo::Message::Response]]を返却します。
+
+=head2 u
+
+  my $res = u('http://mojolicio.us');
+  my $res = u('http://example.com' => {Accept => '*/*'} => 'Hi!');
+  my $res = u('http://example.com' => {Accept => '*/*'} => form => {a => 'b'});
+  my $res = u('http://example.com' => {Accept => '*/*'} => json => {a => 'b'});
+
+[[Mojo::UserAgent]]のC<put>を使って、C<PUT> 要求を実行し、結果として
+[[Mojo::Message::Response]]を返却します。
+
+=head2 x
+
+  my $dom = x('<div>Hello!</div>');
+
+HTML5/XML の入力を [[Mojo::DOM]] オブジェクトに変換します。
+
+  say x('<div>Hello!</div>')->at('div')->text;
+
+=head1 参考
+
+[[Mojolicious]], [[Mojolicious::Guides]], L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月15日更新)
+
+=cut

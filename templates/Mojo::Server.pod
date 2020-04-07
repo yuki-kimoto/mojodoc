@@ -1,0 +1,133 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Server
+
+=head1 名前
+
+Mojo::Server - HTTP/WebSocketサーバーの基底クラス
+
+=head1 使い方
+
+  use Mojo::Base 'Mojo::Server';
+
+  sub run {
+    my $self = shift;
+
+    # トランザクションを取得
+    my $tx = $self->build_tx;
+
+    # リクエストイベントの放出
+    $self->emit(request => $tx);
+  }
+
+=head1 説明
+
+[[Mojo::Server]]は、
+[[Mojo::Server::CGI]], [[Mojo::Server::Daemon]],
+[[Mojo::Server::Hypnotoad]], [[Mojo::Server::Morbo]], [[Mojo::Server::Prefork]]
+[[Mojo::Server::PSGI]]などの、
+抽象HTTP/WebSocketサーバーとサーバーインターフェースのための基底クラスです。
+
+=head1 イベント
+
+=head2 request
+
+  $server->on(request => sub {
+    my ($server, $tx) = @_;
+    ...
+  });
+
+リクエストが準備され、処理される必要があるときに放出されます。
+
+  $server->unsubscribe('request');
+  $server->on(request => sub {
+    my ($server, $tx) = @_;
+    $tx->res->code(200);
+    $tx->res->headers->content_type('text/plain');
+    $tx->res->body('Hello World!');
+    $tx->resume;
+  });
+
+=head1 属性
+
+[[Mojo::Server]]は次の属性を実装しています。
+
+=head2 app
+
+  my $app = $server->app;
+  $server = $server->app(MojoSubclass->new);
+
+このサーバーが扱うアプリケーション。
+デフォルトは[[Mojo::HelloWorld]]オブジェクト。
+
+=head2 reverse_proxy
+
+  my $bool = $server->reverse_proxy;
+  $server  = $server->reverse_proxy($bool);
+
+このサーバーが、リバースプロキシの後ろで実行されるかどうか。
+デフォルトは、C<MOJO_REVERSE_PROXY>の値。
+
+=head1 メソッド
+
+[[Mojo::Server]]は[[ Mojo::EventEmitter]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 build_app
+
+  my $app = $server->build_app('MyApp');
+  my $app = $server->build_app('MyApp', log => Mojo::Log->new);
+  my $app = $server->build_app('MyApp', {log => Mojo::Log->new});
+
+クラスからアプリケーションを構築し、"app"に代入します。
+
+=head2 build_tx
+
+  my $tx = $server->build_tx;
+
+アプリケーションにトランザクションを構築させます。
+
+=head2 daemonize
+
+  $server->daemonize;
+
+サーバープロセスをデーモン化します。
+
+=head2 load_app
+
+  my $app = $server->load_app('/home/sri/myapp.pl');
+
+スクリプトからアプリケーションをロードします。
+
+  say Mojo::Server->new->load_app('./myapp.pl')->home;
+
+=head2 new
+
+  my $server = Mojo::Server->new;
+  my $server = Mojo::Server->new(reverse_proxy => 1);
+  my $server = Mojo::Server->new({reverse_proxy => 1});
+
+新しい[[Mojo::Server]]オブジェクトを構築し、デフォルトのリクエストの処理で
+C<request>イベントを購読します。
+
+=head2 run
+
+  $server->run;
+
+サーバーを開始します。
+
+=head2 setuidgid
+
+  $server = $server->setuidgid;
+
+プロセスのためにC<user>とC<group>を設定。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月27日)
+
+=cut

@@ -1,0 +1,29 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::HelloWorld
+
+=head1 名前
+
+Mojo::HelloWorld - Hello World!
+
+=head1 使い方
+
+  use Mojo::HelloWorld;
+
+  my $hello = Mojo::HelloWorld->new;
+  $hello->start;
+
+=head1 説明
+
+[[Mojo::HelloWorld]]はデフォルトの[[Mojo]]アプリケーションで、
+ほとんどの場合試験のために利用されます。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月16日更新)
+
+=cut

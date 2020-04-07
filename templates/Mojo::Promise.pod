@@ -1,0 +1,257 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 NAME
+
+Mojo::Promise - Promises/A+
+
+=head1 使い方
+
+  use Mojo::Promise;
+  use Mojo::UserAgent;
+
+  # プロミスを使って継続渡しスタイルのAPIをラッピングする
+  my $ua = Mojo::UserAgent->new;
+  sub get {
+    my $promise = Mojo::Promise->new;
+    $ua->get(@_ => sub {
+      my ($ua, $tx) = @_;
+      my $err = $tx->error;
+      if   (!$err || $err->{code}) { $promise->resolve($tx) }
+      else                         { $promise->reject($err->{message}) }
+    });
+    return $promise;
+  }
+
+  # ノンブロッキング操作を順番に実行する
+  get('https://mojolicious.org')->then(sub {
+    my $mojo = shift;
+    say $mojo->res->code;
+    return get('https://metacpan.org');
+  })->then(sub {
+    my $cpan = shift;
+    say $cpan->res->code;
+  })->catch(sub {
+    my $err = shift;
+    warn "Something went wrong: $err";
+  })->wait;
+
+  # ノンブロッキング操作を同期する（すべて）
+  my $mojo = get('https://mojolicious.org');
+  my $cpan = get('https://metacpan.org');
+  Mojo::Promise->all($mojo, $cpan)->then(sub {
+    my ($mojo, $cpan) = @_;
+    say $mojo->[0]->res->code;
+    say $cpan->[0]->res->code;
+  })->catch(sub {
+    my $err = shift;
+    warn "Something went wrong: $err";
+  })->wait;
+
+  # ノンブロッキング操作を同期する (race)
+  my $mojo = get('https://mojolicious.org');
+  my $cpan = get('https://metacpan.org');
+  Mojo::Promise->race($mojo, $cpan)->then(sub {
+    my $tx = shift;
+    say $tx->req->url, ' won!';
+  })->catch(sub {
+    my $err = shift;
+    warn "Something went wrong: $err";
+  })->wait;
+
+=head1 説明
+
+[[Mojo::Promise]]はL<Promises/A+|https://promisesaplus.com>のPerl風の実装です。
+
+=head1 状態
+
+約束は、最終的な完了または失敗を表すオブジェクトです。
+ノンブロッキング操作次のように、ノンブロッキング関数から値を返すことができます。
+ブロッキング機能しかし、すぐに最終的な値を返すのではなく、
+ノンブロッキング関数は、関数内のある時点で値を提供するという約束を返します。
+未来。
+
+プロミスは、ノンブロッキング操作の最終的な完了か失敗を表現するオブジェクトです。
+ノンブロッキング関数が、ブロッキング関数のように、値を返すことができます。
+しかし、最終の値を直接返すのではなく、ノンブロッキング関数が、未来におけるあるポイントの値を供給するためにプロミスを返します。
+
+プロミスは、次の3つの状態のいずれかになります。
+
+=over 2
+
+=item 保留
+
+初期状態、達成も拒否もされていません。
+
+=item 達成
+
+操作が正常に完了したことを意味します。
+
+=item 拒否
+
+操作が失敗したことを意味します。
+
+=back
+
+保留中のプロミスは、値を持つ達成になるか、理由を持つ拒否のどちらかになります。
+どちらかが起こったときに、プロミスの"then"メソッドによって並べられた関連づけられたハンドラが呼び出されます。
+
+=head1 属性
+
+[[Mojo::Promise]]は次の属性を実装しています。
+
+=head2 ioloop
+
+  my $loop = $promise->ioloop;
+  $promise = $promise->ioloop(Mojo::IOLoop->new);
+
+制御するイベントループオブジェクト。デフォルトはグローバルな[[Mojo::IOLoop]]シングルトンです。
+この属性は弱参照です。
+
+=head1 メソッド
+
+[[Mojo::Promise]]は、[[Mojo::Base]]からすべてのメソッド継承しており、次の新しいメソッドを実装しています。
+
+=head2 all
+
+  my $new = Mojo::Promise->all(@promises);
+
+すべての渡された[[Mojo::Promise]]オブジェクトが達成するか、そのうちの一つが拒否されたときに、
+達成か拒否を示す[[Mojo::Promise]]オブジェクトを返します。
+もし返されたプロミスが達成すれば、渡されたプロミスと同じ順序で達成されたプロミスからの値で達成します。
+このメソッドは複数のプロミスの結果を集めるのに役立ちます。
+
+=head2 catch
+
+  my $new = $promise->catch(sub {...});
+
+Appends a rejection handler callback to the promise, and returns a new
+L<Mojo::Promise> object resolving to the return value of the callback if it is
+called, or to its original fulfillment value if the promise is instead
+fulfilled.
+
+プロミスに拒否ハンドラコールバックを追加し、もし呼び出されれば、コールバックの戻り値で解決した、新しい[[Mojo::Promise]]オブジェクトを返します。代わりにプロミスが達成されている場合は、もともとの達成の値になります。
+
+  # 長いバージョン
+  my $new = $promise->then(undef, sub {...});
+
+  # 拒否理由も渡す
+  $promise->catch(sub {
+    my @reason = @_;
+    warn "Something went wrong: $reason[0]";
+    return @reason;
+  });
+
+  # 拒否理由を変える
+  $promise->catch(sub {
+    my @reason = @_;
+    return "This is bad: $reason[0]";
+  });
+
+=head2 clone
+
+  my $new = $promise->clone;
+
+まだ保留中になっている、このプロミスから複製された、新しい[[Mojo::Promise]]オブジェクトを返します。
+
+=head2 finally
+
+  my $new = $promise->finally(sub {...});
+
+達成と拒否のハンドラをプロミスに追加し、もともとの達成の値か拒否理由で解決した新しい[[Mojo::Promise]]オブジェクトを返します。
+
+  # 達成と拒否において何かする
+  $promise->finally(sub {
+    my @value_or_reason = @_;
+    say "We are done!";
+  });
+
+=head2 race
+
+  my $new = Mojo::Promise->race(@promises);
+
+Returns a new L<Mojo::Promise> object that fulfills or rejects as soon as one of
+the passed L<Mojo::Promise> objects fulfills or rejects, with the value or
+reason from that promise.
+
+渡された[[Mojo::Promise]]オブジェクトの一つが達成か拒否になるとすぐに、その達成か拒否の新しい[[Mojo::Promise]]オブジェクトを返します。そのプロミスには値か理由が含まれます。
+
+=head2 reject
+
+  my $new  = Mojo::Promise->reject(@reason);
+  $promise = $promise->reject(@reason);
+
+拒否の[[Mojo::Promise]]オブジェクトを構築するか、ひとつかそれ以上の拒否理由で、プロミスを拒否します。
+
+  # 長いバージョン
+  my $promise = Mojo::Promise->new->reject(@reason);
+
+=head2 resolve
+
+  my $new  = Mojo::Promise->resolve(@value);
+  $promise = $promise->resolve(@value);
+
+解決の[[Mojo::Promise]]オブジェクトを構築するか、ひとつかそれ以上の達成の値でプロミスを解決します。
+
+  # 長いバージョン
+  my $promise = Mojo::Promise->new->resolve(@value);
+
+=head2 then
+
+  my $new = $promise->then(sub {...});
+  my $new = $promise->then(sub {...}, sub {...});
+  my $new = $promise->then(undef, sub {...});
+
+達成か拒否のハンドラをプロミスに追加し、呼び出されたハンドラの値を返すように解決した新しい[[Mojo::Promise]]オブジェクトを返します。
+
+  # 達成の値か拒否理由を渡す
+  $promise->then(
+    sub {
+      my @value = @_;
+      say "The result is $value[0]";
+      return @value;
+    },
+    sub {
+      my @reason = @_;
+      warn "Something went wrong: $reason[0]";
+      return @reason;
+    }
+  );
+
+  # 達成の値か拒否理由を変更します
+  $promise->then(
+    sub {
+      my @value = @_;
+      return "This is good: $value[0]";
+    },
+    sub {
+      my @reason = @_;
+      return "This is bad: $reason[0]";
+    }
+  );
+
+=head2 timeout
+
+  my $new  = Mojo::Promise->timeout(5 => 'Timeout!');
+  $promise = $promise->timeout(5 => 'Timeout!');
+  $promise = $promise->timeout(5);
+
+タイムアウトを指定して新しい[[Mojo::Promise]]オブジェクトを作成するか、すでに存在するプロミスにタイムアウトを設定します。
+プロミスは、理由と一緒に与えられた秒数のの後に、拒否されます。デフォルトは、プロミスのタイムアウトです。
+方法は実験的であり、警告なしに変更される可能性があります。
+
+=head2 wait
+
+  $promise->wait;
+
+"ioloop"を起動し、プロミスが達成あるいは拒否されたら再び停止します。
+"ioloop"が既に実行されているときは何もしません。
+
+=head1 SEE ALSO
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<https://mojolicious.org>.
+
+(Mojolicious 8.12を反映。2019年5月27日)
+
+=cut

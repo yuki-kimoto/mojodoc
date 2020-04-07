@@ -1,0 +1,477 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Plugin::DefaultHelpers - デフォルトヘルパープラグイン
+
+=head1 使い方
+
+  # Mojolicious
+  $self->plugin('DefaultHelpers');
+
+  # Mojolicious::Lite
+  plugin 'DefaultHelpers';
+
+=head1 説明
+
+[[Mojolicious::Plugin::DefaultHelpers]]は[[Mojolicious]]の
+レンダラのヘルパーの集合です。
+これはコアのプラグインで、いつでも有効になっており、
+そのコードは新しいプラグインを構築する
+ことを学ぶための良いサンプルです。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 ヘルパー
+
+=head2 accepts
+
+  my $formats = $c->accepts;
+  my $format  = $c->accepts('html', 'json', 'txt');
+
+[[Mojolicious::Renderer]]のC<accepts>を使って
+C<Accept>リクエストヘッダー、スタッシュのC<format>の値、
+あるいはから、リソースのためにもっともよい可能な表現
+を選択します。C<GET>/C<POST>パラメーターのC<format>の値
+デフォルトでは優先順位が検知できなかった場合は、最初の拡張子が返却されます。
+
+  # JSONが受け入れかのうかチェック
+  $c->render(json => {hello => 'world'}) if $c->accepts('json');
+
+  # JSONが明確にリクエストされたかどうかのチェック
+  $c->render(json => {hello => 'world'}) if $c->accepts('', 'json');
+
+  # サポートしない表現
+  $c->render(data => '', status => 204)
+    unless my $format = $c->accepts('html', 'json');
+
+  # 選択するための表現を検知
+  my @formats = @{$c->accepts};
+
+=head2 app
+
+  %= app->secrets->[0]
+
+[[Mojolicious::Controller]]のC<app>のエイリアス。
+
+=head2 b
+
+  %= b('Joel is a slug')->slugify
+
+文字列を[[Mojo::ByteStream]]オブジェクトに変換。
+
+=head2 c
+
+  %= c('a', 'b', 'c')->shuffle->join
+
+リストを[[Mojo::Collection]]オブジェクトに変換。
+
+=head2 config
+
+  %= config 'something'
+
+[[Mojo]]のC<config>のエイリアス。
+
+=head2 content
+
+  %= content foo => begin
+    test
+  % end
+  %= content bar => 'Hello World!'
+  %= content 'foo'
+  %= content 'bar'
+  %= content
+
+名前つきのバッファの中に、部分的に描画されたコンテンツを保存し、取得します。
+一般的にはC<layout>とC<extends>を描画するために利用されます。
+新しいコンテンツは名前つきバッファがすでに利用されていた場合は、
+無視されることに注意してください。
+
+=head2 content_for
+
+  % content_for foo => begin
+    test
+  % end
+  %= content_for 'foo'
+
+C<content>と同じですが、すでに使用中であれば名前つきバッファにコンテンツを追加します。
+
+  % content_for message => begin
+    Hello
+  % end
+  % content_for message => begin
+    world!
+  % end
+  %= content 'message'
+
+=head2 content_with
+
+  % content_with foo => begin
+    test
+  % end
+  %= content_with 'foo'
+
+C<content>と同じですが、使用されていれば置き換えます。
+
+  % content message => begin
+    world!
+  % end
+  % content_with message => begin
+    Hello <%= content 'message' %>
+  % end
+  %= content 'message'
+
+=head2 continue
+
+  $c->continue;
+
+[[Mojolicious::Routes]]のC<continue>でディスパッチチェーンを継続します。
+
+=head2 csrf_token
+
+  %= csrf_token
+
+C<session>からCSRFトークンを取得します。
+もしなけえれば、生成します。
+
+=head2 current_route
+
+  % if (current_route 'login') {
+    Welcome to Mojolicious!
+  % }
+  %= current_route
+
+現在のルート名をチェック、あるいは取得します。
+
+=head2 dumper
+
+  %= dumper {some => 'data'}
+
+[[Mojo::Util]]のC<dumper>を使ってPerlのデータ構造をダンプします。
+デバッグに便利です。
+
+=head2 extends
+
+  % extends 'blue';
+  % extends 'blue', title => 'Blue!';
+
+テンプレートを拡張します。すべての追加のキーと値のペアは、「stash」にマージされます。
+
+=head2 flash
+
+  my $foo = $c->flash('foo');
+  $c      = $c->flash({foo => 'bar'});
+  $c      = $c->flash(foo => 'bar');
+  %= flash 'foo'
+
+[[Mojolicious::Controller]]のC<flash>のエイリアス。
+
+次のリクエストだけに持続するデータストレージ。「session」に保存されます。
+
+  # リダイレクトの後にメッセージを表示
+  $c->flash(message => 'User created successfully!');
+  $c->redirect_to('show_user', id => 23);
+
+=head2 inactivity_timeout
+
+  $c->inactivity_timeout(3600);
+
+[[Mojo::IOLoop]]のC<stream>を使って、
+現在の接続を見つけ、可能であれば、タイムアウトを増やします。
+
+  # 長いバージョン
+  Mojo::IOLoop->stream($c->tx->connection)->timeout(3600);
+
+=head2 include
+
+  %= include 'menubar'
+  %= include 'menubar', format => 'txt'
+
+[[Mojolicious::Controller]]のC<render_to_string>のエイリアスです。
+
+=head2 is_fresh
+
+  my $bool = $c->is_fresh;
+  my $bool = $c->is_fresh(etag => 'abc');
+  my $bool = $c->is_fresh(last_modified => $epoch);
+
+[[Mojolicious::Static]]のC<is_fresh>を使って
+C<If-None-Match>、C<If-Modified-Since>リクエストヘッダを
+C<ETag>、C<Last-Modified>レスポンスヘッダと比較することによって
+リクエストの新鮮さをチェックします。
+
+  # ETag/Last-Modifiedヘッダーを追加し、描画の前に新鮮さを確認する
+  $c->is_fresh(etag => 'abc', last_modified => 1424985708)
+    ? $c->rendered(304)
+    : $c->render(text => 'I ♥ Mojolicious!');
+
+=head2 layout
+
+  % layout 'green';
+  % layout 'green', title => 'Green!';
+
+C<layout>スタッシュの値を設定します。
+キーと値のペアは、C<stash>にマージされます。
+
+=head2 param
+
+  %= param 'foo'
+
+[[Mojolicious::Controller]]のC<param>のエイリアス。
+
+=head2 redirect_to
+
+  $c = $c->redirect_to('named', foo => 'bar');
+  $c = $c->redirect_to('named', {foo => 'bar'});
+  $c = $c->redirect_to('/index.html');
+  $c = $c->redirect_to('http://example.com/index.html');
+
+C<302>リダイレクトレスポンスを準備します。C<url_for>と同じ引数を受け取ります。
+
+  # 永続的な移動
+  $c->res->code(301);
+  $c->redirect_to('some_route');
+
+  # 一時的なリダイレクト
+  $c->res->code(307);
+  $c->redirect_to('some_route');
+  
+=head2 reply->asset
+
+  $c->reply->asset(Mojo::Asset::File->new);
+
+[[Mojolicious::Static]]のC<serve_asset>を使って、
+[[Mojo::Asset::File]]あるいは[[Mojo::Asset::Memory]]オブジェクトで応答し、
+C<Range>, C<If-Modified-Since>,C<If-None-Match>ヘッダで、
+コンテンツネゴシエーションを実行します。
+
+  # カスタムの修正時刻でアセットをサーブ
+  my $asset = Mojo::Asset::Memory->new;
+  $asset->add_chunk('Hello World!')->mtime(784111777);
+  $c->res->headers->content_type('text/plain');
+  $c->reply->asset($asset);
+
+  # 存在するならば、静的ファイルをサーブ
+  if (my $asset = $c->app->static->file('images/logo.png')) {
+    $c->res->headers->content_type('image/png');
+    $c->reply->asset($asset);
+  }
+
+=head2 reply->exception
+
+  $c = $c->reply->exception('Oops!');
+  $c = $c->reply->exception(Mojo::Exception->new('Oops!'));
+
+例外テンプレートC<exception.$mode.$format.*>あるいはC<exception.$format.*>
+を描画し、レスポンスステータスコードをC<500>に設定します。
+スタッシュの値のC<exception>には、[[Mojo::Exception]]オブジェクトが設定され
+C<snapshot>には、テンプレートで使用されているC<stash>のコピーへのが設定されます。
+
+=head2 reply->file
+
+  $c->reply->file('/etc/passwd');
+
+[[Mojolicious]]の「static」を使って、ファイルシステムの絶対パスから静的ファイルを返答します。
+
+  # 長いバージョン
+  $c->reply->asset(Mojo::Asset::File->new(path => '/etc/passwd'));
+
+  # カスタムコンテントタイプで絶対パスからファイルをサーブ
+  $c->res->headers->content_type('application/myapp');
+  $c->reply->file('/home/sri/foo.txt');
+
+  # 秘密のアプリケーションディレクトリからファイルをサーブ
+  $c->reply->file($c->app->home->child('secret', 'file.txt'));
+
+=head2 reply->not_found
+
+  $c = $c->reply->not_found;
+
+Not FoundテンプレートC<not_found.$mode.$format.*>かC<not_found.$format.*>
+を描画し、レスポンスステータスコードをC<404>に設定します。
+スタッシュの値C<snapshot>には、テンプレートで利用されているC<stash>の
+コピーが設定されます。
+
+=head2 reply->static
+
+  my $bool = $c->reply->static('images/logo.png');
+  my $bool = $c->reply->static('../lib/MyApp.pm');
+
+[[Mojolicious]]のC<static>を使って
+静的なファイルで応答します。
+通常は、C<public>ディレクトリかアプリケーションのC<DATA>セクションが基点です。
+このヘルパーは、親ディレクトリへのトラバーサルを防がないことに注意してください。
+
+  # カスタムコンテントタイプでファイルを応答する
+  $c->res->headers->content_type('application/myapp');
+  $c->reply->static('foo.txt');
+
+=head2 respond_to
+
+  $c->respond_to(
+    json => {json => {message => 'Welcome!'}},
+    html => {template => 'welcome'},
+    any  => sub {...}
+  );
+
+C<Accept>リクエストヘッダ、C<format>のスタッシュの値、C<format>のGET/POSTパラメーターから、自動的に可能である最適なリソースの表現を選択します。デフォルトで空のC<204>レスポンスを描画します。
+ブラウザは実際にほしいものを知らないことがときどきあるので、
+C<X-Requested-With>ヘッダが値に設定されていない場合は、
+ひとつ以上のMIMEタイプが含まれたC<Accept>リクエストヘッダは無視されます。
+
+  # "json"と"xml"以外のすべては204レスポンスを得る
+  $c->respond_to(
+    json => sub { $c->render_json({just => 'works'}) },
+    xml  => {text => '<just>works</just>'},
+    any  => {data => '', status => 204}
+  );
+
+より発展的なネゴシエーションのためには、
+[[Mojolicious::Plugin::DefaultHelpers]]のC<accepts>を使用することができます。
+
+=head2 session
+
+  %= session 'foo'
+
+[[Mojolicious::Controller]]のC<session>のエイリアス。
+
+=head2 stash
+
+  %= stash 'foo'
+  % stash foo => 'bar';
+
+[[Mojolicious::Controller]]のC<stash>のエイリアス。
+
+  %= stash('name') // 'Somebody'
+
+=head2 timing->begin
+
+  $c->timing->begin('foo');
+
+L<"timing-E<gt>elapsed">のために、名前付きのタイムスタンプを生成します。
+
+=head2 timing->elapsed
+
+  my $elapsed = $c->timing->elapsed('foo');
+
+「timing-E<gt>begin」で名前付きtimstampが生成されてからの経過時間を秒単位で返します。
+生成されたタイムスタンプがない場合は、C<undef>を返します。
+
+  # 長いタイミング情報
+  $c->timing->begin('database_stuff');
+  ...
+  my $elapsed = $c->timing->elapsed('database_stuff');
+  $c->app->log->debug("Database stuff took $elapsed seconds");
+
+=head2 timing->rps
+
+  my $rps = $c->timing->rps('0.001');
+
+すべての単独のリクエストが1秒の間に費やした時間があれば、1秒間に実行できるリクエストの小数部を返します。
+数が少なすぎる場合は、C<undef>を返します。
+
+  # 多くのタイミング情報をログに出力
+  $c->timing->begin('web_stuff');
+  ...
+  my $elapsed = $c->timing->elapsed('web_stuff');
+  my $rps     = $c->timing->rps($elapsed);
+  $c->app->log->debug("Web stuff took $elapsed seconds ($rps per second)");
+
+=head2 timing->server_timing
+
+  $c->timing->server_timing('metric');
+  $c->timing->server_timing('metric', 'Some Description');
+  $c->timing->server_timing('metric', 'Some Description', '0.001');
+
+オプションの説明と期間を使って、C<Server-Timing>ヘッダを生成します。
+
+  # "Server-Timing: miss"
+  $c->timing->server_timing('miss');
+
+  # "Server-Timing: dc;desc=atl"
+  $c->timing->server_timing('dc', 'atl');
+
+  # "Server-Timing: db;desc=Database;dur=0.0001"
+  $c->timing->begin('database_stuff');
+  ...
+  my $elapsed = $c->timing->elapsed('database_stuff');
+  $c->timing->server_timing('db', 'Database', $elapsed);
+
+  # "Server-Timing: miss, dc;desc=atl"
+  $c->timing->server_timing('miss');
+  $c->timing->server_timing('dc', 'atl');
+
+=head2 title
+
+  %= title
+  % title 'Welcome!';
+  % title 'Welcome!', foo => 'bar';
+
+C<title>スタッシュの値を、取得、設定します。
+すべてのキーと値のペアはスタッシュにマージされます。
+
+=head2 ua
+
+  %= ua->get('mojolicio.us')->res->dom->at('title')->text
+
+[[Mojo]]のC<ua>のエイリアス。
+
+=head2 url_for
+
+  %= url_for 'named', controller => 'bar', action => 'baz'
+
+[[Mojolicious::Controller]]のC<url_for>のエイリアス。
+
+  %= url_for('/index.html')->query(foo => 'bar')
+
+=head2 url_with
+
+  %= url_with 'named', controller => 'bar', action => 'baz'
+
+C<url_for>と同じですが、現在のリクエストから
+クエリ文字列を受け継ぎます。
+
+  %= url_with->query({page => 2})
+
+=head2 validation
+
+  my $validation = $c->validation;
+
+C<GET>とC<POST>パラメーターを検証するための現在のリクエストのための
+[[Mojolicious::Validator::Validation]]オブジェクトです。
+リクエストボディの部分は、C<POST>パラメーターを解析するために、
+メモリ上にロードされる必要があります。
+そのために大きくなりすぎないように注意してください、
+デフォルトは16MBの制限があります。
+
+  # GET/POSTパラメーターを検証
+  my $v = $c->validation;
+  $v->required('title', 'trim')->size(3, 50);
+  my $title = $v->param('title');
+
+  # ファイルアップロードを検証
+  my $v = $c->validation;
+  $v->required('tarball')->upload->size(1, 1048576);
+  my $tarball = $v->param('tarball');
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::DefaultHelpers]]は
+L<Mojolicious::Plugin>からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 register
+
+  $plugin->register;
+
+[[Mojolicious]]アプリケーションにヘルパーを登録します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月12日更新)
+
+=cut

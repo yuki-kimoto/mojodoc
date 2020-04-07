@@ -1,0 +1,89 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojolicious::Plugin::PODRenderer
+
+=head1 名前
+
+Mojolicious::Plugin::PODRenderer - PODレンダラープラグイン
+
+=head1 使い方
+
+  # Mojolicious ("/perldoc"でドキュメントをブラウズ)
+  my $route = $self->plugin('PODRenderer');
+  my $route = $self->plugin(PODRenderer => {name => 'foo'});
+  my $route = $self->plugin(PODRenderer => {preprocess => 'epl'});
+
+  # Mojolicious::Lite ("/perldoc"でドキュメントをブラウズ)
+  my $route = plugin 'PODRenderer';
+  my $route = plugin PODRenderer => {name => 'foo'};
+  my $route = plugin PODRenderer => {preprocess => 'epl'};
+
+  # ドキュメントブラウザなし
+  plugin PODRenderer => {no_perldoc => 1};
+
+  # foo.html.ep
+  %= pod_to_html "=head1 TEST\n\nC<123>"
+
+  # foo.html.pod
+  =head1 <%= uc 'test' %>
+
+=head1 説明
+
+[[Mojolicious::Plugin::PODRenderer]]は、真のPerlハッカーのためのレンダラーです。がおーっ！
+
+このプラグインは新しいプラグインを構築を学ぶためのよいサンプルとなっています。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 オプション
+
+=head2 name
+
+  # Mojolicious::Lite
+  plugin PODRenderer => {name => 'foo'};
+
+ハンドラの名前。
+
+=head2 no_perldoc
+
+  # Mojolicious::Lite
+  plugin PODRenderer => {no_perldoc => 1};
+
+perldocブラウザを無効にします。
+
+=head2 preprocess
+
+  # Mojolicious::Lite
+  plugin PODRenderer => {preprocess => 'epl'};
+
+プリプロセッサのハンドラの名前。
+
+=head1 ヘルパー
+
+=head2 pod_to_html
+
+  %= pod_to_html '=head2 lalala'
+  <%= pod_to_html begin %>=head2 lalala<% end %>
+
+PODをHTMLに変換します。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::PODRenderer]]は、[[Mojolicious::Plugin]]のすべてのメソッドを継承し、以下の新しいメソッドを実装しています。
+
+=head2 register
+
+  my $route = $plugin->register(Mojolicious->new);
+  my $route = $plugin->register(Mojolicious->new, {name => 'foo'});
+
+[[Mojolicious]]アプリケーションにレンダラーを登録します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 6.05を反映)
+
+=cut

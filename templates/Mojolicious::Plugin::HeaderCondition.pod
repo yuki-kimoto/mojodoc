@@ -1,0 +1,60 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Plugin::HeaderCondition - ヘッダー条件プラグイン
+
+=head1 使い方
+
+  # Mojolicious
+  $self->plugin('HeaderCondition');
+  $self->routes->route('/:controller/:action')
+    ->over(headers => {Referer => qr/example\.com/});
+
+  # Mojolicious::Lite
+  plugin 'HeaderCondition';
+  get '/' => (headers => {Referer => qr/example\.com/}) => sub {...};
+
+  # マッチするためにはすべてのヘッダが必要
+  $self->routes->route('/:controller/:action')->over(headers => {
+    'X-Secret-Header' => 'Foo',
+    Referer => qr/example\.com/
+  });
+
+  # "agent"条件は"User-Agent"ヘッダのショートカット
+  get '/' => (agent => qr/Firefox/) => sub {...};
+
+  # "host"条件は検知されるホストのためのショートカット
+  get '/' => (host => qr/mojolicio\.us/) => sub {...};
+
+=head1 説明
+
+[[Mojolicious::Plugin::HeaderCondition]]はルートに基づいた
+ユーザーエージェントのルートの条件です。
+これはコアのプラグインで
+いつでも有効になっており、そのコードは新しいプラグインを構築する
+ことを学ぶための良いサンプルです。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::HeaderCondition]]は[[Mojolicious::Plugin]]
+からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 register
+
+  $plugin->register;
+
+[[Mojolicious]]アプリケーションに条件を登録します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月12日)
+
+=cut

@@ -1,0 +1,115 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Plugin::JSONConfig - JSONコンフィグプラグイン
+
+=head1 使い方
+
+  # myapp.json (これは埋め込みのPerlが利用できるJSONです。)
+  {
+    %# Just a value
+    "foo": "bar",
+
+    %# Nested data structures are fine too
+    "baz": ["♥"],
+
+    %# You have full access to the application
+    "music_dir": "<%= app->home->child('music') %>"
+  }
+
+  # Mojolicious
+  my $config = $self->plugin('JSONConfig');
+  say $config->{foo};
+
+  # Mojolicious::Lite
+  my $config = plugin 'JSONConfig';
+  say $config->{foo};
+
+  # foo.html.ep
+  %= $config->{foo}
+
+  # 設定はアプリケーション全体で利用可能
+  my $config = app->config;
+  say $config->{foo};
+
+  # オプションですべてをカスタマイズ可能
+  my $config = plugin JSONConfig => {file => '/etc/myapp.conf'};
+
+=head1 説明
+
+[[Mojolicious::Plugin::JSONConfig]]は[[Mojo::Template]]でその入力を前処理するJSONコンフィグプラグインです。
+
+アプリケーションオブジェクトはC<$app>あるいはC<app>ヘルパーを通してアクセスされます。
+通常のコンフィグファイルであるC<myapp.json>は、C<myapp.$mode.json>のようにモードを指定することによって拡張することができます。
+デフォルトのコンフィグのファイル名はアプリケーションクラスは[[Mojolicious]]
+のC<moniker>メソッドの値から生成されます。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 オプション
+
+[[Mojolicious::Plugin::JSONConfig]]は[[Mojolicious::Plugin::Config]]と同じオプションを
+受け取り、次の新しいオプションがあります。
+
+=head2 template
+
+  # Mojolicious::Lite
+  plugin JSONConfig => {template => {line_start => '.'}};
+
+[[Mojo::Template]]オブジェクトに渡される属性値、
+設定ファイルを前処理するために利用されます。
+
+=head1 ヘルパー
+
+[[Mojolicious::Plugin::JSONConfig]]は[[Mojolicious::Plugin::Config]]から
+すべてのヘルパーを継承しています。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::JSONConfig]]>は
+[[Mojolicious::Plugin::Config]]のすべてのメソッドを実装しており、
+次の新しいメソッドを実装しています。
+
+=head2 parse
+
+  $plugin->parse($content, $file, $conf, $app);
+
+C<render>でコンテンツを処理し、[[Mojo::JSON]]で解析します。
+
+  sub parse {
+    my ($self, $content, $file, $conf, $app) = @_;
+    ...
+    $content = $self->render($content, $file, $conf, $app);
+    ...
+    return $hash;
+  }
+
+=head2 register
+
+  my $config = $plugin->register(Mojolicious->new);
+  my $config = $plugin->register(Mojolicious->new, {file => '/etc/foo.conf'});
+
+[[Mojolicious]]アプリケーションにプラグインを登録します。
+
+=head2 render
+
+  $plugin->render($content, $file, $conf, $app);
+
+[[Mojo::Template]]でコンフィグファイルを処理します。
+
+  sub render {
+    my ($self, $content, $file, $conf, $app) = @_;
+    ...
+    return $content;
+  }
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月12日更新)
+
+=cut

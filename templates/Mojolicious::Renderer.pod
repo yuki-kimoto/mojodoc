@@ -1,0 +1,244 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Renderer - MIMEタイプに基づくレンダラ
+
+=head1 使い方
+
+  my $renderer = Mojolicious::Renderer->new;
+  push @{$renderer->classes}, 'MyApp::Controller::Foo';
+  push @{$renderer->paths}, '/home/sri/templates';
+
+
+=head1 説明
+
+[[Mojolicious::Renderer]]は標準の[[Mojolicious]]のレンダラです。
+蓄積されたデータ構造はコンテンツに変換されます。
+より多くのことを知るには[[Mojolicious::Guides::Rendering]]を見てください。
+
+=head1 属性
+
+[[Mojolicious::Renderer]]は次の属性を実装しています。
+
+=head2 cache
+
+  my $cache = $renderer->cache;
+  $renderer = $renderer->cache(Mojo::Cache->new);
+
+レンダラのキャッシュ。デフォルトは[[Mojo::Cache]]オブジェクトです。
+
+=head2 classes
+
+  my $classes = $renderer->classes;
+  $renderer   = $renderer->classes(['main']);
+
+[[Mojo::Loader]]を使って、
+C<DATA> セクションに記述されたテンプレートを探すためのクラス。
+先頭にあるクラスから順に探します。デフォルトは C<main> です。
+
+  # DATAセクションのテンプレートのために他のクラスを追加
+  push @{$renderer->classes}, 'Mojolicious::Plugin::Fun';
+
+=head2 compress
+
+  my $bool  = $renderer->compress;
+  $renderer = $renderer->compress($bool);
+
+動的に生成されたレスポンスコンテンツの圧縮を交渉し、自動的にC<gzip>圧縮しようとします。
+デフォルトは、無効です。実験的であり、警告なしに変更される可能性があります。
+
+=head2 default_format
+
+  my $default = $renderer->default_format;
+  $renderer   = $renderer->default_format('html');
+
+C<format>がスタッシュに設定されていない場合の描画のためのデフォルトのフォーマット。
+レンダラはコンテンツのMIMEタイプを検索するために[[Mojolicious]]のC<types>を使用します。
+
+=head2 default_handler
+
+  my $default = $renderer->default_handler;
+  $renderer   = $renderer->default_handler('epl');
+
+自動検知が機能しない場合に描画のために利用する
+デフォルトのテンプレートのハンドラ。
+これはC<inline>テンプレートのためです。
+
+=head2 encoding
+
+  my $encoding = $renderer->encoding;
+  $renderer    = $renderer->encoding('koi8-r');
+
+もし設定されていれば、コンテンツはエンコードされます。
+デフォルトはC<UTF-8>。
+[[Mojolicious::Plugin::EPRenderer]]のような多くのレンダラーは
+テンプレートファイルが処理前にどのようにデコードすべきかを
+決定するためにこの値を利用します。
+
+=head2 handlers
+
+  my $handlers = $renderer->handlers;
+  $renderer    = $renderer->handlers({epl => sub { ... }});
+
+ハンドラを登録します。
+
+=head2 helpers
+
+  my $helpers = $renderer->helpers;
+  $renderer   = $renderer->helpers({url_for => sub { ... }});
+
+ヘルパーを登録します。
+
+=head2 paths
+
+  my $paths = $renderer->paths;
+  $renderer = $renderer->paths(['/foo/bar/templates']);
+
+テンプレートを探すディレクトリ。先頭にあるディレクトリから順に探します。
+
+  # 別の templates ディレクトリを追加
+  push @{$renderer->paths}, '/foo/bar/templates';
+
+  # 優先順位の高い他の「templates」ディレクトリを追加
+  unshift @{$renderer->paths}, '/home/sri/themes/blue/templates';
+
+=head1 メソッド
+
+[[Mojolicious::Renderer]]は[[Mojo::Base]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 accepts
+ 
+  my $all  = $renderer->accepts(Mojolicious::Controller->new);
+  my $best = $renderer->accepts(Mojolicious::Controller->new, 'html', 'json');
+
+C<Accept>リクエストヘッダー, スタッシュのC<format>の値、
+C<GET>/C<POST>パラメータのC<format>の値から
+[[Mojolicious::Controller]]オブジェクトのための可能な表現を選択します。
+デフォルトで、もし優先順位が決定できない場合は、最初の拡張子を返します。
+ブラウザはしばしば本当は何を実際に望んでいるかをしらないので、
+もしC<X-Requested-With>ヘッダにC<XMLHttpRequest>の値がなければ
+ひとつ以上のMIMEタイプをもつ不確定なC<Accept>リクエストヘッダは無視されるでしょう。
+
+=head2 add_handler
+
+  $renderer = $renderer->add_handler(epl => sub { ... });
+    
+レンダラに新しいハンドラを追加します。
+
+  $renderer->add_handler(foo => sub {
+    my ($renderer, $c, $output, $options) = @_;
+    ...
+    $$output = 'Hello World!';
+  });
+
+=head2 add_helper
+
+  $renderer = $renderer->add_helper(url_for => sub { ... });
+
+新しいヘルパーをレンダラに登録します。
+
+  $renderer->add_helper(foo => sub {
+    my ($c, @args) = @_;
+    ...
+  });
+
+=head2 get_data_template
+
+  my $template = $renderer->get_data_template({
+    template       => 'foo/bar',
+    format         => 'html',
+    handler        => 'epl'
+  });
+
+オプションのC<template>, C<format>, C<variant> and C<handler>の値を指定したハッシュレファレンスで、"classes"からC<DATA>テンプレートを取得します。テンプレートが見つからなかった場合は、C<undef>を返します。
+通常はハンドラで利用されます。
+
+=head2 new
+
+  my $renderer = Mojolicious::Renderer->new;
+
+新しいレンダラを構築します。
+
+=head2 get_helper
+
+  my $helper = $renderer->get_helper('url_for');
+
+完全な名前でヘルパーを取得し、プレフィックスつきのヘルパーを
+動的に生成します。
+ヘルパーかプレフィックスが見つからなければC<undef>を返します。
+生成されたヘルパーは現在のコントローラーオブジェクトを含んでいる
+プロキシオブジェクトを返却し、
+ネストされたヘルパーを呼び出すことができます。
+
+=head2 render
+
+  my ($output, $type) = $renderer->render(Mojolicious::Controller->new, {
+    template => 'foo/bar',
+    foo      => 'bar'
+  });
+
+Mojoのレンダラのひとつを通して出力を描画します。
+よりユーザーフレンドリーなインターフェースについては
+[[Mojolicious::Controller]]のC<render>を見てください。
+
+=head2 respond
+
+  my $bool = $renderer->respond(Mojolicious::Controller->new, $output, $format);
+  my $bool = $renderer->respond(
+    Mojolicious::Controller->new, $output, $format, $status);
+
+動的に生成されたレスポンスコンテンツをファイナライズし、可能であれば、圧縮します。
+このメソッドは実験的なものであり、変更することなく変更できることに注意してください。
+
+=head2 template_for
+
+  my $name = $renderer->template_for(Mojolicious::Controller->new);
+
+[[Mojolicious::Controller]]オブジェクトのための
+デフォルトのテンプレート名を生成します。
+
+=head2 template_handler
+
+  my $handler = $renderer->template_handler({
+    template => 'foo/bar',
+    format   => 'html'
+  });
+
+C<template>とC<format>を持ったオプションのハッシュリファレンスに基づいてハンドラを検知します。
+ハンドラが見つからなければ、undefを返します。
+
+=head2 template_name
+
+  my $template = $renderer->template_name({
+    template => 'foo/bar',
+    format   => 'html',
+    handler  => 'epl'
+  });
+
+C<template>, C<format>, C<handler>を持つオプションのハッシュに基づいて
+テンプレート名を構築します。
+テンプレートが見つからなければ、undefを返します。通常はハンドラによって利用されます。
+
+=head2 template_path
+
+  my $path = $renderer->template_path({
+    template => 'foo/bar',
+    format   => 'html',
+    handler  => 'epl'
+  });
+
+C<template>, C<format>, C<handler>を持つオプションのハッシュに基づいて、
+テンプレートのフルパスを構築します。
+ファイルがパスの中に見つからなければ、undefを返します。通常はハンドラによって利用されます。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月13日更新)
+
+=cut

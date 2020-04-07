@@ -1,0 +1,88 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::daemon - デーモンコマンド
+
+=head1 使い方
+
+  Usage: APPLICATION daemon [OPTIONS]
+
+    ./myapp.pl daemon
+    ./myapp.pl daemon -m production -l http://*:8080
+    ./myapp.pl daemon -l http://127.0.0.1:8080 -l https://[::]:8081
+    ./myapp.pl daemon -l 'https://*:443?cert=./server.crt&key=./server.key'
+    ./myapp.pl daemon -l http+unix://%2Ftmp%2Fmyapp.sock
+
+  Options:
+    -b, --backlog <size>                 Listen backlog size, defaults to
+                                         SOMAXCONN
+    -c, --clients <number>               Maximum number of concurrent
+                                         connections, defaults to 1000
+    -h, --help                           Show this summary of available options
+        --home <path>                    Path to home directory of your
+                                         application, defaults to the value of
+                                         MOJO_HOME or auto-detection
+    -i, --inactivity-timeout <seconds>   Inactivity timeout, defaults to the
+                                         value of MOJO_INACTIVITY_TIMEOUT or 15
+    -l, --listen <location>              One or more locations you want to
+                                         listen on, defaults to the value of
+                                         MOJO_LISTEN or "http://*:3000"
+    -m, --mode <name>                    Operating mode for your application,
+                                         defaults to the value of
+                                         MOJO_MODE/PLACK_ENV or "development"
+    -p, --proxy                          Activate reverse proxy support,
+                                         defaults to the value of
+                                         MOJO_REVERSE_PROXY
+    -r, --requests <number>              Maximum number of requests per
+                                         keep-alive connection, defaults to 100
+
+=head1 説明
+
+[[Mojolicious::Command::daemon]]は[[Mojo::Server::Daemon]]
+のコマンドインターフェースです。
+
+いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目
+をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::daemon]]は[[Mojo::Command]]からすべての属性を
+継承しており、次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $daemon->description;
+  $daemon         = $daemon->description('Foo');
+
+このコマンドの短い説明。コマンド一覧のために利用されます。
+
+=head2 usage
+
+  my $usage = $daemon->usage;
+  $daemon   = $daemon->usage('Foo');
+
+このコマンドの使用情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::daemon]]は[[Mojo::Command]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $daemon = $daemon->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

@@ -1,0 +1,314 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::DOM::CSS - CSSセレクタエンジン
+
+=head1 使い方
+
+  use Mojo::DOM::CSS;
+
+  # DOMツリーから要素を選択
+  my $css = Mojo::DOM::CSS->new(tree => $tree);
+  my $elements = $css->select('h1, h2, h3');
+
+=head1 説明
+
+[[Mojo::DOM::CSS]]は[[Mojo::DOM]]で利用されるCSSセレクタエンジンです。
+L<HTML Living Standard|https://html.spec.whatwg.org>とL<Selectors Level 3|http://www.w3.org/TR/css3-selectors/>に基づきます。
+
+=head1 セレクタ
+
+スタンドアロンパーサに理解できるすべての CSSセレクタがサポートされます。
+
+=head2 *
+
+全ての要素
+
+  my $first = $dom->at('*');
+
+=head2 E
+
+要素名が C<E> である要素。
+
+  my $title = $dom->at('title');
+
+=head2 E[foo]
+
+C<foo> 属性を持つ C<E> 要素。
+
+  my $links = $css->select('a[foo^=b][foo$=ar]');
+
+=head2 E[foo="bar"]
+
+C<foo> 属性を持ち、その値が正に C<bar> と等しい C<E> 要素。
+
+  my $case_sensitive = $css->select('input[type="hidden"]');
+  my $case_sensitive = $css->select('input[type=hidden]');
+
+=head2 E[foo="bar" i]
+
+C<foo>属性の値がC<bar>にあらゆる(ASCIIの範囲)ケース順序で完全に一致するC<E>要素。
+このセレクタは実験的なものなので、警告なしに変更されます。
+
+  my $case_insensitive = $css->select('input[type="hidden" i]');
+  my $case_insensitive = $css->select('input[type=hidden i]');
+  my $case_insensitive = $css->select('input[class~="foo" i]');
+
+このセレクタはL<Selectors Level 4|http://dev.w3.org/csswg/selectors-4>
+です。これはまだ仕様策定中のものです。
+
+=head2 E[foo~="bar"]
+
+C<foo> 属性の値が、空白文字で区切られた幾つかの値であり、
+その内のひとつが正に C<bar> と等しい C<E> 要素。
+
+  my $foo = $css->select('input[class~="foo"]');
+  my $foo = $css->select('input[class~=foo]');
+
+=head2 E[foo^="bar"]
+
+C<foo> 属性の値が正に文字列 C<bar> で始まる C<E> 要素。
+
+  my $begins_with = $css->select('input[name^="f"]');
+  my $begins_with = $css->select('input[name^=f]');
+
+=head2 E[foo$="bar"]
+
+C<foo> 属性の値が正に文字列 C<bar> で終わる C<E> 要素。
+
+  my $ends_with = $css->select('input[name$="o"]');
+  my $ends_with = $css->select('input[name$=o]');
+
+=head2 E[foo*="bar"]
+
+C<foo> 属性の値が文字列 C<bar> を含んでいる C<E> 要素。
+
+  my $contains = $css->select('input[name*="fo"]');
+  my $contains = $css->select('input[name*=fo]');
+
+=head2 E:root
+
+文書のルートである C<E> 要素。
+
+  my $root = $dom->at(':root');
+
+=head2 E:nth-child(n)
+
+その親に対して C<n> 番目の子である C<E> 要素。
+
+  my $third = $dom->at('div:nth-child(3)');
+  my $odd   = $dom->find('div:nth-child(odd)');
+  my $even  = $dom->find('div:nth-child(even)');
+  my $top3  = $dom->find('div:nth-child(-n+3)');
+
+=head2 E:nth-last-child(n)
+
+その親に対して、最後の子から数え始めて C<n> 番目の子である C<E> 要素。
+
+  my $third    = $dom->at('div:nth-last-child(3)');
+  my $odd      = $dom->find('div:nth-last-child(odd)');
+  my $even     = $dom->find('div:nth-last-child(even)');
+  my $bottom3  = $dom->find('div:nth-last-child(-n+3)');
+
+=head2 E:nth-of-type(n)
+
+同じ要素名を持つ兄弟要素のうちの C<n> 番目である C<E> 要素。
+
+  my $third = $dom->at('div:nth-of-type(3)');
+  my $odd   = $dom->find('div:nth-of-type(odd)');
+  my $even  = $dom->find('div:nth-of-type(even)');
+  my $top3  = $dom->find('div:nth-of-type(-n+3)');
+
+=head2 E:nth-last-of-type(n)
+
+同じ要素名を持つ兄弟要素のうち、最後のものから数え始めて C<n> 番目である C<E> 要素。
+
+  my $third    = $dom->at('div:nth-last-of-type(3)');
+  my $odd      = $dom->find('div:nth-last-of-type(odd)');
+  my $even     = $dom->find('div:nth-last-of-type(even)');
+  my $bottom3  = $dom->find('div:nth-last-of-type(-n+3)');
+
+=head2 E:first-child
+
+その親の最初の子である C<E> 要素。
+
+  my $first = $dom->at('div p:first-child');
+
+=head2 E:last-child
+
+その親の最後の子である C<E> 要素。
+
+  my $last = $dom->at('div p:last-child');
+
+=head2 E:first-of-type
+
+同じ要素名を持つ兄弟要素のうちの、最初の C<E> 要素。
+
+  my $first = $dom->at('div p:first-of-type');
+
+=head2 E:last-of-type
+
+同じ要素名を持つ兄弟要素のうちの、最後の C<E> 要素。
+
+  my $last = $dom->at('div p:last-of-type');
+
+=head2 E:only-child
+
+その親の唯一の子である C<E> 要素。
+
+  my $lonely = $dom->at('div p:only-child');
+
+=head2 E:only-of-type
+
+他に同じ要素名の兄弟を持たない C<E> 要素。
+
+  my $lonely = $dom->at('div p:only-of-type');
+
+=head2 E:empty
+
+(テキストノードを含む)子を持たない C<E> 要素。
+
+  my $empty = $dom->find(':empty');
+
+=head2 E:link
+
+ターゲットがまだ尋ねられていない(C<:link>)か、すでに尋ねられている(C<:visited>)のハイバーリンクのソースアンカーであるC<E>要素。
+
+[[Mojo::DOM::CSS]]は、状態を持たないので、C<:link>とC<:visited>は、まったく同じ結果になることに注意してください。
+
+  my $links = $css->select(':link');
+  my $links = $css->select(':visited');
+
+=head2 E:visited
+
+「E:link」のエイリアス。
+
+=head2 E:checked
+
+チェックされたユーザインターフェース要素である C<E> 要素
+(例えば、ラジオボタンやチェックボックス)。
+
+  my $input = $dom->at(':checked');
+
+=head2 E.warning
+
+  my $warning = $css->select('div.warning');
+
+class が "warning" である C<E> 要素。
+(訳注: class 属性は、空白文字で区切られた複数の値を持つことができ、
+上記例ではそれらの値の一つが "warning" である C<div> 要素が選択されます)
+
+=head2 E#myid
+
+C<ID> が "myid" に等しい C<E> 要素。
+
+  my $foo = $css->select('div#foo');
+
+=head2 E:not(s1, s2)
+
+合体セレクタ C<s1>あるいはC<s2> にマッチしない C<E> 要素。複合セレクタは実験的で、警告なしに変更される可能性があります。
+
+  my $others = $css->select('div p:not(:first-child, :last-child)');
+
+このセレクタはL<Selectors Level 4|http://dev.w3.org/csswg/selectors-4>の一部で、まだ策定中です。
+
+=head2 E:matches(s1, s2)
+
+合体セレクタ C<s1>あるいはC<s2> にマッチする C<E> 要素。複合セレクタは実験的で、警告なしに変更される可能性があります。
+
+  my $headers = $css->select(':matches(section, article, aside, nav) h1');
+
+このセレクタはL<Selectors Level 4|http://dev.w3.org/csswg/selectors-4>の一部で、まだ策定中です。
+
+=head2 A|E
+
+L<CSS Namespaces Module Level 3|https://www.w3.org/TR/css-namespaces-3/>からの名前空間エイリアスC<A>に属する要素C<E>。
+セレクタメソッドに渡されたキーと価のペアは名前空間エイリアスを決定します。
+
+  my $elem = $css->select('lq|elem', lq => 'http://example.com/q-markup');
+
+名前空間に属さない要素を探すために、空のエイリアスを使用できます。
+
+  my $div = $c->select('|div');
+
+=head2 E F
+
+C<E> 要素の子孫である C<F> 要素。
+
+  my $headlines = $dom->find('div h1');
+
+=head2 E E<gt> F
+
+C<E> 要素の子である C<F> 要素。
+
+  my $headlines = $dom->find('html > body > div > h1');
+
+=head2 E + F
+
+直前に C<E> 要素がある C<F> 要素。
+
+  my $second = $dom->find('h1 + h2');
+
+=head2 E ~ F
+
+前に C<E> 要素がある C<F> 要素。
+
+  my $second = $dom->find('h1 ~ h2');
+
+=head2 E, F, G
+
+要素名が C<E> または C<F> または C<G> である要素。
+
+  my $headlines = $dom->find('h1, h2, h3');
+
+=head2 E[foo=bar][bar=baz]
+
+その属性が、後続の全ての属性セレクタにマッチする C<E> 要素。
+
+  my $links = $dom->find('a[foo^="b"][foo$="ar"]');
+
+=head1 属性
+
+[[Mojo::DOM::CSS]]は次の属性を実装しています。
+
+=head2 tree
+
+  my $tree = $css->tree;
+  $css     = $css->tree(['root']);
+
+ドキュメントオブジェクトモデル。
+この構造は、とても動的なので、とても慎重に利用されるべきです。
+
+=head1 メソッド
+
+[[Mojo::DOM::CSS]]は[[Mojo::Base]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 matches
+
+  my $bool = $css->matches('head > title');
+
+C<tree>における最初のノードに対応するCSSセレクタにマッチするかどうかの確認。
+
+=head2 select
+
+  my $results = $css->select('head > title');
+
+C<tree>に対してCSSセレクタを実行します。
+
+=head2 select_one
+
+  my $result = $css->select_one('head > title');
+
+C<tree>に対してCSSセレクタを実行し、最初のノードがマッチするとすぐに停止します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月14日更新)
+
+=cut

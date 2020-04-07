@@ -1,0 +1,99 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::prefork - プリフォークコマンド
+
+=head1 使い方
+
+  使用方法: APPLICATION prefork [OPTIONS]
+
+    ./myapp.pl prefork
+    ./myapp.pl prefork -m production -l http://*:8080
+    ./myapp.pl prefork -l http://127.0.0.1:8080 -l https://[::]:8081
+    ./myapp.pl prefork -l 'https://*:443?cert=./server.crt&key=./server.key'
+    ./myapp.pl prefork -l http+unix://%2Ftmp%2Fmyapp.sock -w 12
+
+  オプション:
+    -a, --accepts <number>               ワーカーが受け入れる接続の数
+                                         デフォルトは1000
+    -b, --backlog <size>                 リッスンバックログのサイズ
+                                         デフォルトはSOMAXCONN
+    -c, --clients <number>               並列クライアントの最大数。デフォルトは1000
+    -G, --graceful-timeout <seconds>     グレースフルタイムアウト、デフォルトは20
+    -I, --heartbeat-interval <seconds>   ハートビートの間隔。デフォルトは5
+    -H, --heartbeat-timeout <seconds>    ハートビートのタイムアウト。デフォルトは20
+    -i, --inactivity <seconds>           インアクティビティタイムアウト。デフォルトは
+                                         MOJO_INACTIVITY_TIMEOUTの値か15
+    -h, --help                           Show this summary of available options
+        --home <path>                    Path to home directory of your
+                                         application, defaults to the value of
+                                         MOJO_HOME or auto-detection
+    -l, --listen <location>              リッスンしたいひとつかひとつ以上の位置
+                                         デフォルトはMOJO_LISTENの値か"http://*:3000"
+        --multi-accept <number>          一度に受け付けるアクセプトの接続の数
+                                         デフォルトは50
+    -m, --mode <name>                    Operating mode for your application,
+                                         defaults to the value of
+                                         MOJO_MODE/PLACK_ENV or "development"
+    -P, --pid-file <path>                プロセスIDファイルのパス
+                                         デフォルトはランダムなファイル
+    -p, --proxy                          アクティブなリバースプロキシのサポート
+                                         デフォルトは、MOJO_REVERSE_PROXYの値
+    -p, --proxy                          Activate reverse proxy support,
+                                         defaults to the value of
+                                         MOJO_REVERSE_PROXY
+    -r, --requests <number>              キープアライブコネクションあたりの
+                                         リクエスト数の最大。デフォルトは25
+    -s, --spare <number>                 Temporarily spawn up to this number of
+                                         additional workers, defaults to 2
+    -w, --workers <number>               ワーカーの数。デフォルトは4
+
+=head1 説明
+
+[[Mojolicious::Command::prefork]]は[[Mojo::Server::Prefork]]のバックエンドで
+アプリケーションを開始します。
+
+いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::prefork]]は[[Mojolicious::Command]]を継承しており、
+次の新しいものを実装しています。
+
+=head2 説明
+
+  my $description = $prefork->description;
+  $prefork        = $prefork->description('Foo');
+
+このコマンドの短い説明。コマンドの一覧のために利用されます。
+
+=head2 usage
+
+  my $usage = $prefork->usage;
+  $prefork  = $prefork->usage('Foo');
+
+このコマンドの使用方法。ヘルプ画面のために使用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::prefork]]は[[Mojolicious::Command]]のすべてのメソッド
+を継承しており、次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $prefork->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

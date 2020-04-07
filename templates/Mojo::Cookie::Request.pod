@@ -1,0 +1,51 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Cookie::Request
+
+=head1 名前
+
+Mojo::Cookie::Request - HTTPリクエストのクッキー
+
+=head1 使い方
+
+  use Mojo::Cookie::Request;
+
+  my $cookie = Mojo::Cookie::Request->new;
+  $cookie->name('foo');
+  $cookie->value('bar');
+  say "$cookie";
+
+=head1 説明
+
+[[Mojo::Cookie::Request]]はHTTPリクエストクッキーです。
+
+=head1 属性
+
+[[Mojo::Cookie::Request]]は[[Mojo::Cookie]]からすべての属性を継承しています。
+
+=head1 メソッド
+
+[[Mojo::Cookie::Request]]は[[Mojo::Cookie]]からすべてのメソッドを継承しており、
+次のすべてのメソッドを実装しています。
+
+=head2 parse
+
+  my $cookies = Mojo::Cookie::Request->parse('f=b; g=a');
+
+クッキーを解析します。
+
+=head2 to_string
+
+  my $str = $cookie->to_string;
+
+クッキーを描画します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映)
+
+=cut

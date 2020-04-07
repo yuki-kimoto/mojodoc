@@ -1,0 +1,45 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+morbo - Morbo HTTP 1.1 and WebSocket 開発サーバー
+
+=head1 使い方
+
+  使用方法: morbo [OPTIONS] [APPLICATION]
+
+    morbo ./script/my_app
+    morbo ./myapp.pl
+    morbo -m production -l https://*:443 -l http://[::]:3000 ./myapp.pl
+    morbo -l 'https://*:443?cert=./server.crt&key=./server.key' ./myapp.pl
+    morbo -w /usr/local/lib -w public ./myapp.pl
+
+  オプション:
+    -b, --backend <name>           再読み込みするために使用されるバックエンド。デフォルトは"Poll"
+    -h, --help                     このメッセージを表示
+    -l, --listen <location>        リッスンしたいひとつ、またはひとつ以上の
+                                   位置。デフォルトはMOJO_LISTENの値か
+                                   「http://*:3000」
+    -m, --mode <name>              アプリケーションのオペレーションモード
+                                   デフォルトはMOJO_MODE/PLACK_ENVの値か
+                                   「development」
+    -v, --verbose                  どのファイルが変更されたかの詳細をSTDOUTに出力
+    -w, --watch <directory/file>   変更を監視するひとつか、それ以上のディレクトリ
+                                   あるいはファイル。デフォルトは現在のディレクトリ
+                                   の中のアプリケーション
+                                   スクリプトと「lib」「templates」ディレクトリ
+
+=head1 説明
+
+[[Mojolicious]]と[[Mojolicious::Lite]]アプリケーションを
+[[Mojo::Server::Morbo]]Webサーバーで開始します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月17日更新)
+
+=cut

@@ -1,0 +1,99 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Routes::Match - ルーティングを見つける
+
+=head1 使い方
+
+  use Mojolicious::Controller;
+  use Mojolicious::Routes;
+  use Mojolicious::Routes::Match;
+
+  # ルーティング
+  my $r = Mojolicious::Routes->new;
+  $r->get('/:controller/:action');
+  $r->put('/:controller/:action');
+
+  # マッチ
+  my $c = Mojolicious::Controller->new;
+  my $match = Mojolicious::Routes::Match->new(root => $r);
+  $match->match($c => {method => 'PUT', path => '/foo/bar'});
+  say $match->stack->[0]{controller};
+  say $match->stack->[0]{action};
+
+  # 描画
+  say $match->path_for->{path};
+  say $match->path_for(action => 'baz')->{path};
+
+=head1 説明
+
+[[Mojolicious::Routes::Match]]は[[Mojolicious::Routes]]構造
+のためのビジターです。
+
+=head1 属性
+
+[[Mojolicious::Routes::Match]]は次の属性を実装しています。
+
+=head2 endpoint
+
+  my $endpoint = $m->endpoint;
+  $m           = $m->endpoint(Mojolicious::Routes->new);
+
+実際にマッチされたルーティングの終点。通常は[[Mojolicious::Routes::Route]]オブジェクト。
+
+=head2 position
+
+  my $current = $match->position;
+  $match      = $match->position(2);
+
+スタック(c<stack>)上の現在のポジション, デフォルトはC<0>。
+
+=head2 root
+
+  my $root = $m->root;
+  $m       = $m->root($routes);
+
+ルーティングのツリーの根。通常は[[Mojolicious::Routes::Route]]オブジェクト。
+
+=head2 stack
+
+  my $stack = $m->stack;
+  $match    = $match->stack([{action => 'foo'}, {action => 'bar'}]);
+
+ネストしているヒストリーと一緒にキャプチャされたパラメータ。
+
+適切なC<endpoint>を探すためにコントローラーとC<root>に対するオプションにマッチします。
+
+=head1 メソッド
+
+[[Mojolicious::Routes::Match]]は[[Mojo::Base]]から
+すべてのメソッドを実装しており、
+次のメソッドを実装しています。
+
+=head2 find
+
+  $match->find(Mojolicious::Controller->new, {method => 'GET', path => '/'});
+
+ルーティングの木にマッチします。
+
+=head2 path_for
+
+  my $info = $match->path_for;
+  my $info = $match->path_for(foo => 'bar');
+  my $info = $match->path_for({foo => 'bar'});
+  my $info = $match->path_for('named');
+  my $info = $match->path_for('named', foo => 'bar');
+  my $info = $match->path_for('named', {foo => 'bar'});
+
+パラメーター付きのマッチしたルーティングパスに描画します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月13日更新)
+
+=cut

@@ -1,0 +1,118 @@
+=encoding utf8
+
+B<Mojo::Server::FastCGIはデフォルトでサポートされなくなりました。>
+
+CPANにあるL<Mojo::Server::FastCGI>を代わりに利用してください。
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Server::FastCGI
+
+=head1 NAME
+
+Mojo::Server::FastCGI - FastCGIサーバー
+
+=head1 使い方
+
+  use Mojo::Server::FastCGI;
+
+  my $fcgi = Mojo::Server::FastCGI->new;
+  $fcgi->on_handler(sub {
+    my ($self, $tx) = @_;
+
+    # リクエスト
+    my $method = $tx->req->method;
+    my $path   = $tx->req->url->path;
+
+    # レスポンス
+    $tx->res->code(200);
+    $tx->res->headers->content_type('text/plain');
+    $tx->res->body("$method request for $path!");
+
+    # トランザクションの再開
+    $tx->resume;
+  });
+  $fcgi->run;
+
+=head1 説明
+
+[[Mojo::Server::FastCGI]]はポータブルなピュアPerlのC<FastCGI Specification>で
+説明されているFastCGIの実装です。
+
+デプロイメントのレシピについては[[Mojolicious::Guides::Cookbook]]
+を見てください。
+
+=head1 属性
+
+[[Mojo::Server::FastCGI]]は[[Mojo::Server]]から属性を継承しています。
+
+=head1 メソッド
+
+[[Mojo::Server::FastCGI]]は[[Mojo::Server]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 accept_connection
+
+  my $c = $fcgi->accept_connection;
+
+FastCGIの接続を受け入れます。
+
+=head2 read_record
+
+  my ($type, $id, $body) = $fcgi->read_record($c);
+
+FastCGIのレコードを解析します。
+
+=head2 read_request
+
+  my $tx = $fcgi->read_request($c);
+
+FastCGIのリクエストを解析します。
+
+=head2 role_name
+
+  my $name = $fcgi->role_name(3);
+
+FastCGIのロール名。
+
+=head2 role_number
+
+  my $number = $fcgi->role_number('FILTER');
+
+FastCGIのロール番号。
+
+=head2 run
+
+  $fcgi->run;
+
+FastCGIを開始します。
+
+=head2 type_name
+
+  my $name = $fcgi->type_name(5);
+
+FastCGIのタイプ名。
+
+=head2 type_number
+
+  my $number = $fcgi->type_number('STDIN');
+
+FastCGIのタイプ番号。
+
+=head2 write_records
+
+  $fcgi->write_record($c, 'STDOUT', $id, 'HTTP/1.1 200 OK');
+
+FastCGIレコードを書き込みます。
+
+=head2 write_response
+
+  $fcgi->write_response($tx);
+
+FastCGIのレスポンスを書き込みます。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+=cut

@@ -1,0 +1,276 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Server::Prefork - プリフォークのノンブロッキングIOのHTTPとWebSocketのサーバー
+
+=head1 使用方法
+
+  use Mojo::Server::Prefork;
+
+  my $prefork = Mojo::Server::Prefork->new(listen => ['http://*:8080']);
+  $prefork->unsubscribe('request')->on(request => sub {
+    my ($prefork, $tx) = @_;
+
+    # リクエスト
+    my $method = $tx->req->method;
+    my $path   = $tx->req->url->path;
+
+    # レスポンス
+    $tx->res->code(200);
+    $tx->res->headers->content_type('text/plain');
+    $tx->res->body("$method request for $path!");
+
+    # トランザクションをレジュームする
+    $tx->resume;
+  });
+  $prefork->run;
+
+=head1 説明
+
+[[Mojo::Server::Prefork]]は完全の機能を備えたUNIXに最適化された
+プリフォークの非同期IOのHTTPとWebSocketの組み込みのサーバーです。
+とてもよく試験されて信頼性のある[[ Mojo::Server::Daemon]]の上に
+構築されており、C<IPv6>, C<TLS>, コメット(ロングポーリング),
+キープアライブ, コネクションポーリング、タイムアウト,クッキー, マルチパート, 
+複数のイベントループがサポートされています。
+サーバーはプロセス管理のためにシグナルを使用しているので
+シグナルハンドラーをアプリケーションの中で
+修正するのは避けるべきです。
+
+よりよいスケーラビリティ(epoll, kqueue)、ノンブロッキングの名前解決、
+SOCK5、TLSサポートも以下のモジュールによってサポートされます。
+オプションのモジュールとしてL<EV>(4.0+), L<Net::DNS::Native> (0.15+)
+L<IO::Socket::SSL>(1.84+),L<IO::Socket::Socks> (0.64+)、L<IO::Socket::SSL> (1.94+)が
+透過的にサポートされ、インストールされていれば利用されます。
+個々の機能はC<MOJO_NO_NDN>、C<MOJO_NO_IPV6>とC<MOJO_NO_TLS>環境変数で無効にすることもできます。
+
+より知りたい場合は[[Mojolicious::Guides::Cookbook]]のC<デプロメント>の項目
+をみてください。
+
+=head1 マネージャーシグナル
+
+[[Mojo::Server::Prefork]]は次の
+シグナルで実行時にコントロールすることができます。
+
+=head2 INT, C<TERM>
+
+すぐにサーバーをシャットダウンします。
+
+=head2 QUIT
+
+緩やかにサーバーをシャットダウンします。
+
+=head2 TTIN
+
+ワーカープールをひとつ増やします。
+
+=head2 TTOU
+
+ワーカープールをひとつ減らします。
+
+=head1 ワーカーシグナル
+
+=head2 QUIT
+
+緩やかにワーカーを停止します。
+
+=head1 イベント
+
+[[Mojo::Server::Prefork]]は[[Mojo::Server::Daemon]]からイベントを継承し、
+次の新しいイベントを発行します。
+
+=head2 finish
+
+  $prefork->on(finish => sub {
+    my ($prefork, $graceful) = @_;
+    ...
+  });
+
+サーバーがシャットダウンしたときに発行されます。
+
+  $prefork->on(finish => sub {
+    my ($prefork, $graceful) = @_;
+    say $graceful ? 'Graceful server shutdown' : 'Server shutdown';
+  });
+
+=head2 heartbeat
+
+  $prefork->on(heartbeat => sub {
+    my ($prefork, $pid) = @_;
+    ...
+  });
+
+ハートビートメッセージをワーカーから受信したときに発行されます。
+
+  $prefork->on(heartbeat => sub {
+    my ($prefork, $pid) = @_;
+    say "Worker $pid has a heartbeat";
+  });
+
+=head2 reap
+
+  $prefork->on(reap => sub {
+    my ($prefork, $pid) = @_;
+    ...
+  });
+
+子プロセスが死んだときに発行されます。
+
+  $prefork->on(reap => sub {
+    my ($prefork, $pid) = @_;
+    say "Worker $pid stopped";
+  });
+
+=head2 spawn
+
+  $prefork->on(spawn => sub {
+    my ($prefork, $pid) = @_;
+    ...
+  });
+
+ワーカープロセスが生み出されたときに発行されます。
+
+  $prefork->on(spawn => sub {
+    my ($prefork, $pid) = @_;
+    say "Worker $pid started";
+  });
+
+=head2 wait
+
+  $prefork->on(wait => sub {
+    my $prefork = shift;
+    ...
+  });
+
+新しいハートビートメッセージを待っている
+マネージャーがスタートしたときに発行されます。
+
+  $prefork->on(wait => sub {
+    my $prefork = shift;
+    my $workers = $prefork->workers;
+    say "Waiting for heartbeat messages from $workers workers";
+  });
+
+=head1 属性
+
+[[Mojo::Server::Prefork]]は[[Mojo::Server::Daemon]]
+からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 accepts
+
+  my $accepts = $prefork->accepts;
+  $prefork    = $prefork->accepts(100);
+
+ワーカーが緩やかに停止し
+新しく開始するワーカーで置換される
+前に受け入れることが可能な接続の最大数。
+デフォルトは[[Mojo::IOLoop]]のC<max_accepts>の値。
+この値をC<0>に設定すると、ワーカーが新しい接続を無限に受け入れる
+ことを許可します。
+この値の半分まではロードバランシングを改善するためにランダムに
+減らされ、いったん限界に達すると、ワーカーはハートビートメッセージの送信を
+停止することに注意してください。
+
+=head2 cleanup
+
+  my $bool = $prefork->cleanup;
+  $prefork = $prefork->cleanup($bool);
+
+必要ではなくなったときに、自動的にPIDファイル(C<pid_file>)を削除します。
+デフォルトは、真値です。
+
+=head2 graceful_timeout
+
+  my $timeout = $prefork->graceful_timeout;
+  $prefork    = $prefork->graceful_timeout(15);
+
+緩やかなワーカーの停止が、強制的なものになるまでの秒数。
+デフォルトはC<20>。
+
+=head2 heartbeat_interval
+
+  my $interval = $prefork->heartbeat_intrval;
+  $prefork     = $prefork->heartbeat_interval(3);
+
+ハートビートの間隔の秒数。デフォルトはC<5>。
+
+=head2 heartbeat_timeout
+
+  my $timeout = $prefork->heartbeat_timeout;
+  $prefork    = $prefork->heartbeat_timeout(2);
+
+ハートビートのないワーカーが停止するまでの秒数。
+デフォルトはC<20>。
+
+=head2 pid_file
+
+  my $file = $prefork->pid_file;
+  $prefork = $prefork->pid_file('/tmp/prefork.pid');
+
+PIDファイルのフルパス。デフォルトはアプリケーションと同じ
+ディレクトリのC<hypnotoad.pid>。
+この値はサーバーが停止したときにのみ変更されることに
+注意してください。
+
+=head2 spare
+
+  my $spare = $prefork->spare;
+  $prefork  = $prefork->spare(4);
+
+必要に応じて、一時的に、この数の追加のワーカーを生み出します。
+デフォルトは2です。古いワーカーがまだ緩やかにシャットダウン中で、新しいワーカーが開始されているときに、ワーカーの再起動のパフォーマンスコストを、大幅に減らします。
+
+=head2 workers
+
+  my $workers = $prefork->workers;
+  $prefork    = $prefork->workers(10);
+
+ワーカープロセスの数。デフォルトはC<4>。
+経験則では、CPUコアあたり2ワーカープロセスを設定するのがよいでしょう。
+ブロッキングする処理ではこの値を増やし、
+[[Mojo::Server::Daemon]]の並列C<clients>の数を減らす(C<1>と同程度に低く)のがよいでしょう。
+
+=head1 メソッド
+
+[[Mojo::Server::Prefork]]は[[Mojo::Server::Daemon]]からすべてのメソッドを
+継承しており、次の新しいメソッドを実装しています。
+
+=head2 check_pid
+
+  my $pid = $prefork->check_pid;
+
+C<pid_file>から実行されているサーバーのために
+プロセスIDを取得するか、
+サーバーが実行されていなければ、それを削除します。
+
+  say 'Server is not running' unless $prefork->check_pid;
+
+=head2 ensure_pid_file
+
+  $prefork->ensure_pid_file;
+
+C<pid_file>が存在することを確実にします。
+
+=head2 healthy
+
+  my $healthy = $prefork->healthy;
+
+ハートビートしている現在のアクティブなワーカープロセス。
+
+=head2 run
+
+  $prefork->run;
+
+サーバーを開始し、"MANAGER SIGNALS"を待ちます。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月29日更新)
+
+=cut

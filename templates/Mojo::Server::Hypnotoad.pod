@@ -1,0 +1,291 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Server::Hypnotoad
+
+=head1 名前
+
+Mojo::Server::Hypnotoad - プロダクション環境のWebサーバー
+
+=head1 使い方
+
+  use Mojo::Server::Hypnotoad;
+
+  my $hypnotoad = Mojo::Server::Hypnotoad->new;
+  $hypnotoad->run('/home/sri/myapp.pl');
+
+=head1 説明
+
+[[Mojo::Server::Hypnotoad]]は完全の機能を備えたUNIXに最適化された
+プリフォークの非同期IOのHTTPとWebSocketの組み込みのサーバーです。
+とてもよく試験されて信頼性のある[[ Mojo::Server::Prefork]]の上に
+構築されており、C<IPv6>, C<TLS>, コメット(ロングポーリング),
+キープアライブ, コネクションポーリング、タイムアウト,クッキー, マルチパート, 
+複数のイベントループとホットデプロイメントがサポートされています。
+サーバーはプロセス管理のためにシグナルを使用しているので
+シグナルハンドラーをアプリケーションの中で
+修正するのは避けるべきです。
+
+これを使ってアプリケーションをスタートするには、
+[[hypnotoad]]スクリプトを使用してください。
+[[Mojolicious]]と[[Mojolicious::Lite]]アプリケーションは、デフォルト
+でC<production>モードで実行されます。
+
+  $ hypnotoad ./myapp.pl
+
+自動的なホットデプロイメントをするには、同じコマンドをもう一度実行します。
+
+  $ hypnotoad ./myapp.pl
+  Starting hot deployment for Hypnotoad server 31841.
+
+This second invocation will load the application again, detect the process id
+file with it, and send a L</"USR2"> signal to the already running server.
+
+この2回目の呼び出しはアプリケーションを再度ロードし、プロセスIDを検出します。
+それをファイル化し、すでに動いているサーバに"USR2"シグナルを送ります。
+
+よりよりスケーラビリティ(epoll, kqueue)と、ノンブロッキング名前解決、SOCKS5とTLSサポートは、
+オプションのモジュールとしてL<EV>(4.0+), L<Net::DNS::Native> (0.15+) 
+L<IO::Socket::SSL>(2.009+), L<IO::Socket::Socks> (0.64+)が
+透過的にサポートされ、インストールされていれば利用されます。
+個々の機能はC<MOJO_NO_IPV6>とC<MOJO_NO_TLS>環境変数で無効にすることもできます。
+
+C<hypnotoad>スクリプトを使ってアプリケーションをスタートするためには以下のようにします。
+
+  $ hypnotoad myapp.pl
+  Server available at http://127.0.0.1:8080.
+
+自動的なホットデプロイのために、もう一度まったく同じコマンドを実行することができます。
+
+  $ hypnotoad myapp.pl
+  Starting hot deployment for Hypnotoad server 31841.
+
+二回目の実行は、プロセスIDファイルを検知して、
+すでに実行されているサーバーにC<USR2>シグナルを送り
+再びアプリケーションをロードします。
+
+よりよいスケーラビリティ(epoll, kqueue)、ノンブロッキングの名前解決、
+SOCK5、TLSサポートも以下のモジュールによってサポートされます。
+オプションのモジュールとしてL<EV>(4.0+), L<Net::DNS::Native> (0.15+)
+L<IO::Socket::SSL>(1.84+),L<IO::Socket::Socks> (0.64+)、L<IO::Socket::SSL> (1.94+)が
+透過的にサポートされ、インストールされていれば利用されます。
+個々の機能はC<MOJO_NO_NDN>、C<MOJO_NO_IPV6>とC<MOJO_NO_TLS>環境変数で無効にすることもできます。
+
+デプロイメントのレシピは[[Mojolicious::Guides::Cookbook]]を見てください。
+
+=head1 マネージャーシグナル
+
+シグナルを使って実行中にC<hypnotoad>を制御することができます。
+
+=head2 INT, TERM
+
+すぐにサーバーをシャットダウンします。
+
+=head2 QUIT
+
+緩やかにサーバーをシャットダウンします。
+
+=head2 TTIN
+
+ワーカープールをひとつ増やします。
+
+=head2 TTOU
+
+ワーカープールをひとつ減らします。
+
+=head2 USR2
+
+入ってくる接続をひとつも失うことなく、ゼロダウンタイムのソフトウェア
+アップグレード(ホットデプロイメント)を試みます。
+
+  Manager (old)
+  |- Worker [1]
+  |- Worker [2]
+  |- Worker [3]
+  |- Worker [4]
+  `- Manager
+     |- Worker [1]
+     |- Worker [2]
+     |- Worker [3]
+     `- Worker [4]
+
+新しいマネージャは古いマネージャに自動的にC<QUIT>シグナルを送信し、
+スタートアップに成功した後リクエストのサーブを引き継ぎます。
+
+=head1 ワーカーシグナル
+
+=head2 QUIT
+
+緩やかにワーカーを停止します。
+
+=head1 設定
+
+C<Hypnotoad>の設定ファイルはハッシュを返す通常のPerlスクリプトです。
+サンプルは[[Mojolicious::Guides::Cookbook]]のC<Hypnotoad>の
+項目を見てください。
+
+=head2 accepts
+
+  accepts => 100
+
+ワーカーが緩やかに停止し、
+新しく開始するワーカーで置き換えられる
+前に受け入れることが可能な接続の最大数。
+デフォルトは[[Mojo::Server::Prefork]]のC<accepts>の値。
+この値をC<0>に設定すると、ワーカーが新しい接続を無限に受け入れる
+ことを許可します。
+この値の半分まではロードバランシングを改善するためにランダムに
+減らされ、いったん限界に達すると、ワーカーはハートビートメッセージの送信を
+停止することに注意してください。
+
+=head2 backlog
+
+  backlog => 128
+
+リッスンバックログサイズ。デフォルトは[[Mojo::Server::Daemon]]のC<backlog>の値。
+
+=head2 clients
+
+  clients => 100
+
+それぞれのワーカープロセスが、
+新しくくる接続の受け入れを停止する前に、処理可能な
+並列接続の最大数。デフォルトは、[[Mojo::IOLoop]]のC<max_connections>の値。
+アプリケーションがどれほどブロックするかどうかに依存して、
+よりよりパフォーマンスのために、この値を減らし
+代わりにワーカーを増やしたい場合があるかもしれない
+ことに注意してください。
+
+=head2 graceful_timeout
+
+  graceful_timeout => 15
+
+緩やかなワーカーの停止が、強制的なものになるまでの秒数。
+デフォルトは[[Mojo::Server::Prefork]]のC<graceful_timeout>の値。
+
+=head2 heartbeat_interval
+
+  heartbeat_interval => 3
+
+ハートビートの間隔の秒数。デフォルトは[[Mojo::Server]]のC<group>の値。
+
+=head2 heartbeat_timeout
+
+  heartbeat_timeout => 5
+
+ハートビートのないワーカーが停止するまでの秒数。
+デフォルトは[[Mojo::Server::Prefork]]のC<heartbeat_interval>の値。
+
+=head2 inactivity_timeout
+
+  inactivity_timeout => 10
+
+接続が閉じられるまでに非アクティブでいることができる最大の秒数。
+デフォルトは[[Mojo::Server::Daemon]]のC<inactivity_timeout>の値。
+この値をC<0>に設定すると、永久に非アクティブにしておくことができます。
+
+=head2 listen
+
+  listen => ['http://*:80']
+
+ポートとリッスンのためのファイルのリスト。デフォルトはC<http://*:8080>。
+[[Mojo::Server::Daemon]]のC<listen>に多くの例があります。
+
+=head2 pid_file
+
+  pid_file => '/var/run/hypnotoad.pid'
+
+PIDファイルのフルパス。デフォルトはアプリケーションと同じ
+ディレクトリのC<hypnotoad.pid>。
+この値はサーバーが停止したときにのみ変更されることに
+注意してください。
+
+=head2 proxy
+
+  proxy => 1
+
+リバースプロキシのサポートを有効にします。
+C<X-Forwarded-For>とC<X-Forwarded-Proto>ヘッダを
+自動的に認識します。
+デフォルトは[[Mojo::Server]]のC<reverse_proxy>の値です。
+
+=head2 requests
+
+  requests => 50
+
+接続あたりのキープアライブを維持するリクエストの数。
+デフォルトは、[[Mojo::Server::Daemon]]のC<max_requests>の値。
+
+=head2 spare
+
+  spare => 4
+
+必要に応じて、一時的に、この数の追加のワーカーを生み出します。
+デフォルトは[[Mojo::Server::Prefork]]の"spare"の値です。古いワーカーがまだ緩やかにシャットダウン中で、新しいワーカーが開始されているときに、ワーカーの再起動のパフォーマンスコストを、大幅に減らします。
+
+=head2 upgrade_timeout
+
+  upgrade_timeout => 45
+
+ゼロダウンタイムソフトウェアアップグレードが行われてから
+失敗するまでの秒数。デフォルトはC<60>秒です。
+
+=head2 workers
+
+  workers => 10
+
+ワーカープロセスの数。デフォルトは[[Mojo::Server::Prefork]]のC<workers>の値。
+経験則では、ほとんどがノンブロックの処理の場合は、
+CPUコアあたり2ワーカープロセスを設定するのがよいでしょう。
+ブロックする処理ではより多くの値を設定し、
+並列のC<clients>の値を減らすこと(C<1>程度に小さく)で利益を受けられます。
+ゼロダウンタイムソフトウェアアップグレードの間は、短い時間だけ、2倍のワーカーが存在することに注意してください。
+
+=head1 属性
+
+[[Mojo::Server::Hypnotoad]]は次の属性を実装しています。
+
+=head2 prefork
+
+  my $prefork = $hypnotoad->prefork;
+  $hypnotoad  = $hypnotoad->prefork(Mojo::Server::Prefork->new);
+
+このサーバーが管理する[[Mojo::Server::Prefork]]オブジェクト。
+
+=head2 upgrade_timeout
+
+  my $timeout = $hypnotoad->upgrade_timeout;
+  $hypnotoad  = $hypnotoad->upgrade_timeout(15);
+
+
+Maximum amount of time in seconds a zero downtime software upgrade may take
+before getting canceled, defaults to C<60>.
+
+キャンセルされる前に、停止時間ゼロのソフトウェアアップグレードに要する最大時間（秒）。デフォルトは60秒です。
+
+=head1 メソッド
+
+[[Mojo::Server::Hypnotoad]]は[[Mojo::Base]]からすべての
+メソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 configure
+
+  $hypnotoad->configure('hypnotoad');
+
+アプリケーションの設定を元にサーバーを設定します。
+
+=head2 run
+
+  $hypnotoad->run('script/my_app');
+
+サーバーを開始します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月28日更新)
+
+=cut

@@ -1,0 +1,53 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Home
+
+=head1 名前
+
+Mojo::Home - ホーム、スゥートホーム!
+
+=head1 使い方
+
+  use Mojo::Home;
+
+  # プロジェクトのルートディレクトリを見つけて、扱う
+  my $home = Mojo::Home->new;
+  $home->detect;
+  say $home->child('templates', 'layouts', 'default.html.ep');
+  say "$home";
+
+=head1 説明
+
+[[Mojo::Home]]は、をベースにした、ホームディレクトリのコンテナです。
+
+=head1 メソッド
+
+[[Mojo::Home]]は[[Mojo::Home]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 detect
+
+  $home = $home->detect;
+  $home = $home->detect('My::App');
+
+C<MOJO_HOME>環境変数かアプリケーションクラスからホームディレクトリを検知します。
+
+=head2 rel_file
+
+  my $path = $home->rel_file('foo/bar.html');
+
+ホームディレクトからの相対ファイルを表現するL<Mojo::Home>オブジェクトを返却します。
+
+=head1 演算子
+
+[[Mojo::Home]]は[[Mojo::File]]のオーバーロードされた演算子を継承しています。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月16日更新)
+
+=cut

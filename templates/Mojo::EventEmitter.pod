@@ -1,0 +1,131 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::EventEmitter - イベントエミッターの基底クラス
+
+=head1 使い方
+
+  package Cat;
+  use Mojo::Base 'Mojo::EventEmitter';
+
+  # イベントの発行
+  sub poke {
+    my $self = shift;
+    $self->emit(roar => 3);
+  }
+
+  package main;
+
+  # イベントの購読
+  my $tiger = Cat->new;
+  $tiger->on(roar => sub {
+    my ($tiger, $times) = @_;
+    say 'RAWR!' for 1 .. $times;
+  });
+  $tiger->poke;
+
+=head1 説明
+
+[[Mojo::EventEmitter]]はイベント発行オブジェクトのためのシンプルな基底クラスです。
+
+=head1 イベント
+
+[[Mojo::EventEmitter]]は次のイベントを発行します。
+
+=head2 error
+
+  $e->on(error => sub {
+    my ($e, $err) = @_;
+    ...
+  });
+
+これは、エラーのための特別なイベントで、このクラスからは直接に発生しませんが、処理できない場合は、致命的になります。サブクラスは、発生させるかもしれませんが、必要不可欠ではありません。
+
+  $e->on(error => sub {
+    my ($e, $err) = @_;
+    say "This looks bad: $err";
+  });
+
+=head1 メソッド
+
+[[Mojo::EventEmitter]]は[[Mojo::Base]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 catch
+
+  $e = $e->catch(sub {...});
+
+C<error>イベントを購読します。
+
+  # Longer version
+  $e->on(error => sub {...});
+
+=head2 emit
+
+  $e = $e->emit('foo');
+  $e = $e->emit('foo', 123);
+
+イベントを安全に発行し、失敗した場合はC<error>イベントを発行します。
+
+=head2 has_subscribers
+
+  my $bool = $e->has_subscribers('foo');
+
+イベントが購読者を持っているかをチェックします。
+
+=head2 on
+
+  my $cb = $e->on(foo => sub {...});
+
+イベントを購読します。
+
+  $e->on(foo => sub {
+    my ($e, @args) = @_;
+  });
+
+=head2 once
+
+  my $cb = $e->once(foo => sub {...});
+
+イベントを購読し、一度だけイベントが発行された後に、購読をやめます。
+
+  $e->once(foo => sub {
+    my ($e, @args) = @_;
+  });
+
+=head2 subscribers
+
+  my $subscribers = $e->subscribers('foo');
+
+イベントのすべての購読者。
+
+  # 最後の購読者の購読をやめる
+  $e->unsubscribe(foo => $e->subscribers('foo')->[-1]);
+
+  # 購読者の順序を変える
+  @{$e->subscribers('foo')} = reverse @{$e->subscribers('foo')};
+
+=head2 unsubscribe
+
+  $e = $e->unsubscribe('foo');
+  $e = $e->unsubscribe(foo => $cb);
+
+イベントの購読をやめます。
+
+=head1 デバッグ
+
+C<MOJO_EVENTEMITTER_DEBUG>環境変数を設定すれば、
+より進んだ詳細な情報をC<STDERR>に出力することができます。
+
+  MOJO_EVENTEMITTER_DEBUG=1
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月14日更新)
+
+=cut

@@ -1,0 +1,75 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::DOM::HTML - HTML5/XMLエンジン
+
+=head1 使い方
+
+  use Mojo::DOM::HTML;
+
+  # HTML5をDOMツリーに変換する
+  my $html = Mojo::DOM::HTML->new;
+  $html->parse('<div><p id="a">Test</p><p id="b">123</p></div>');
+  my $tree = $html->tree;
+
+=head1 説明
+
+[[Mojo::DOM::HTML]]は、
+L<HTML Living Standard|https://html.spec.whatwg.org>、
+L<Extensible Markup Language (XML) 1.0|http://www.w3.org/TR/xml/>
+に基づいた
+[[Mojo::DOM]]で利用されるHTML/XMLエンジンです。
+
+=head1 属性
+
+[[Mojo::DOM::HTML]]は次の属性を実装しています。
+
+=head2 tree
+
+  my $tree = $html->tree;
+  $html    = $html->tree(['root']);
+
+ドキュメントオブジェクトモデル。
+この構造は、とても動的なので、とても慎重に利用されるべきです。
+
+=head2 xml
+
+  my $bool = $html->xml;
+  $html    = $html->xml($bool);
+
+パーサーのHTML5の動作を無効にして、ケースセンシティビティを有効にします。
+デフォルトでは動作命令に基づいて自動的に検知されます。
+
+=head1 メソッド
+
+[[Mojo::DOM::HTML]]はすべてのメソッドを[[Mojo::Base]]から継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 parse
+
+  $html = $html->parse('<foo bar="baz">I ♥ Mojolicious!</foo>');
+
+HTML5/XMLの断片を解析します。
+
+=head2 render
+
+  my $str = $html->render;
+
+DOMをHTML/XMLに描画します。
+
+=head2 tag
+
+  $html = $html->tag('div', id => 'foo', 'safe content');
+
+HTML/XMLタグを生成。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月14日)
+
+=cut

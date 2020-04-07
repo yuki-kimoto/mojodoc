@@ -1,0 +1,70 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojolicious::Command::cgi
+
+=head1 名前
+
+Mojolicious::Command::cgi - CGIコマンド
+
+=head1 使い方
+
+  Usage: APPLICATION cgi [OPTIONS]
+
+    ./myapp.pl cgi
+
+  Options:
+    -h, --help          利用可能なオプションの概要を表示する
+        --home <path>   アプリケーションのホームディレクトリへのパス。デフォルトはMOJO_HOMEまたは自動検出の値
+    -m, --mode <name>   アプリケーションの動作モード。デフォルトはMOJO_MODE/PLACK_ENVまたは"development"の値
+        --nph           非解析ヘッダモードを有効にする
+
+=head1 説明
+
+[[Mojolicious::Command::cgi]]は[[Mojo::Server::CGI]]のコマンドインターフェースです。
+
+これはコアのコマンドです。
+いつでも有効になっていて、
+これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドのリストについては[[Mojolicious::Commands]]のC<コマンド>の
+項目を見てください。
+
+=head1 属性
+
+[[Mojolicious::Command::cgi]]は[[Mojo::Command]]からすべての属性を
+継承しており、次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $cgi->description;
+  $cgi            = $cgi->description('Foo!');
+
+このコマンドの短い説明です。コマンド一覧のために利用されます。
+
+=head2 usage
+
+  my $usage = $cgi->usage;
+  $cgi      = $cgi->usage('Foo!');
+
+このコマンドの使用情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::cgi]]は[[Mojo::Command]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $cgi = $cgi->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月3日更新)
+
+=cut

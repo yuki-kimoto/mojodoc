@@ -1,0 +1,130 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Asset
+
+=head1 名前
+
+Mojo::Asset - HTTPコンテンツのストレージの基底クラス
+
+=head1 使い方
+
+  package Mojo::Asset::MyAsset;
+  use Mojo::Base 'Mojo::Asset';
+
+  sub add_chunk {...}
+  sub contains  {...}
+  sub get_chunk {...}
+  sub move_to   {...}
+  sub mtime     {...}
+  sub size      {...}
+  sub slurp     {...}
+
+=head1 説明
+
+[[Mojo::Asset]]は、[[Mojo::Asset::File]],[[Mojo::Asset::Memory]]のような、HTTPコンテンツの保存のための抽象基底クラスです。
+
+=head1 イベント
+
+[[Mojo::Asset]]は、[[Mojo::EventEmitter]]のすべてのイベントを継承しています。
+
+=head1 属性
+
+[[Mojo::Asset]]は次の属性を実装しています。
+
+=head2 end_range
+
+  my $end = $asset->end_range;
+  $asset  = $asset->end_range(8);
+
+より早くファイルが終わるように見せかけます。
+
+=head2 start_range
+
+  my $start = $asset->start_range;
+  $asset    = $asset->start_range(3);
+
+より後でファイルが始まるように見せかけます。
+
+=head1 メソッド
+
+[[Mojo::Asset]]は[[ Mojo::EventEmitter]]のすべてのメソッドを継承し、
+次の新しいメソッドを実装しています。
+
+=head2 add_chunk
+
+  $asset = $asset->add_chunk('foo bar baz');
+
+データのチャンクを資源に追加します。
+サブクラスでオーバーロードされます。
+
+=head2 contains
+
+  my $position = $asset->contains('bar');
+
+資源が、指定した文字列を含んでいるかをチェックします。
+サブクラスでオーバーロードされます。
+
+=head2 get_chunk
+
+  my $bytes = $asset->get_chunk($offset);
+  my $bytes = $asset->get_chunk($offset, $max);
+
+指定した位置から始まる、データのチャンクを取得します。
+C<131072>バイト(128KB)が最大のチャンクサイズのデフォルトです。
+サブクラスでオーバーロードされます。
+
+=head2 is_file
+
+  my $false = $asset->is_file;
+
+常に偽になります。これは[[Mojo::Asset::File]]オブジェクトではありません。
+
+=head2 is_range
+
+  my $bool = $asset->is_range;
+
+アセットがC<start_range>あるいはC<end_range>を持つかどうかをチェックします。
+
+=head2 move_to
+
+  $asset = $asset->move_to('/home/sri/foo.txt');
+
+資源データを指定したファイルに移動します。
+サブクラスでオーバーロードされます。
+
+=head2 mtime
+
+  my $mtime = $asset->mtime;
+
+アセットの修正された時刻。サブクラスでオーバーロードすることが予定されています。
+
+=head2 size
+
+  my $size = $asset->size;
+
+資源データのバイトサイズです。
+サブクラスでオーバーロードされます。
+
+=head2 slurp
+
+  my $string = $file->slurp;
+
+一度にすべての資源データを読み込みます。
+サブクラスでオーバーロードされます。
+
+=head2 to_file
+
+  my $file = $asset->to_file;
+
+資源を[[Mojo::Asset::File]]オブジェクトに変換します。
+サブクラスでオーバーロードされます。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(2019/03/16 Mojolicious 8.12)
+
+=cut

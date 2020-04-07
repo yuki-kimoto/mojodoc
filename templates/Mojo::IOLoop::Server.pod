@@ -1,0 +1,206 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::IOLoop::Server - ノンブロッキングなTPCとUNIドメインソケットサーバー
+
+=head1 使い方
+
+  use Mojo::IOLoop::Server;
+
+  # リッスンソケットを生成
+  my $server = Mojo::IOLoop::Server->new;
+  $server->on(accept => sub {
+    my ($server, $handle) = @_;
+    ...
+  });
+  $server->listen(port => 3000);
+
+  # コネクションの受け入れの開始と終了
+  $server->start;
+  $server->stop;
+
+  # 必要であればリアクターを開始
+  $server->reactor->start unless $server->reactor->is_running;
+
+=head1 説明
+
+[[Mojo::IOLoop::Server]]は[[Mojo::IOLoop]]のためにTCPコネクションを受け入れます。
+このモジュールは実験的なもので、警告なしに変更される可能性があることに注意してください。
+
+=head1 イベント
+
+[[Mojo::IOLoop::Server]]は[[Mojo::EventEmitter]]のすべてのイベントを継承しており、
+次の新しいイベントを発行することができます。
+
+=head2 accept
+
+  $server->on(accept => sub {
+    my ($server, $handle) = @_;
+  });
+
+それぞれの受け入れた接続のために安全に発行されます。
+
+=head1 属性
+
+[[Mojo::IOLoop::Server]]は次の属性を実装しています。
+
+=head2 reactor
+
+  my $reactor = $server->reactor;
+  $server     = $server->reactor(Mojo::Reactor::Poll->new);
+
+低レベルのイベントウォッチャー。
+デフォルトはグローバルな[[Mojo::IOLoop]]シングルトンのC<reactor>属性の値です。
+
+=head1 メソッド
+
+[[Mojo::IOLoop::Server]]は[[Mojo::EventEmitter]]からすべてのメソッドを継承し、
+次の新しいメソッドを実装しています。
+
+=head2 generate_port
+
+  my $port = $server->generate_port;
+
+フリーのTCPポートを検索します。
+主に試験のためのユーティリティ機能として利用されます。
+
+=head2 handle
+
+  my $handle = $server->handle;
+
+サーバーのためのハンドルを取得します。通常は、L<IO::Socket::IP>オブジェクトです。
+
+=head2 listen
+
+  my $id = $loop->listen(port => 3000);
+
+新しいリッスン(listen)ソケットを生成します。
+TLSのサポートはL<IO::Socket::SSL>
+(2.009+)
+に依存していることに注意してください。
+
+下記のオプションが現在利用できます。
+
+=over 2
+
+=item C<address>
+
+  address => '127.0.0.1'
+
+リッスンするローカルアドレス。デフォルトはすべてをリッスンします。
+デフォルトは、C<0.0.0.0>。
+
+=item C<backlog>
+
+  backlog => 128
+
+最大のバックログサイズ。デフォルトはC<SOMAXCONN>。
+
+=item fd
+
+  fd => 3
+
+すでに準備されたリッスンソケットのファイルディスクリプタ
+
+=item path
+
+  path => '/tmp/myapp.sock'
+
+リッスンしているUNIXドメインソケットのパス
+
+=item C<port>
+
+  port => 80
+
+リッスンするポート。
+
+=item reuse
+
+  reuse => 1
+
+C<SO_REUSEPORT>ソケットオプションで、複数サーバーが同じポートを利用することを許可する。
+
+=item single_accept
+
+  single_accept => 1
+
+一度にひとつの接続だけ受けれる
+
+=item C<tls>
+
+  tls => 1
+
+TLSを有効にします。
+
+=item C<tls_ca>
+
+  tls_ca => '/etc/tls/ca.crt'
+
+TLS認証局ファイルへのパス。
+
+=item C<tls_cert>
+
+  tls_cert => '/etc/tls/server.crt'
+
+TLS証明書ファイルのパス。デフォルトは組み込みのテスト証明書です。
+
+=item tls_ciphers
+
+  tls_ciphers => 'AES128-GCM-SHA256:RC4:HIGH:!MD5:!aNULL:!EDH'
+
+チッパー仕様文字列。
+
+=item C<tls_key>
+
+  tls_key => '/etc/tls/server.key'
+
+TLSキーファイルへのパス。デフォルトは組み込みのテストキーです。
+
+=item tls_protocols
+
+  tls_protocols => ['foo', 'bar']
+
+ネゴシエーションへのALPNプロコトル
+
+=item C<tls_verify>
+
+  tls_verify => 0x00
+
+TLSバリフィケーションモード。デフォルトはC<0x03>.
+
+=item tls_version
+
+  tls_version => 'TLSv1_2'
+
+TLSプロコトルバージョン。
+
+=back
+
+=head2 port
+
+  my $port = $server->port;
+
+このサーバーがリッスンしているポートを取得する。
+
+=head2 start
+
+  $server->start;
+
+接続の受け入れを開始します。
+
+=head2 stop
+
+  $server->stop;
+
+接続の受け入れを停止します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolciious 8.12を反映。2019年5月22日更新)
+
+=cut

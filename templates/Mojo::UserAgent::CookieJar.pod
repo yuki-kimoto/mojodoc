@@ -1,0 +1,116 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::UserAgent::CookieJar - HTTPユーザーエージェントのためのクッキーの入れ物
+
+=head1 使い方
+
+  use Mojo::UserAgent::CookieJar;
+
+  # レスポンスクッキーを追加
+  my $jar = Mojo::UserAgent::CookieJar->new;
+  $jar->add(
+    Mojo::Cookie::Response->new(
+      name   => 'foo',
+      value  => 'bar',
+      domain => 'localhost',
+      path   => '/test'
+    )
+  );
+
+  # リクエストクッキーを見つける
+  for my $cookie ($jar->find(Mojo::URL->new('http://localhost/test'))) {
+    say $cookie->name;
+    say $cookie->value;
+  }
+  
+=head1 説明
+
+[[Mojo::UserAgent::CookieJar]]はRFC 6265で定義されている
+HTTPユーザーエージェントのための最小限で緩やかなのクッキーの入れ物です。
+
+=head1 属性
+
+[[Mojo::UserAgent::CookieJar]]は次の属性を実装しています。
+
+=head2 ignore
+
+  my $ignore = $jar->ignore;
+  $jar       = $jar->ignore(sub {...});
+
+クッキーが"collect"によって無視されるべきかを決定するのに利用されるコールバック。
+
+  # すべてのクッキーを無視
+  $jar->ignore(sub { 1 });
+
+  # "com", "net" と "org" のドメインを無視
+  $jar->ignore(sub {
+    my $cookie = shift;
+    return undef unless my $domain = $cookie->domain;
+    return $domain eq 'com' || $domain eq 'net' || $domain eq 'org';
+  });
+
+=head2 max_cookie_size
+
+  my $max_cookie_size = $jar->max_cookie_size;
+  $jar                = $jar->max_cookie_size(4096);
+
+クッキージャーの最大のバイトサイズ。デフォルトは、C<4096> (4KB)。
+
+=head1 メソッド
+
+[[Mojo::UserAgent::CookieJar]]は[[Mojo::Base]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 add
+
+  $jar = $jar->add(@cookies);
+
+複数の[[Mojo::Cookie::Response]]オブジェクトを入れ物に追加します。
+
+=head2 all
+
+  my $cookies = $jar->all;
+
+入れ物に現在保存されているすべての[[Mojo::Cookie::Response]]オブジェクトを返却します。
+
+  # すべてのクッキーの名前
+  say $_->name for @{$jar->all};
+
+=head2 collect
+
+  $jar->collect(Mojo::Transaction::HTTP->new);
+
+トランザクションからレスポンスクッキーを収集します。
+
+=head2 empty
+
+  $jar->empty;
+
+入れ物を空にします。
+
+=head2 find
+
+  my $cookies = $jar->find(Mojo::URL->new);
+
+入れ物の中から[[Mojo::URL]]オブジェクトに対応する[[Mojo::Cookie::Request]]オブジェクトを探します。
+
+  # すべての発見されたクッキーの名前
+  say $_->name for @{$jar->find(Mojo::URL->new('http://example.com/foo'))};
+
+=head2 prepare
+
+  $jar->prepare(Mojo::Transaction::HTTP->new);
+
+トランザクションのために、リクエストクッキーを準備します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月30日更新)
+
+=cut

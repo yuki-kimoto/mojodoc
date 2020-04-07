@@ -1,0 +1,189 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Log
+
+=head1 名前
+
+Mojo::Log - シンプルなロガー
+
+=head1 使い方
+
+  use Mojo::Log;
+
+  # STDERRにロギング
+  my $log = Mojo::Log->new;
+
+  # ログの位置ともっとも低いログレベルのカスタマイズ
+  my $log = Mojo::Log->new(path => '/var/log/mojo.log', level => 'warn');
+
+  $log->debug('Not sure what is happening here');
+  $log->info('FYI: it happened again');
+  $log->warn('This might be a problem');
+  $log->error('Garden variety error');
+  $log->fatal('Boom');
+
+=head1 説明
+
+[[Mojo::Log]]は[[Mojo]]プロジェクトのためのシンプルなロガーです。
+
+=head1 イベント
+
+[[Mojo::Log]]は次のイベントを発行することができます。
+
+=head2 message
+
+  $log->on(message => sub {
+    my ($log, $level, @lines) = @_;
+    ...
+  });
+
+新しいメッセージがロギングされたときに、発行されます。
+
+  $log->on(message => sub {
+    my ($log, $level, @lines) = @_;
+    say "$level: ", @lines;
+  });
+
+=head1 属性
+
+[[Mojo::Log]]は次の属性を実装しています。
+
+=head2 format
+
+  my $cb = $log->format;
+  $log   = $log->format(sub {...});
+
+ログメッセージをフォーマットするためのコールバック
+
+  $log->format(sub {
+    my ($time, $level, @lines) = @_;
+    return "[2018-11-08 14:20:13.77168] [28320] [info] I ♥ Mojolicious\n";
+  });
+
+=head2 handle
+
+  my $handle = $log->handle;
+  $log       = $log->handle(IO::Handle->new);
+
+デフォルトのC<message>イベントによって利用されるファイルハンドル。
+デフォルトで、C<path>かC<STDERR>がオープンされます。
+
+=head2 history
+
+  my $history = $log->history;
+  $log        = $log->history([[time, 'debug', 'That went wrong']]);
+
+最後のいくつかのログメッセージ。
+
+=head2 level
+
+  my $level = $log->level;
+  $log      = $log->level('debug');
+
+アクティブなログレベル。デフォルトは<debug>です。
+利用可能なログレベルはC<debug>,
+C<info>, C<warn>, C<error>とC<fatal>です。
+C<MOJO_LOG_LEVEL>環境変数でこの値を
+オーバーライドすることができます。
+
+=head2 max_history_size
+
+  my $size = $log->max_history_size;
+  $log     = $log->max_history_size(5);
+
+C<history>の中に保存するログメッセージの最大数。
+デフォルトは、C<10>.
+
+=head2 path
+
+  my $path = $log->path
+  $log     = $log->path('/var/log/mojo.log');
+
+C<handle>によって利用されるログファイルのパス。
+
+=head2 short
+
+  my $bool = $log->short;
+  $log     = $log->short($bool);
+
+タイムスタンプを除いた短いログメッセージの生成。systemdに対応します。デフォルトはC<MOJO_LOG_SHORT>環境変数の値です。
+
+=head1 メソッド
+
+[[Mojo::Log]]は[[Mojo::EventEmitter]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 append
+
+  $log->append("[2018-11-08 14:20:13.77168] [28320] [info] I ♥ Mojolicious\n");
+
+C<handle>にログメッセージを追加します。
+
+=head2 debug
+
+  $log = $log->debug('You screwed up, but that is ok');
+  $log = $log->debug('All', 'cool');
+  $log = $log->debug(sub {...});
+
+C<message>イベントを発生させ、デバッグ(debug)メッセージをログ出力する。
+
+=head2 error
+
+  $log = $log->error('You really screwed up this time');
+  $log = $log->error('Wow', 'seriously');
+  $log = $log->error(sub {...});
+
+C<message>イベントを発生させ、エラー(error)メッセージをログ出力する。
+
+=head2 fatal
+
+  $log = $log->fatal('Its over...');
+  $log = $log->fatal('Bye', 'bye');
+  $log = $log->fatal(sub {...});
+
+C<message>イベントを発生させ、致命的な(fatal)メッセージをログ出力する。
+
+=head2 info
+
+  $log = $log->info('You are bad, but you prolly know already');
+  $log = $log->info('Ok', 'then');
+  $log = $log->info(sub {...});
+
+C<message>イベントを発生させ、情報(info)メッセージをログ出力する。
+
+=head2 is_level
+
+  my $bool = $log->is_level('debug');
+
+ログレベルのチェック。
+
+  # 真
+  $log->level('debug')->is_level('debug');
+  $log->level('debug')->is_level('info');
+
+  # 偽
+  $log->level('info')->is_level('debug');
+  $log->level('fatal')->is_level('warn');
+
+=head2 new
+
+  my $log = Mojo::Log->new;
+
+新しい[[Mojo::Log]]オブジェクトを生成し、デフォルトのロガーのC<message>イベントを購読します。
+
+=head2 warn
+
+  $log = $log->warn('Dont do that Dave...');
+  $log = $log->warn('No', 'really!');
+
+警告(warn)メッセージをログ出力する。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月22日)
+
+=cut

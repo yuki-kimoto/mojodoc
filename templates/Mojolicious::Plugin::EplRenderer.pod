@@ -1,0 +1,49 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Plugin::EPLRenderer - EPLレンダラプラグイン
+
+=head1 使い方
+
+  # Mojolicious
+  $app->plugin('EPRenderer');
+  $app->plugin(EPRenderer => {name => 'foo'});
+  $app->plugin(EPRenderer => {name => 'bar', template => {line_start => '.'}});
+
+  # Mojolicious::Lite
+  plugin 'EPRenderer';
+  plugin EPRenderer => {name => 'foo'};
+  plugin EPRenderer => {name => 'bar', template => {line_start => '.'}};
+
+=head1 説明
+
+[[Mojolicious::Plugin::EPLRenderer]]はC<epl>テンプレートのレンダラです。
+C<epl>テンプレートはほとんど生の[[Mojo::Template]]です。
+これはコアのプラグインで、いつでも有効になっており、
+そのコードは新しいプラグインを構築する
+ことを学ぶための良いサンプルです。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::EPLRenderer]]は
+[[Mojolicious::Plugin]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 register
+
+  $plugin->register;
+
+[[Mojolicious]]アプリケーションにレンダラを登録します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月12日更新)
+
+=cut

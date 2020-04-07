@@ -1,0 +1,318 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Content
+
+=head1 名前
+
+Mojo::Content - HTTPコンテンツの基底クラス
+
+=head1 使い方
+
+  package Mojo::Content::MyContent;
+  use Mojo::Base 'Mojo::Content';
+
+  sub body_contains  {...}
+  sub body_size      {...}
+  sub get_body_chunk {...}
+
+=head1 説明
+
+[[Mojo::Content::MultiPart]]、[[Mojo::Content::Single]]のような、
+HTTPコンテンツのための抽象基底クラスです。 
+L<RFC 7230|http://tools.ietf.org/html/rfc7230>と
+L<RFC 7231|http://tools.ietf.org/html/rfc7231>を元にしています。
+
+=head1 イベント
+
+[[Mojo::Content]]は[[Mojo::EventEmitter]]からすべてのイベントを継承していて、
+[[Mojo::Content]]は新たにイベントを発生させます。
+
+=head2 body
+
+  $content->on(body => sub {
+    my $content = shift;
+    ...
+  });
+
+すべてのヘッダーが解析され、ボディが始まったときに一度だけ発行されます。
+
+  $content->on(body => sub {
+    my $content = shift;
+    $content->auto_upgrade(0) if $content->headers->header('X-No-MultiPart');
+  });
+
+=head2 drain
+
+  $content->on(drain => sub {
+    my ($content, $offset) = @_;
+    ...
+  });
+
+すべてのデータが書き込まれたときに一度だけ発行される。
+
+  $content->on(drain => sub {
+    my $content = shift;
+    $content->write_chunk(time);
+  });
+
+=head2 read
+
+  $content->on(read => sub {
+    my ($content, $bytes) = @_;
+    say "Streaming: $bytes";
+  });
+
+新しいコンテンツのチャンクが到着したときに発行されます。
+
+  $content->unsubscribe('read');
+  $content->on(read => sub {
+    my ($content, $chunk) = @_;
+    say "Streaming: $chunk";
+  });
+
+=head1 属性
+
+[[Mojo::Content]]は次の属性を実装しています。
+
+=head2 auto_decompress
+
+  my $bool = $content->auto_decompress;
+  $content = $content->auto_decompress($bool);
+
+C<is_compressed>が真ならば、自動的にコンテンツをデコンプレスします。
+
+=head2 auto_relax
+
+  my $bool = $content->auto_relax;
+  $content = $content->auto_relax($bool);
+
+壊れたWebサーバーを検知し、自動的に緩やかな解析を有効にします。
+
+=head2 headers
+
+  my $headers = $content->headers;
+  $content    = $content->headers(Mojo::Headers->new);
+
+ヘッダー。デフォルトは[[Mojo::Headers]]オブジェクト。
+
+=head2 max_buffer_size
+
+  my $size = $content->max_buffer_size;
+  $content = $content->max_buffer_size(1024);
+
+コンテントパーサーのためのバッファの最大バイトサイズ。
+デフォルトの値ははC<MOJO_MAX_BUFFER_SIZE>
+環境変数の値、あるいはC<262144> (256KB).
+
+=head2 max_leftover_size
+
+  my $size = $content->max_leftover_size;
+  $content = $content->max_leftover_size(1024);
+
+パイプライン化されたHPPリクエストのためのバッファの最大バイトサイズ。デフォルトはC<MOJO_MAX_LEFTOVER_SIZE>の値か、
+C<262144>(256KB)です。
+
+=head2 relaxed
+
+  my $bool = $content->relaxed;
+  $content = $content->relaxed($bool);
+
+接続を閉じることを停止する
+レスポンスのために
+緩やかな解析を有効にします。
+
+=head2 skip_body
+
+  my $bool = $content->skip_body;
+  $content = $content->skip_body($bool);
+
+ヘッダの解析の後に、ボディの解析をスキップして終了します。
+
+=head1 メソッド
+
+[[Mojo::Content]]は[[Mojo::Base]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 body_contains
+
+  my $bool = $content->body_contains('foo bar baz');
+
+コンテンツが指定した文字列を含んでいるかチェックします。
+サブクラスでオーバーロードすることが想定されています。
+
+=head2 body_size
+
+  my $size = $content->body_size;
+
+バイトでのコンテンツのサイズ。
+サブクラスでオーバーロードすることが想定されています。
+
+=head2 boundary
+
+  my $boundary = $content->boundary;
+
+コンテントタイプヘッダからマルチパート境界を抽出します。
+
+=head2 charset
+
+  my $charset = $content->charset;
+
+コンテントタイプ(C<Content-Type>)ヘッダからキャラクターセットを抽出します。
+
+=head2 clone
+
+  my $clone = $content->clone;
+
+可能であればコンテンツを複製し新しい[[Mojo::Content]]オブジェクトを返します。そうでなければ未定義値を返却します。
+
+=head2 generate_body_chunk
+
+  my $chunk = $content->generate_body_chunk(0);
+
+動的なコンテンツを生成します。
+
+=head2 get_body_chunk
+
+  my $chunk = $content->get_body_chunk(0);
+
+特定の位置から始まるコンテンツの断片を取得します。サブクラスでオーバーロードされます。
+
+=head2 get_header_chunk
+
+  my $chunk = $content->get_header_chunk(13);
+
+特定の位置から始まるヘッダーの断片を取得します。このメソッドは、コンテントをファイナライズすることに注意してください。
+
+=head2 header_size
+
+  my $bool = $content->is_chunked;
+
+バイトでのヘッダーサイズ。このメソッドは、コンテントをファイナライズすることに注意してください。
+
+=head2 is_chunked
+
+  my $bool = $content->is_chunked;
+
+"Transfer-Encoding"ヘッダが、断片化された転送エンコーディングを意味しているか確認します。
+
+=head2 is_compressed
+
+  my $bool = $content->is_compressed;
+
+コンテンツがgzipで圧縮のための"Content-Encoding"ヘッダがあるかを確認します。
+
+=head2 is_dynamic
+
+  my $bool = $content->is_dynamic;
+
+コンテンツが動的なものになるかどうかをチェックします。
+これはC<clone>が働くのを抑止します。
+
+=head2 is_finished
+
+  my $bool = $content->is_finished;
+
+パーサーが終了しているかどうかをチェックします。
+
+=head2 is_limit_exceeded
+
+  my $bool = $content->is_limit_exceeded;
+
+バッファーがC<max_buffer_size>を超えていないかどうかをチェックします。
+
+=head2 is_multipart
+
+  my $multipart = $content->is_multipart;
+
+常に偽になります。これは[[Mojo::Content::MultiPart]]オブジェクトではありません。
+
+=head2 is_parsing_body
+
+  my $bool = $content->is_parsing_body;
+
+ボディの解析が開始しているかどうかをチェックします。
+
+=head2 leftovers
+
+  my $bytes = $content->leftovers;
+
+次のHTTPメッセージのためのレフトオーバー。
+
+=head2 parse
+
+  $content
+    = $content->parse("Content-Length: 12\x0d\x0a\x0d\x0aHello World!");
+
+コンテンツを解析します。
+
+=head2 parse_body
+
+  $content = $content->parse_body("Hi!");
+
+ボディを解析し、ヘッダをスキップします。
+
+=head2 progress
+
+  my $bytes = $content->progress;
+
+すでにメッセージのコンテンツから受け取ったバイト数。
+
+=head2 write
+
+  $content = $content->write;
+  $content = $content->write('');
+  $content = $content->write($bytes);
+  $content = $content->write($bytes => sub {...});
+
+動的なコンテンツをノンブロッキングで書き込みます。
+オプションの排水のコールバックは
+すべてのデータが書き込まれると一度だけ呼び出されます。
+
+このメソッドをデータのチャンクなしで呼び出すと、
+C<headers>をファイナライズし、
+動的コンテンツが、後で書かれることを許可します。
+ストリームの最後にいつでも、空のチャンクデータを書き込むことができます。
+
+  # 前のチャンクデータが継続する前に書かれることを保証する
+  $content->write('He' => sub {
+    my $content = shift;
+    $content->write('llo!' => sub {
+      my $content = shift;
+      $content->write('');
+    });
+  });
+
+=head2 write_chunk
+
+  $content = $content->write_chunk;
+  $content = $content->write_chunk('');
+  $content->write_chunk('Hello!');
+  $content->write_chunk('Hello!', sub {...});
+
+コンテンツをノンブロッキングで、チャンクトランスファーエンコーディングを使って、書き込みます。
+オプションの排水のコールバックは
+すべてのデータが書き込まれると一度だけ呼び出されます。
+
+このメソッドをデータのチャンクなしで呼び出すと、
+C<headers>をファイナライズし、
+動的コンテンツが、後で書かれることを許可します。
+ストリームの最後にいつでも、空のチャンクデータを書き込むことができます。
+
+  # 前のチャンクデータが継続する前に書かれることを保証する
+  $content->write_chunk('He' => sub {
+    my $content = shift;
+    $content->write_chunk('llo!' => sub {
+      my $content = shift;
+      $content->write_chunk('');
+    });
+  });
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映)
+
+=cut

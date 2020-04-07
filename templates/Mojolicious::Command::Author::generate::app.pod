@@ -1,0 +1,57 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::Author::generate::app - アプリケーション生成コマンド
+
+=head1 使い方
+
+  Usage: APPLICATION generate app [NAME]
+
+=head1 説明
+
+[[Mojolicious::Command::Author::generate::app]]はアプリケーションのジェネレーターです。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 属性
+
+[[Mojolicious::Command::Author::generate::app]]は
+[[Mojo::Command]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $app->description;
+  $app            = $app->description('Foo');
+
+このコマンドの短い説明。コマンドの一覧表示に利用されます。
+
+=head2 usage
+
+  my $usage = $app->usage;
+  $app      = $app->usage('Foo');
+
+このコマンドの使用方法の情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::Author::generate::app]]は
+[[Mojo::Command]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $app->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

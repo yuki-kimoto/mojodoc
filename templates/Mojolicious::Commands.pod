@@ -1,0 +1,232 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Commands - コマンドラインインターフェース
+
+=head1 使い方
+
+  Usage: APPLICATION COMMAND [OPTIONS]
+
+    mojo version
+    mojo generate lite_app
+    ./myapp.pl daemon -m production -l http://*:8080
+    ./myapp.pl get /foo
+    ./myapp.pl routes -v
+
+  Tip: CGI and PSGI environments can be automatically detected very often and
+       work without commands.
+
+  オプション (for all commands):
+    -h, --help          特定のコマンドのより多くの情報を取得する
+        --home <path>   アプリケーションのホームディレクトリのパス
+                        デフォルトはMOJO_HOMEの値か、自動的に検知される
+    -m, --mode <name>   アプリケーションのオペレーティングモード。デフォルトは
+                        MOJO_MODE/PLACK_ENVの値か「development」
+
+=head1 説明
+
+[[Mojolicious::Commands]]は[[Mojolicious]]フレームワークへの対話式のコマンドラインインターフェースです。C<Mojolicious::Command>名前空間の中にある利用できるコマンドを自動的に検知します。
+
+これはコアのコマンドです。いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 コマンド
+
+以下のコマンドがデフォルトで利用できます。
+
+=head2 cgi
+
+  $ script/myapp cgi
+
+CGIをバックエンドにしてアプリケーションを開始するために[[Mojolicious::Command::cgi]]を使用します。
+通常は自動的に検知されます。
+
+=head2 cpanify
+
+  $ mojo cpanify -u sri -p secr3t Mojolicious-Plugin-Fun-0.1.tar.gz
+
+ファイルのCPANへのアップロードするために[[Mojolicious::Command::Author::cpanify]]を使用する。
+
+=head2 daemon
+
+  $ ./myapp.pl daemon
+
+スタンドアロンのHTTP 1.1サーバーをバックエンドにして
+アプリケーションを開始するために[[Mojolicious::Command::daemon]]を使用します。
+
+=head2 eval
+
+  $ ./myapp.pl eval 'say app->home'
+
+アプリケーションのコードを実行しするために[[Mojolicious::Command::eval]]を使用します。
+
+=head2 generate
+
+  $ mojo generate
+  $ mojo generate help
+  $ ./myapp.pl generate help
+
+[[Mojolicious::Command::Author::generate::app]]を使って、短い説明と共に利用できる生成コマンドをを一覧表示します。
+
+  $ mojo generate help <generator>
+  $ ./myapp.pl generate help <generator>
+
+短い説明と共に生成コマンドの利用できるオプションを一覧表示します。
+
+=head2 generate app
+
+  $ mojo generate app <AppName>
+
+完全な機能を備えた[[Mojolicious]]アプリケーションのために
+アプリケーションのディレクトリ構造を生成するために[[Mojolicious::Command::Author::generate::app]]を使用します。
+
+=head2 generate lite_app
+
+  $ mojo generate lite_app
+
+完全な機能を持つ[[Mojolicious::Lite]]アプリケーションを生成するために[[Mojolicious::Command::Author::generate::lite_app]]
+を使用します。
+
+=head2 generate makefile
+
+  $ mojo generate makefile
+
+アプリケーションのためにC<Makefile.PL>ファイルを生成するために、
+[[Mojolicious::Command::Author::generate::makefile]]を使用します。
+
+=head2 generate plugin
+
+  $ mojo generate plugin <PluginName>
+
+完全な機能を持つ[[Mojolicious]]プラグインのディレクトリ構造を生成するために、
+[[Mojolicious::Command::Author::generate::plugin]]を使用します。
+
+=head2 get
+
+  $ mojo get http://mojolicio.us
+  $ script/myapp get /foo
+
+リモートホストあるいはローカルアプリケーションにGETリクエストを実行するために、
+[[Mojolicious::Command::get]]を使用します。
+
+=head2 help
+
+  $ mojo
+  $ mojo help
+  $ ./myapp.pl help
+
+短い説明と共に利用できるコマンドを一覧表示します。
+
+  $ mojo help <command>
+  $ ./myapp.pl help <command>
+
+短い説明とともにコマンドの利用できるオプションを一覧表示します。
+
+=head2 inflate
+
+  $ myapp.pl inflate
+
+C<DATA>セクションの埋め込みファイルを
+本当のファイルに変換するために[[Mojolicious::Command::Author::inflate]]を使用します。
+
+=head2 prefork
+
+  $ ./myapp.pl prefork
+
+スタンドアロンのプリフォークのHTTPとWebSocketサーバーでアプリケーションを開始するために
+[[Mojolicious::Command::prefork]]を使用します。
+
+=head2 psgi
+
+  $ ./myapp.pl psgi
+
+C<PSGI>をバックエンドにしてアプリケーションを開始するために、
+[[Mojolicious::Command::psgi]]を使用します。
+
+=head2 routes
+
+  $ myapp.pl routes
+  $ script/myapp routes
+
+アプリケーションのルートを一覧表示するために[[Mojolicious::Command::routes]]を使用します。
+
+=head2 version
+
+  $ mojo version
+  $ ./myapp.pl version
+
+インストールされているコアあるいはオプショナルなモジュールのバージョン情報
+を一覧表示するために[[Mojolicious::Command::version]]を使用します。デバッグのときにとても便利です。
+
+=head1 属性
+
+[[Mojolicious::Commands]]は[[Mojo::Command]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 hint
+
+  my $hint  = $commands->hint;
+  $commands = $commands->hint('Foo');
+
+利用可能なコマンドが一覧表示された後に表示される短いヒント
+
+=head2 message
+
+  my $msg   = $commands->message;
+  $commands = $commands->message('Hello World');
+
+利用できるコマンド一覧表示の前に、表示される短い使用方法です。
+
+=head2 namespaces
+
+  my $namespaces = $commands->namespaces;
+  $commands      = $commands->namespaces(['Mojolicious::Commands']);
+
+利用できるコマンドを検索する名前空間。
+デフォルトはC<Mojo::Command>とC<Mojolicious::Command>です。
+
+  # コマンドをロードするための他の名前空間を追加
+  push @{$commands->namespaces}, 'MyApp::Command';
+
+=head1 メソッド
+
+[[Mojolicious::Commands]]は[[Mojo::Command]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 detect
+
+  my $env = $commands->detect;
+
+環境を検出します。検出できなかった場合はC<undef>を返します。
+
+=head2 run
+
+  $commands->run;
+  $commands->run(@ARGV);
+
+コマンドをロードし、実行します。デプロイ環境の自動検知は環境変数 MOJO_NO_DETECT により無効にされます。
+
+=head2 start_app
+
+  Mojolicious::Commands->start_app('MyApp');
+  Mojolicious::Commands->start_app(MyApp => @ARGV);
+
+アプリケーションをロードし、そのコマンドライン・インターフェースを開始します。
+C<-h>/C<--help>, C<--home>,C<-m>/C<--mode>オプションは、
+すべてのコマンドで共有され、コンパイル時にC<@ARGV>から解析される
+ことに注意してください。
+
+  # アプリケーションを常に daemon で開始します
+  Mojolicious::Commands->start_app('MyApp', 'daemon', '-l', 'http://*:8080');
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

@@ -1,0 +1,65 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::Author::generate::lite_app - Liteアプリケーションの生成コマンド
+
+=head1 使い方
+
+  Usage: APPLICATION generate lite_app [OPTIONS] [NAME]
+
+    mojo generate lite_app
+    mojo generate lite_app foo.pl
+
+  Options:
+    -h, --help   Show this summary of available options
+
+=head1 説明
+
+[[Mojolicious::Command::Author::generate::lite_app]]はアプリケーションのジェネレーターです。
+
+いつでも有効になっていて、 これをフォークして新しいコマンドの構築を学ぶための、よいサンプルになっています。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 属性
+
+L<Mojolicious::Command::Author::generate::lite_app>は
+L<Mojo::Command>からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $app->description;
+  $app            = $app->description('Foo');
+
+このコマンドの短い説明。コマンドの一覧表示に利用されます。
+
+=head2 usage
+
+  my $usage = $app->usage;
+  $app      = $app->usage('Foo');
+
+このコマンドの使用方法の情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+L<Mojolicious::Command::Author::generate::lite_app>は
+L<Mojo::Command>からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $app->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月5日更新)
+
+=cut

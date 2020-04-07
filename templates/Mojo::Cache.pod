@@ -1,0 +1,58 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Cache
+
+=head1 名前
+
+Mojo::Cache - 素朴なインメモリーキャッシュ
+
+=head1 使い方
+
+  use Mojo::Cache;
+
+  my $cache = Mojo::Cache->new(max_keys => 50);
+  $cache->set(foo => 'bar');
+  my $foo = $cache->get('foo');
+
+=head1 説明
+
+[[Mojo::Cache]]はサイズ制限のあるインメモリーキャッシュです。
+
+=head1 属性
+
+[[Mojo::Cache]]は次の属性を実装しています。
+
+=head2 max_keys
+
+  my $max_keys = $cache->max_keys;
+  $cache       = $cache->max_keys(50);
+
+キャッシュのキーの最大数です。デフォルトはC<100>です。
+キャッシングを無効にしたい場合は、この値をC<0>に設定してください。
+
+=head1 メソッド
+
+[[Mojo::Cache]]は[[Mojo::Base]]のすべてのメソッドを継承し、
+次の新しいメソッドを実装しています。
+
+=head2 get
+
+  my $value = $cache->get('foo');
+
+キャッシュの値を取得します。
+
+=head2 set
+
+  $cache = $cache->set(foo => 'bar');
+
+キャッシュの値を設定します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映)
+
+=cut

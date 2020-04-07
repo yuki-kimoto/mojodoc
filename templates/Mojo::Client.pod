@@ -1,0 +1,21 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Client - B<廃止されました>
+
+=head1 使い方
+
+  use Mojo::UserAgent;
+
+=head1 説明
+
+このモジュールは廃止され、[[Mojo::UserAgent]] に代わりました!
+
+=head1 参考
+
+[[Mojolicious]], [[Mojolicious::Guides]], L<http://mojolicio.us>.
+
+=cut

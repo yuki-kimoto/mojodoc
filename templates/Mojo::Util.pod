@@ -1,0 +1,447 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Util - ポータブルなユーティリティ関数
+
+=head1 使い方
+
+  use Mojo::Util qw(b64_encode url_escape url_unescape);
+
+  my $str = 'test=23';
+  my $escaped = url_escape $str;
+  say url_unescape $escaped;
+  say b64_encode $escaped, '';
+
+=head1 説明
+
+[[Mojo::Util]] は [[Mojo]] にポータブルなユーティリティ関数を提供します。
+
+=head1 関数
+
+[[Mojo::Util]] は以下の関数を実装します。
+
+=head2 b64_decode
+
+  my $bytes = b64_decode $b64;
+
+L<MIME::Base64>を使って、Base64 デコードします。
+
+=head2 b64_encode
+
+  my $b64 = b64_encode $bytes;
+  my $b64 = b64_encode $bytes, "\n";
+
+L<MIME::Base64>を使って、Base64 エンコードします。
+
+=head2 camelize
+
+  my $camelcase = camelize $snakecase;
+
+スネークケースの文字列をキャメルケースの文字列へ変換します。
+C<->はC<::>に変換されます。
+
+  # "FooBar"
+  camelize 'foo_bar';
+
+  # "FooBar::Baz"
+  camelize 'foo_bar-baz';
+
+  # "FooBar::Baz"
+  camelize 'FooBar::Baz';
+
+=head2 class_to_file
+
+  my $file = class_to_file 'Foo::Bar';
+
+クラス名をファイル名に変換します。
+
+  # "foo_bar"
+  class_to_file 'Foo::Bar';
+
+  # "foobar"
+  class_to_file 'FOO::Bar';
+
+  # "foo_bar"
+  class_to_file 'FooBar';
+
+  # "foobar"
+  class_to_file 'FOOBar';
+
+=head2 class_to_path
+
+  my $path = class_to_path 'Foo::Bar';
+
+クラス名をパス名に変換します。
+
+  # "Foo/Bar.pm"
+  class_to_path 'Foo::Bar';
+
+  # "FooBar.pm"
+  class_to_path 'FooBar';
+
+=head2 decamelize
+
+  my $snakecase = decamelize $camelcase;
+
+キャメルケースの文字列をスネークケースの文字列へ変換します。
+C<::>はC<->に変換されます。
+
+  # "foo_bar"
+  decamelize 'FooBar';
+
+  # "foo_bar-baz"
+  decamelize 'FooBar::Baz';
+
+  # "foo_bar-baz"
+  decamelize 'foo_bar-baz';
+
+=head2 decode
+
+  my $chars = decode 'UTF-8', $bytes;
+
+L<Encode>を使って、バイト列を文字列にデコードします。
+
+=head2 deprecated
+
+  deprecated 'foo is DEPRECATED in favor of bar';
+
+呼び出し元の視点から廃止予定の機能の警告を出します。
+L<MOJO_FATAL_DEPRECATIONS>環境変数を設定すれば、
+変わりに例外を発生させることができます。
+
+=head2 dumper
+
+my $perl = dumper {some => 'data'};
+
+Perlのデータ構造を[[Data::Dumper]]でダンプします。
+
+=head2 encode
+
+  my $bytes = encode 'UTF-8', $chars;
+
+L<Encode>を使って、文字列をバイト列にエンコードします。
+
+=head2 extract_usage
+
+  my $usage = extract_usage;
+  my $usage = extract_usage '/home/sri/foo.pod';
+
+Extract usage message from the SYNOPSIS section of a file containing POD
+documentation, defaults to using the file this function was called from.
+
+PODドキュメントを含むファイルのSYNOPSISセクションから使用法メッセージを抽出しあｍす。
+デフォルトでは、この関数が呼び出されたファイルを使用します。
+
+  # "Usage: APPLICATION test [OPTIONS]\n"
+  extract_usage;
+
+  =head1 SYNOPSIS
+
+    Usage: APPLICATION test [OPTIONS]
+
+  =cut
+
+=head2 getopt
+
+  getopt
+    'H|headers=s' => \my @headers,
+    't|timeout=i' => \my $timeout,
+    'v|verbose'   => \my $verbose;
+  getopt $array,
+    'H|headers=s' => \my @headers,
+    't|timeout=i' => \my $timeout,
+    'v|verbose'   => \my $verbose;
+  getopt $array, ['pass_through'],
+    'H|headers=s' => \my @headers,
+    't|timeout=i' => \my $timeout,
+    'v|verbose'   => \my $verbose;
+
+L<Getopt::Long>を使って、配列のリファレンスからオプションを抽出しますが、グローバルな設定は、変更しません。
+デフォルトでは、C<@ARGV>を使います。設定オプションは、デフォルトで、C<no_auto_abbrev>とC<no_ignore_case>が有効になっています。
+
+  # "charset"オプションを抽出
+  getopt ['--charset', 'UTF-8'], 'charset=s' => \my $charset;
+  say $charset;
+
+=head2 hmac_sha1_sum
+
+  my $checksum = hmac_sha1_sum $bytes, 'passw0rd';
+
+バイトのためにHMAC-SHA1チェックサムを生成します。
+
+  # "11cedfd5ec11adc0ec234466d8a0f2a83736aa68"
+  hmac_sha1_sum 'foo', 'passw0rd';
+
+=head2 gunzip
+
+  my $uncompressed = gunzip $compressed;
+
+L<IO::Compress::Gunzip>を使って、バイト列を解凍します。
+
+=head2 gzip
+
+  my $compressed = gzip $uncompressed;
+
+L<IO::Compress::Gzip>を使って、バイト列を圧縮しています。
+
+=head2 html_attr_unescape
+
+  my $str = html_attr_unescape $escaped;
+
+Same as L</"html_unescape">, but handles special rules from the
+L<HTML Living Standard|https://html.spec.whatwg.org> for HTML attributes.
+
+"html_unescape"と同じですが、HTML属性のためにL<HTML Living Standard|https://html.spec.whatwg.org>からの特別なルールで処理します。
+
+  # "foo=bar&ltest=baz"
+  html_attr_unescape 'foo=bar&ltest=baz';
+
+  # "foo=bar<est=baz"
+  html_attr_unescape 'foo=bar&lt;est=baz';
+
+=head2 html_unescape
+
+  my $str = html_unescape $escaped;
+
+文字列を HTML5 アンエスケープします。
+
+  # "<div>"
+  html_unescape '&lt;div&gt;';
+
+=head2 md5_bytes
+
+  my $checksum = md5_bytes $bytes;
+
+L<Digest::MD5>を使って、バイトのためにバイナリ MD5 チェックサムを生成します。
+
+=head2 md5_sum
+
+  my $checksum = md5_sum $bytes;
+
+L<Digest::MD5>を使って、バイトのためにMD5 チェックサムを生成します。
+
+  # "acbd18db4cc2f85cedef654fccc4a4d8"
+  md5_sum 'foo';
+
+=head2 monkey_patch
+
+  monkey_patch $package, foo => sub {...};
+  monkey_patch $package, foo => sub {...}, bar => sub {...};
+
+関数をパッケージのなかにモンキーパッチします。
+
+  monkey_patch 'MyApp',
+    one   => sub { say 'One!' },
+    two   => sub { say 'Two!' },
+    three => sub { say 'Three!' };
+
+=head2 punycode_decode
+
+  my $str = punycode_decode $punycode;
+
+RFC 3492で解説されているPunycode デコードします。
+
+  # "bücher"
+  punycode_decode 'bcher-kva';
+
+=head2 punycode_encode
+
+  my $punycode = punycode_encode $str;
+
+RFC 3492で解説されているPunycodeエンコードします。
+
+  # "bcher-kva"
+  punycode_encode 'bücher';
+
+=head2 quote
+
+  my $quoted = quote $str;
+
+文字列をクォートします。
+
+=head2 secure_compare
+
+  my $bool = secure_compare $str1, $str2;
+
+タイミングアタックを防ぐための定数時間比較アルゴリズム。
+
+=head2 sha1_bytes
+
+  my $checksum = sha1_bytes $bytes;
+
+L<Digest::SHA>を使って、バイトのためにバイナリ SHA1 チェックサムを生成します。
+
+=head2 sha1_sum
+
+  my $checksum = sha1_sum $bytes;
+
+L<Digest::SHA>を使って、バイトのためにSHA1 チェックサムを生成します。
+
+  # "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"
+  sha1_sum 'foo';
+
+=head2 slugify
+
+  my $slug = slugify $string;
+  my $slug = slugify $string, $bool;
+
+Returns a URL slug generated from the input string. Non-word characters are
+removed, the string is trimmed and lowercased, and whitespace characters are
+replaced by a dash. By default, non-ASCII characters are normalized to ASCII
+word characters or removed, but if a true value is passed as the second
+parameter, all word characters will be allowed in the result according to
+unicode semantics.
+
+入力文字列から生成されたURLスラッグを返します。非単語文字は
+削除され、文字列はトリミングされ、小文字化されます。空白文字は
+ダッシュで置き換えます。デフォルトでは、非ASCII文字はASCIIに正規化されるか、取り除かれます。
+2番目のパラメーターに、真の値が渡された場合
+パラメータでは、結果にはすべての単語の文字はUnicodeのセマンティクスに応じて許可されます。
+
+  # "joel-is-a-slug"
+  slugify 'Joel is a slug';
+
+  # "this-is-my-resume"
+  slugify 'This is: my - résumé! ☃ ';
+
+  # "this-is-my-résumé"
+  slugify 'This is: my - résumé! ☃ ', 1;
+
+=head2 split_cookie_header
+
+  my $tree = split_cookie_header 'a=b; expires=Thu, 07 Aug 2008 07:07:59 GMT';
+
+C<split_header>と同じですが、
+L<RFC 6265|http://tools.ietf.org/html/rfc6265>.
+からのC<expires>の値を処理します。
+
+=head2 split_header
+
+   my $tree = split_header 'foo="bar baz"; test=123, yada';
+
+HTTPヘッダの値を分割します。
+
+HTTPヘッダの値を、キーと値のペアに分割します。
+それぞれのコンマで分割された部分は、配列のリファレンスになります。
+値のないキーにはC<undef>が割り当てられます。
+
+  # "one"
+  split_header('one; two="three four", five=six')->[0][0];
+
+  # "two"
+  split_header('one; two="three four", five=six')->[0][2];
+
+  # "three four"
+  split_header('one; two="three four", five=six')->[0][3];
+
+  # "five"
+  split_header('one; two="three four", five=six')->[1][0];
+
+  # "six"
+  split_header('one; two="three four", five=six')->[1][1];
+
+=head2 steady_time
+
+  my $time = steady_time;
+
+過去の任意の固定した点から経過した高い分解時間。
+これはL<Time::HiRes>をとおしてモノトニッククロックが利用可能であれば、
+回復力のあるタイムジャンプを提供します。
+
+=head2 tablify
+
+  my $table = tablify [['foo', 'bar'], ['baz', 'yada']];
+
+テキストテーブルのための、行指向ジェネレーター。
+
+  # "foo   bar\nyada  yada\nbaz   yada\n"
+  tablify [['foo', 'bar'], ['yada', 'yada'], ['baz', 'yada']];
+
+=head2 term_escape
+
+  my $escaped = term_escape $str;
+
+C<\n>を除いたすべてのPOSIXコントロール文字をエスケープします。
+
+  # "foo\\x09bar\\x0d\n"
+  term_escape "foo\tbar\r\n";
+
+=head2 trim
+
+  my $trimmed = trim $str;
+
+文字列の両端にある空白文字を除去します。
+
+  # "foo bar"
+  trim '  foo bar  ';
+
+=head2 unindent
+
+  my $unindented = unindent $str;
+
+複数行の文字列をアンインデントします。
+
+  # "foo\nbar\nbaz\n"
+  unindent "  foo\n  bar\n  baz\n";
+
+=head2 unquote
+
+  my $str = unquote $quoted;
+
+文字列をアンクォートします。
+
+  # "foo%3Bbar"
+  url_unescape 'foo;bar';
+
+=head2 url_escape
+
+  my $escaped = url_escape $str;
+  my $escaped = url_escape $str, 'A-Za-z0-9\-\.\_\~';
+
+RFC 3986で解説されている文字列において、安全でない文字を
+パーセントエンコードします。
+このパターンのデフォルトはC<^A-Za-z0-9\-._~>です。
+
+  # "foo%3Bbar"
+  url_escape 'foo;bar';
+
+=head2 url_unescape
+
+  my $str = url_unescape $escaped;
+
+RFC 3986で解説されている文字列のおいて
+パーセントエンコーディングされた文字をデコードします。
+
+  # "foo;bar"
+  url_unescape 'foo%3Bbar';
+
+=head2 xml_escape
+
+  my $escaped = xml_escape $str;
+
+文字列の中の安全でない文字である C<&>, C<E<lt>>, C<E<gt>>, C<">, C<'> 
+をエスケープします。
+
+  # "&lt;div&gt;"
+  xml_escape '<div>';
+
+  # "<div>"
+  use Mojo::ByteStream 'b';
+  xml_escape b('<div>');
+
+=head2 xor_encode
+
+  my $encoded = xor_encode $str, $key;
+
+可変長の長さのキーを使って、文字列をXORエンコードします。
+
+=head1 参考
+
+[[Mojolicious]], [[Mojolicious::Guides]], L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月3日)
+
+=cut

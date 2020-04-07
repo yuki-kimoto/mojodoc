@@ -1,0 +1,630 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Controller - コントローラーの基底クラス
+
+=head1 使い方
+
+  # コントローラー
+  package MyApp::Controller::Foo;
+  use Mojo::Base 'Mojolicious::Controller';
+
+  # アクション
+  sub bar {
+    my $self = shift;
+    my $name = $self->param('name');
+    $self->res->headers->cache_control('max-age=1, no-cache');
+    $self->render(json => {hello => $name});
+  }
+
+=head1 説明
+
+[[Mojolicious::Controller]]はあなたの[[Mojolicious]]のコントローラーの基底クラスです。
+アプリケーションでC<controller_class>を設定しない場合の、
+[[Mojolicious]]のデフォルトのコントローラークラスでもあります。
+
+=head1 属性
+
+[[Mojolicious::Controller]]は[[Mojo::Base]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 app
+
+  my $app = $c->app;
+  $c      = $c->app(Mojolicious->new);
+
+このコントローラディスパッチさせたアプリケーションへの参照。通常は[[Mojolicious]]オブジェクトです。ウィークリファレンスであることに注意してください。
+
+  # アプリケーションのロガーを使う
+  $c->app->log->debug('Hello Mojo');
+
+  # パスの生成
+  my $path = $c->app->home->child('templates', 'foo', 'bar.html.ep');
+
+=head2 match
+
+  my $m = $c->match;
+  $c    = $c->match(Mojolicious::Routes::Match->new);
+
+現在のリクエストのルートの結果。デフォルトは[[Mojolicious::Routes::Match]]オブジェクトです。
+
+  # 使い方の例
+  my $name   = $c->match->endpoint->name;
+  my $foo    = $c->match->endpoint->pattern->defaults->{foo};
+  my $action = $c->match->stack->[-1]{action};
+
+=head2 tx
+
+  my $tx = $c->tx;
+  $c     = $c->tx(Mojo::Transaction::HTTP->new);
+
+現在実行されているトランザクション。通常は
+[[Mojo::Transaction::HTTP]]か[[Mojo::Transaction::WebSocket]]オブジェクトです。
+このリファレンスは通常は弱いリファレンスです。
+ですので、ノンブロッキングの処理を行っていて
+下層の接続が早期に閉じられるときは、
+リファレンスは他の場所から参照されている必要があります。
+
+  # リモートの情報をチェック
+  my $address = $c->tx->remote_address;
+  my $port    = $c->tx->remote_port;
+
+  # WebSocketメッセージのサイズの制限を16MBに上げる
+  $c->tx->max_websocket_size(16777216) if $c->tx->is_websocket;
+
+  # 接続の状態を知ることなしに、ノンブロッキンの処理を実行する
+  my $tx = $c->tx;
+  Mojo::IOLoop->timer(2 => sub {
+    $c->app->log->debug($tx->is_finished ? 'Finished' : 'In progress');
+  });
+
+=head1 メソッド
+
+[[Mojolicious::Controller]]は[[Mojo::Base]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 cookie
+
+  my $value = $c->cookie('foo');
+  $c        = $c->cookie(foo => 'bar');
+  $c        = $c->cookie(foo => 'bar', {path => '/'});
+
+リクエストのクッキーの値にアクセスし、新しいレスポンスのクッキーを生成します。
+もし同じ名前で共有される複数の値があり、
+最後のひとつ以外を取得したい場合は、
+C<every_cookie>を使用することができます。
+
+  # ドメインと有効期限つきのレスポンスクッキーを作成
+  $c->cookie(user => 'sri', {domain => 'example.com', expires => time + 60});
+
+  # セキュアなレスポンスクッキーを作成
+  $c->cookie(secret => 'I <3 Mojolicious', {secure => 1, httponly => 1});
+
+=head2 every_cookie
+
+  my $values = $c->every_cookie('foo');
+
+C<cookie>と似ていますが、同じ名前で共有されるすべてのリクエストクッキーの値を
+配列のリファレンスとして取得します。
+
+  $ 最初のクッキーの値を取得
+  my $first = $c->every_cookie('foo')->[0];
+
+=head2 every_param
+
+  my $values = $c->every_param('foo');
+
+C<param>と似ていますが、同じ名前で共有されるすべての値を、
+配列のリファレンスとして取得します。
+
+  # 最初の値を取得
+  my $first = $c->every_param('foo')->[0];
+
+=head2 every_signed_cookie
+
+  my $values = $c->every_signed_cookie('foo');
+
+C<signed_cookie>と同じですが、同じ名前で共有される
+すべての署名つきリクエストクッキーを、
+配列のリファレンスとして取得します。
+
+  # 最初の署名つきクッキーの値を取得
+  my $first = $c->every_signed_cookie('foo')->[0];
+
+=head2 finish
+
+  $c = $c->finish;
+  $c = $c->finish(1000);
+  $c = $c->finish(1003 => 'Cannot accept data!');
+  $c = $c->finish('Bye!');
+
+WebSocketコネクションかロングポーリングストリームを緩やかに終了させます。
+このメソッドは、C<101>レスポンスコードでのWebSocketハンドシェイクリクエストに自動的に対応し、
+WebSocket接続を確立します。
+
+=head2 helpers
+
+  my $helpers = $c->helpers;
+
+現在のコントローラーオブジェクトを含んでいる
+プロキシオブジェクトを返却します。
+これから、アプリケーション(C<app>)によって提供されているヘルパーを、
+呼び出すことが可能です。
+これは
+[[Mojolicious::Plugin::DefaultHelpers]]と[[Mojolicious::Plugin::TagHelpers]]
+のすべてのヘルパーを含んでいます。
+
+  # コントローラーメソッドではなく、"title"ヘルパーを確実に使う
+  $c->helpers->title('Welcome!');
+
+  # "reply"コントローラーメソッドではなく、ネストされたヘルパーを使う
+  $c->helpers->reply->not_found;
+
+=head2 on
+
+  my $cb = $c->on(finish => sub {...});
+
+C<tx>のイベントを購読します。
+C<tx>は通常、[[Mojo::Transaction::HTTP]]か[[Mojo::Transaction::WebSocket]]オブジェクトです。
+このメソッドは自動的にWebSocketハンドシェイクリクエストに対してはC<101>レスポンスステータス
+で応答することに注意してください。
+
+  # トランザクションが終了した後に何かを行う
+  $c->on(finish => sub {
+    my $c = shift;
+    $c->app->log->debug('We are done');
+  });
+
+  # WebSocketメッセージを受ける
+  $c->on(message => sub {
+    my ($c, $msg) = @_;
+    $c->app->log->debug("Message: $msg");
+  });
+
+  # JSONオブジェクトをWebSocketメッセージを通して受け取る
+  $c->on(json => sub {
+    my ($c, $hash) = @_;
+    $c->app->log->debug("Test: $hash->{test}");
+  });
+
+  # WebSocketのバイナリメッセージを受け取る
+  $c->on(binary => sub {
+    my ($c, $bytes) = @_;
+    my $len = length $bytes;
+    $c->app->log->debug("Received $len bytes");
+  });
+
+=head2 param
+
+  my $value = $c->param('foo');
+  $c        = $c->param(foo => 'ba;r');
+  $c        = $c->param(foo => qw(ba;r baz));
+  $c        = $c->param(foo => ['ba;r', 'baz']);
+
+スタッシュの値として予約されていないルートのプレースホルダーの値、
+Get/POSTパラメーター、ファイルのアップロード(これらは、
+クエリ文字列、C<application/x-www-form-urlencoded>あるいはC<multipart/form-data>
+のメッセージボディから、この順番で抽出される)
+にアクセスします。
+同じ名前で共有されている複数の値があり、
+最後のひとつ以外にアクセスしたい場合は、
+C<every_param>を使用することができます。
+POSTパラメーターを解析するために、リクエストボディの部分はメモリ上に読み込まれる必要があるので、
+大きすぎないようにするようにしてください。
+この制限はデフォルトで16MBです。
+
+  # 最初の値を取得
+  my $first = $c->every_param('foo')->[0];
+
+さらにコントロールするために、リクエストの情報直接アクセスできます。
+
+  # GETパラメーターだけ
+  my $foo = $c->req->query_params->param('foo');
+
+  # POSTパラメーターだけ
+  my $foo = $c->req->body_params->param('foo');
+
+  # GETとPOSTパラメーターだけ
+  my $foo = $c->req->param('foo');
+
+  # アップロードされたファイルだけ
+  my $foo = $c->req->upload('foo');
+
+=head2 render
+
+  my $bool = $c->render;
+  my $bool = $c->render(foo => 'bar', baz => 23);
+  my $bool = $c->render(template => 'foo/index');
+  my $bool = $c->render(template => 'index', format => 'html');
+  my $bool = $c->render(data => $bytes);
+  my $bool = $c->render(text => 'Hello!');
+  my $bool = $c->render(json => {foo => 'bar'});
+  my $bool = $c->render(handler => 'something');
+  my $bool = $c->render('foo/index');
+
+[[Mojolicious]]のC<render>を使って
+コンテンツを描画し、[[Mojolicious]]のC<before_render>フックとC<after_render>フックを発行します。
+レスポンスが生成されない場合は、
+[[Mojolicious::Plugin::DefaultHelpers]]のC<reply-E<gt>not_found>が呼び出されます。
+後ろに続くすべてのキーと値のペアは、C<stash>の中にマージされます。
+
+  # 文字を描画
+  $c->render(text => 'I ♥ Mojolicious!');
+
+  # 文字を描画(もう一つのやり方)
+  $c->stash(text => 'I ♥ Mojolicious!')->render;
+
+  # バイナリデータを描画
+  use Mojo::JSON 'encode_json';
+  $c->render(data => encode_json({test => 'I ♥ Mojolicious!'}));
+
+  # JSONを描画
+  $c->render(json => {test => 'I ♥ Mojolicious!'});
+
+  # インラインテンプレートを描画
+  $c->render(inline => '<%= 1 + 1 %>');
+
+  # テンプレート「foo/bar.html.ep」を描画
+  $c->render(template => 'foo/bar', format => 'html', handler => 'ep');
+
+  # 任意の値"foo"と"bar"をつけた、テンプレート"test.*.*"を描画
+  $c->render(template => 'test', foo => 'test', bar => 23);
+
+  # テンプレート「test.xml.*」を描画
+  $c->render(template => 'test', format => 'xml');
+
+=head2 render_later
+
+  $c->render_later;
+
+レスポンスの生成を遅らせるために、自動的な描画を無効にします。
+レスポンスの中で自動的な描画が結果を返さないときだけ必要になるでしょう。
+
+  # 遅らせた描画
+  $c->render_later;
+  Mojo::IOLoop->timer(2 => sub {
+    $c->render(text => 'Delayed by 2 seconds!');
+  });
+
+=head2 render_maybe
+
+  my $bool = $c->render_maybe;
+  my $bool = $c->render_maybe(controller => 'foo', action => 'bar');
+  my $bool = $c->render_maybe('foo/index', format => 'html');
+
+コンテンツを描画しようとしますが、レスポンスが生成されなければ[[Mojolicious::Plugin::DefaultHelpers]]のC<reply-E<gt>not_found>を呼びません。
+すべての引数は、自動的にローカライズされ、この描画の処理の間だけ利用可能です。
+「render」と同じ引数をとります。
+
+  # "index_local"テンプレートを存在するときだけ描画
+  $self->render_maybe('index_local') or $self->render('index');
+  
+=head2 render_to_string
+
+  my $output = $c->render_to_string('foo/index', format => 'pdf');
+
+コンテンツを描画しようとし、結果を[[Mojo::ByteStream]]でラップされたオブジェクトを返却します。
+できなければ、C<undef>を返します。
+すべての引数は自動的にローカライズされ、この描画処理の間でだけ
+利用可能です。C<render>と同じ引数をとります。
+
+  # インラインテンプレートを描画
+  my $two = $c->render_to_string(inline => '<%= 1 + 1 %>');
+
+=head2 rendered
+
+  $c = $c->rendered;
+  $c = $c->rendered(302);
+
+レスポンスを終了させ、C<after_dispatch>フックを発行します。
+デフォルトはC<200>レスポンスコードです。
+
+  # カスタムレスポンス
+  $c->res->headers->content_type('text/plain');
+  $c->res->body('Hello World!');
+  $c->rendered(200);
+
+=head2 req
+
+  my $req = $c->req;
+
+C<tx>から[[Mojo::Message::Request]]オブジェクトを取得します。
+
+  # 長いバージョン
+  my $req = $c->tx->req;
+
+  # リクエストの情報を抽出
+  my $id     = $c->req->request_id;
+  my $method = $c->req->method;
+  my $url    = $c->req->url->to_abs;
+  my $info   = $c->req->url->to_abs->userinfo;
+  my $host   = $c->req->url->to_abs->host;
+  my $agent  = $c->req->headers->user_agent;
+  my $custom = $c->req->headers->header('Custom-Header');
+  my $bytes  = $c->req->body;
+  my $str    = $c->req->text;
+  my $hash   = $c->req->params->to_hash;
+  my $all    = $c->req->uploads;
+  my $value  = $c->req->json;
+  my $foo    = $c->req->json('/23/foo');
+  my $dom    = $c->req->dom;
+  my $bar    = $c->req->dom('div.bar')->first->text;
+  
+=head2 res
+
+  my $res = $c->res;
+
+C<tx>から[[Mojo::Message::Response]]オブジェクトを取得します。
+
+  # 長いバージョン
+  my $res = $c->tx->res;
+
+  # カスタムレスポンスヘッダを設定することによってファイルのダウンロードを強制する
+  $c->res->headers->content_disposition('attachment; filename=foo.png;');
+
+  # カスタムのレスポンスヘッダを使う
+  $c->res->headers->header('Custom-Header' => 'whatever');
+
+  # レスポンスが必ずキャッシュされるようにする
+  $c->res->headers->cache_control('public, max-age=300');
+  $c->res->headers->append(Vary => 'Accept-Encoding');
+
+=head2 send
+
+  $c = $c->send({binary => $bytes});
+  $c = $c->send({text   => $bytes});
+  $c = $c->send({json   => {test => [1, 2, 3]}});
+  $c = $c->send([$fin, $rsv1, $rsv2, $rsv3, $op, $payload]);
+  $c = $c->send($chars);
+  $c = $c->send($chars => sub {...});
+
+WebSocketを通してノンブロッキングで、メッセージあるいはフレームを送信します。
+オプションの排出コールバックは、データがすべて書き込まれた場合に
+一度だけ実行されます。
+このメソッドは、C<101>レスポンスステータスで、WebSocketハンドシェイクリクエストに自動的に応答し、
+WebSocket接続を確立します。
+
+  # テキストメッセージを送信
+  $c->send('I ♥ Mojolicious!');
+
+  # JSONオブジェクトをテキストメッセージとして送信
+  $c->send({json => {test => 'I ♥ Mojolicious!'}});
+
+  # JSONオブジェクトをバイナリメッセージとして送信
+  use Mojo::JSON 'encode_json';
+  $c->send({binary => encode_json({test => 'I ♥ Mojolicious!'})});
+
+  # PINフレームを送信
+  use Mojo::WebSocket 'WS_PING';
+  $c->send([1, 0, 0, 0, 9, 'Hello World!']);
+
+  # 継続する前に以前のメッセージが書き込まれたことを確実にする
+  $c->send('First message!' => sub {
+    my $c = shift;
+    $c->send('Second message!');
+  });
+
+ ほどんどの時間がアイドル状態のWebソケットにおいては、
+[[Mojolicious::Plugin::DefaultHelpers]]のC<inactivity_timeout>を使って、
+インアクティビティタイムアウトを増やしたいと思うかもしれません。
+通常はデフォルトで15秒です。
+
+  # 接続のために300秒にインアクティビティタイムアウトを増やす
+  $c->inactivity_timeout(300);
+
+=head2 session
+
+  my $session = $c->session;
+  my $foo     = $c->session('foo');
+  $c          = $c->session({foo => 'bar'});
+  $c          = $c->session(foo => 'bar');
+
+持続的なデータストレージ。
+暗号化クッキーの中に、JSON形式でシリアライズされ保存されます。
+すべてのセッションデータは[[Mojo::JSON]]によってシリアライズされ、
+C<HMAC-SHA1>による書名つきクッキーをつけてC<Base64>でエンコードされて
+保存されます。
+クッキーは一般的にC<4096>バイト(4KB)のデータに制限されることに注意してください。
+
+  # セッションを扱う
+  $c->session->{foo} = 'bar';
+  my $foo = $c->session->{foo};
+  delete $c->session->{foo};
+
+  # 今からの秒で指定する有効日付 (リクエストの間で存続する)
+  $c->session(expiration => 604800);
+
+  # 絶対的なエポック病で指定する有効日付 (ひとつのリクエストだけで有効)
+  $c->session(expires => time + 604800);
+
+  # 過去の有効日付を指定して、セッションを完全に削除するst
+  $c->session(expires => 1);
+
+=head2 signed_cookie
+
+  my $value = $c->signed_cookie('foo');
+  $c        = $c->signed_cookie(foo => 'bar');
+  $c        = $c->signed_cookie(foo => 'bar', {path => '/'});
+
+暗号化されたリクエストのクッキーにアクセスし、
+新しい暗号化されたレスポンスのクッキーを作成します。
+同じ名前共有される複数の値があり、
+最後のひとつ以外の値にアクセスしたい場合は、
+C<every_signed_cookie>を使用できます。
+C<HMAC-SHA1>による署名による照合が失敗したクッキーは自動的に破棄されます。
+
+=head2 stash
+
+  my $stash = $c->stash;
+  my $foo   = $c->stash('foo');
+  $c        = $c->stash({foo => 'bar'});
+  $c        = $c->stash(foo => 'bar');
+
+持続的ではないデータの保存と入れ替え。
+アプリケーションのデフォルトの値は[[Mojolicious]]のC<defaults>で設定可能です。
+多くのstashの値は特別な意味を持ち予約されています。
+完全なリストは現在は、C<action>, C<app>, C<cb>, C<controller>, C<data>, C<extends>, 
+C<format>, C<handler>, C<json>, C<layout>, C<namespace>, C<partial>, C<path>, C<status>,
+C<template>, C<text>, C<variant>です。
+内部的に利用される予約語についてはC<mojo.*>プレフィックスがすべてのスタッシュの値につきます。
+
+  # 値を削除
+  my $foo = delete $c->stash->{foo};
+
+  # 複数の値を一度に代入
+  $c->stash(foo => 'test', bar => 23);
+
+=head2 url_for
+
+  my $url = $c->url_for;
+  my $url = $c->url_for(name => 'sebastian');
+  my $url = $c->url_for({name => 'sebastian'});
+  my $url = $c->url_for('test', name => 'sebastian');
+  my $url = $c->url_for('test', {name => 'sebastian'});
+  my $url = $c->url_for('/index.html');
+  my $url = $c->url_for('//example.com/index.html');
+  my $url = $c->url_for('http://example.com/index.html');
+  my $url = $c->url_for('mailto:sri@example.com');
+  my $url = $c->url_for('#whatever');
+
+ルートやパスやURLのためにベース(URL)を持ったポータブルな[[Mojo::URL]]オブジェクトを生成します。
+
+  # 現在のルーティングでURLを再構築する
+  $c->url_for;
+
+  # 現在のルーティングでURLを再構築するが「name」プレースホルダーの値で置換する
+  $c->url_for(name => 'sebastian');
+
+  # 現在のルーティングの絶対URL
+  $c->url_for->to_abs;
+
+  # 二つのプレースホルダーの値でルーティング「test」のURLを構築する
+  $c->url_for('test', name => 'sebastian', foo => 'bar');
+
+  # "http://127.0.0.1:3000/index.html"(アプリケーションがMorboで開始されていた場合)
+  $c->url_for('/index.html')->to_abs;
+
+  # "https://127.0.0.1:443/index.html"(アプリケーションがMorboで開始されていた場合)
+  $c->url_for('/index.html')->to_abs->scheme('https')->port(443);
+
+  # "/index.html?foo=bar" (アプリケーションが「/」の下でデプロイされていた場合)
+  $c->url_for('/index.html')->query(foo => 'bar');
+
+  # "/myapp/index.html?foo=bar" (アプリケーションが「/myapp」の下でデプロイされていた場合)
+  $c->url_for('/index.html')->query(foo => 'bar');
+
+現在のリクエストからクエリパラメーターを受け継ぐために、
+[[Mojolicious::Plugin::DefaultHelpers]]のC<url_with>を使うこともできます。
+
+  # "/list?q=mojo&page=2" (現在のリクエストが"/list?q=mojo&page=1"の場合)
+  $c->url_with->query({page => 2});
+
+=head2 write
+
+  $c = $c->write;
+  $c = $c->write('');
+  $c = $c->write($bytes);
+  $c = $c->write($bytes => sub {...});
+
+対応するC<Content-Length>のチャンクサイズにマッチする動的なコンテンツをノンブロッキングで書き込みます。
+オプションの排出コールバックは、すべてのデータが書き込まれた後に一度だけ実行されます。
+
+  # 接続をキープアライブに保つ(Content-Lengthヘッダーをつける)
+  $c->res->headers->content_length(6);
+  $c->write('Hel', sub {
+    my $c = shift;
+    $c->write('lo!');
+  });
+
+  # 終了したときに接続を閉じる(Content-Lengthヘッダーをつけない)
+  $c->write('Hel', sub {
+    my $c = shift;
+    $c->write('lo!', sub {
+      my $c = shift;
+      $c->finish;
+    });
+  });
+
+「finish」メソッドを呼ぶか、空のチャンクデータを書き込むことで、いつでもストリームを終了できます。
+
+  HTTP/1.1 200 OK
+  Connection: keep-alive
+  Date: Sat, 13 Sep 2014 16:48:29 GMT
+  Content-Length: 6
+  Server: Mojolicious (Perl)
+
+  Hello!
+
+  HTTP/1.1 200 OK
+  Connection: close
+  Date: Sat, 13 Sep 2014 16:48:29 GMT
+  Server: Mojolicious (Perl)
+
+  Hello!
+
+Comet (ロングポーリングにおいては)、
+インアクティビティタイムアウトの値を
+[[Mojolicious::Plugin::DefaultHelpers]]のC<inactivity_timeout>
+を使って、増やすこともできます。
+デフォルトはC<15>秒です。
+
+  # 現在のコネクションのタイムアウトを300秒に増やす
+  $c->inactivity_timeout(300);
+
+=head2 write_chunk
+
+  $c = $c->write_chunk;
+  $c = $c->write_chunk('');
+  $c = $c->write_chunk($bytes);
+  $c = $c->write_chunk($bytes => sub {...});
+
+C<chunked>トランスファーエンコードで、動的なコンテンツをノンブロッキングで書き込みます。
+オプションの排出コールバックは、すべてのデータが書き込まれた後に一度だけ実行されます。
+
+  # 継続するまえに前のチャンクが書き込まれることを確実にする
+  $c->write_chunk('H' => sub {
+    my $c = shift;
+    $c->write_chunk('ell' => sub {
+      my $c = shift;
+      $c->finish('o!');
+    });
+  });
+
+C<finish>を呼ぶか、空のデータチャンクを書き込むことで、いつでもストリームの終わらせることができます。
+
+  HTTP/1.1 200 OK
+  Date: Sat, 13 Sep 2014 16:48:29 GMT
+  Transfer-Encoding: chunked
+  Server: Mojolicious (Perl)
+
+  1
+  H
+  3
+  ell
+  2
+  o!
+  0
+
+=head2 ヘルパー
+
+上記の属性とメソッドに加えて、[[Mojolicious::Controller]]のインスタンスで、ヘルパーを呼ぶことができます。
+これは[[Mojolicious::Plugin::DefaultHelpers]]と[[Mojolicious::Plugin::TagHelpers]]の
+すべてのヘルパーを含んでいます。
+
+  # ヘルパーを呼ぶ
+  $c->layout('green');
+  $c->title('Welcome!');
+
+  # 長いバージョン
+  $c->helpers->layout('green');
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月11日更新)
+
+=cut

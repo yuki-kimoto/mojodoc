@@ -1,0 +1,24 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+mojo - Mojoliciousコマンドシステム
+
+=head1 使い方
+
+  $ mojo --help
+
+=head1 説明
+
+[[Mojolicious::Commands]]で解説されている
+[[Mojolicious]]コマンドを一覧あるいは実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月17日更新)
+
+=cut

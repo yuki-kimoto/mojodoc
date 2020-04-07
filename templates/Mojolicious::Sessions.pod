@@ -1,0 +1,141 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Sessions - 署名されたクッキーに基づくセッションマネージャー
+
+=head1 使い方
+
+  use Mojolicious::Sessions;
+
+  my $sessions = Mojolicious::Sessions->new;
+  $sessions->cookie_name('myapp');
+  $sessions->default_expiration(86400);
+
+=head1 説明
+
+[[Mojolicious::Sessions]]はとても簡単な暗号化クッキーに基づくセッションの実装です。
+すべてのデータは[[Mojo::JSON]]によってシリアライズされ、
+クライアント側に保存されますが、署名によって
+望まない変更を防ぐことができます。
+
+=head1 属性
+
+[[Mojolicious::Sessions]]は次の属性を実装しています。
+
+=head2 cookie_domain
+
+  my $domain = $session->cookie_domain;
+  $session   = $session->cookie_domain('.example.com');
+
+セッションクッキーのためのドメイン。
+デフォルトは定義されていません。
+
+=head2 cookie_name
+
+  my $name = $session->cookie_name;
+  $session = $session->cookie_name('session');
+
+セッションデータを保存するのに利用される署名されたクッキーの名前。
+デフォルトはC<mojolicious>。
+
+=head2 cookie_path
+
+  my $path = $session->cookie_path;
+  $session = $session->cookie_path('/foo');
+
+セッションクッキーのためのパス。デフォルトはC</>。
+
+=head2 default_expiration
+
+  my $time = $session->default_expiration;
+  $session = $session->default_expiration(3600);
+
+今から有効期限に至るまでのセッションの秒数。
+デフォルトはC<3600>。
+毎回のリクエストで有効期限のタイムアウトはリフレッシュされます。
+この値をC<0>に設定すると、ブラウザーのウインドウが閉じられるまでセッションを永続化することができますが、
+セキュリティの問題を引き起こすかもしれません。
+より調節するには、セッションのC<expires>の値を利用して、有効期限の日付を特定の時間にエポック秒で指定してください。
+
+  # 現在からの秒数で有効日付を指定 (リクエスト間で継続)
+  $c->session(expiration => 604800);
+
+  # 絶対的なエポック秒として有効日付を指定 (ひとつのリクエストに対してだけ有効)
+  $c->session(expires => time + 604800);
+
+  # 有効日付を過去に設定してセッション全体を削除
+  $c->session(expires => 1);
+
+=head2 deserialize
+
+  my $cb    = $sessions->deserialize;
+  $sessions = $sessions->deserialize(sub {...});
+
+セッションをデシリアライズするために使用されるコールバック。
+デフォルトは[[Mojo::JSON]]のC<j>です。
+
+  $sessions->deserialize(sub {
+    my $bytes = shift;
+    return {};
+  });
+
+=head2 samesite
+
+  my $samesite = $sessions->samesite;
+  $sessions    = $sessions->samesite('Strict');
+
+すべてのセッションクッキーににSameSite値を設定します。デフォルトはC<Lax>です。ご了承ください
+一般的なほとんどのブラウザがこの機能をサポートしていますが、この属性は実験的なものです。
+L<this draft|https://tools.ietf.org/html/draft-west-first-party-cookies-07>以外ではまだ仕様化されていません。
+
+  # SameSite機能を無効にする
+  $sessions->samesite(undef);
+
+=head2 secure
+
+  my $bool  = $sessions->secure;
+  $sessions = $sessions->secure($bool);
+
+すべてのセッションクッキーにセキュアフラグを設定します。
+ブラウザーはクッキーをHTTPS接続のみによって送信することができます。
+
+=head2 serialize
+
+  my $cb    = $sessions->serialize;
+  $sessions = $sessions->serialize(sub {...});
+
+セッションをシリアライズするために使用されるコールバック。
+デフォルトは、[[Mojo::JSON]]のC<encode_json>です。
+
+  $sessions->serialize(sub {
+    my $hash = shift;
+    return '';
+  });
+
+=head1 メソッド
+
+[[Mojolicious::Sessions]]は[[Mojo::Base]]からすべてのメソッドを
+実装しており、次のメソッドを実装しています。
+
+=head2 load
+
+  $sessions->load(Mojolicious::Controller->new);
+
+セッションデータを署名されたデータからロードします。
+
+=head2 store
+
+  $sessions->store(Mojolicious::Controller->new);
+
+署名されたクッキーにセッションのデータを保存します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月13日更新)
+
+=cut

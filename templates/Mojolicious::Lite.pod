@@ -1,0 +1,282 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojolicious::Lite
+
+=head1 名前
+
+Mojolicious::Lite - 小さなリアルタイムWebフレームワーク
+
+=head1 使い方
+
+  # Mojolicious::Liteを使うと"strict","warnings","utf8","Perl 5.10 feature"が有効になる
+  use Mojolicious::Lite;
+
+  # プレースホルダーを使ったルーティング
+  get '/:foo' => sub {
+    my $self = shift;
+    my $foo  = $self->param('foo');
+    $self->render(text => "Hello from $foo!");
+  };
+
+  # Mojoliciousのコマンドシステムの開始
+  app->start;
+
+=head1 説明
+
+[[Mojolicious::Lite]]は[[Mojolicious]]を中心にして構築された小さなドメイン指定言語です。
+
+Perl 5.20以上の場合は、C<-signatures>フラグを使うことによりサブルーチンシグネチャを有効にできます。
+
+より多くを知りたい場合は、[[Mojolicious::Guides::Tutorial]]を見てください。
+
+=head1 成長
+
+[[Mojolicious::Guides::Growing]]は、[[Mojolicious::Lite]]プロトタイプをよく構成された[[Mojolicious]]に成長させるための詳細なイントロダクションとなっていますが、それが、どれくらいよく似ているかを示すために、いくつかのスニペットを集めました。
+
+=head2 ルーティング
+
+「get」「post」関数とその仲間は、まったく同じです。
+
+  # Mojolicious::Lite
+  get '/foo' => sub {
+    my $c = shift;
+    $c->render(text => 'Hello World!');
+  };
+
+  # Mojolicious
+  sub startup {
+    my $self = shift;
+
+    my $routes = $self->routes;
+    $routes->get('/foo' => sub {
+      my $c = shift;
+      $c->render(text => 'Hello World!');
+    });
+  }
+
+=head2 アプリケーション
+
+「app」関数でアクセスできるアプリケーションオブジェクトは「startup」メソッドに渡される最初の引数です。
+
+  # Mojolicious::Lite
+  app->max_request_size(16777216);
+
+  # Mojolicious
+  sub startup {
+    my $self = shift;
+    $self->max_request_size(16777216);
+  }
+
+=head2 プラグイン
+
+「plugin」関数の代わりに、[[Mojolicious]]のpluginメソッドを使うだけです。
+
+  # Mojolicious::Lite
+  plugin 'Config';
+
+  # Mojolicious
+  sub startup {
+    my $self = shift;
+    $self->plugin('Config');
+  }
+
+=head2 ヘルパー
+
+プラグインと似ていて、「helper」関数の代わりに[[Mojolicious]]の「helper」メソッドを使うだけです。
+
+  # Mojolicious::Lite
+  helper two => sub {
+    my $c = shift;
+    return 1 + 1;
+  };
+
+  # Mojolicious
+  sub startup {
+    my $self = shift;
+    $self->helper(two => sub {
+      my $c = shift;
+      return 1 + 1;
+    });
+  }
+
+=head2 アンダー
+
+後に続く関数の呼び出しの代わりに、ネストされたルートで木を構築するためのメソッドを使うことができます。
+
+  # Mojolicious::Lite
+  under '/foo';
+  get '/bar' => sub {...};
+
+  # Mojolicious
+  sub startup {
+    my $self = shift;
+
+    my $routes = $self->routes;
+    my $foo = $routes->under('/foo');
+    $foo->get('/bar' => sub {...});
+  }
+
+=head1 関数
+
+[[Mojolicious::Lite]]は次の関数を実装しています。
+
+=head2 any
+
+  my $route = any '/:foo' => sub {...};
+  my $route = any '/:foo' => sub {...} => 'name';
+  my $route = any '/:foo' => {foo => 'bar'} => sub {...};
+  my $route = any '/:foo' => [foo => qr/\w+/] => sub {...};
+  my $route = any ['GET', 'POST'] => '/:foo' => sub {...};
+  my $route = any ['GET', 'POST'] => '/:foo' => [foo => qr/\w+/] => sub {...};
+  my $route = any
+    ['GET', 'POST'] => '/:foo' => (agent => qr/Firefox/) => sub {...};
+
+[[Mojolicious::Routes::Route]]のC<any>によるルーティングを
+生成し、リストされたHTTPのリクエストメソッドにマッチします。
+さらなる引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]を見てください。
+
+=head2 app
+
+  my $app = app;
+
+[[Mojolicious::Lite]]アプリケーションです。
+これは、[[Mojolicious]]のサブクラスです。
+
+  # すべての利用可能な属性とメソッドが利用できます
+  app->log->level('error');
+  app->defaults(foo => 'bar');
+
+=head2 del
+
+  my $route = del '/:foo' => sub {...};
+  my $route = del '/:foo' => sub {...} => 'name';
+  my $route = del '/:foo' => {foo => 'bar'} => sub {...};
+  my $route = del '/:foo' => [foo => qr/\w+/] => sub {...};
+  my $route = del '/:foo' => (agent => qr/Firefox/) => sub {...};
+
+[[Mojolicious::Routes::Route]]のC<delete>によるルーティングを生成し、
+C<DELETE>リクエストにだけマッチします。
+さらなる引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]を見てください。
+
+=head2 get
+
+  my $route = get '/:foo' => sub {...};
+  my $route = get '/:foo' => sub {...} => 'name';
+  my $route = get '/:foo' => {foo => 'bar'} => sub {...};
+  my $route = get '/:foo' => [foo => qr/\w+/] => sub {...};
+  my $route = get '/:foo' => (agent => qr/Firefox/) => sub {...};
+
+[[Mojolicious::Routes::Route]]のC<get>によるルーティングを生成し、
+C<GET>リクエストにだけマッチします。
+さらなる引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]を見てください。
+
+=head2 group
+
+  group {...};
+
+新しいルーティングのグループを開始します。
+
+=head2 helper
+
+  helper foo => sub {...};
+
+[[Mojolicious]]のC<helper>を使って新しいヘルパーを追加します。
+
+=head2 hook
+
+  hook after_dispatch => sub {...};
+
+[[Mojolicious]]のC<hook>と同じです。
+
+=head2 options
+
+  my $route = options '/:foo' => sub {...};
+  my $route = options '/:foo' => sub {...} => 'name';
+  my $route = options '/:foo' => {foo => 'bar'} => sub {...};
+  my $route = options '/:foo' => [foo => qr/\w+/] => sub {...};
+  my $route = options '/:foo' => (agent => qr/Firefox/) => sub {...};
+
+[[Mojolicious::Routes::Route]]のC<options>によるルーティングを生成し、
+C<OPTIONS>リクエストにだけマッチします。
+さらなる引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]を見てください。
+
+=head2 patch
+
+  my $route = patch '/:foo' => sub {...};
+  my $route = patch '/:foo' => sub {...} => 'name';
+  my $route = patch '/:foo' => {foo => 'bar'} => sub {...};
+  my $route = patch '/:foo' => [foo => qr/\w+/] => sub {...};
+  my $route = patch '/:foo' => (agent => qr/Firefox/) => sub {...};
+
+[[Mojolicious::Routes::Route]]のC<patch>によるルーティングを生成し、
+C<PATCH>リクエストにだけマッチします。
+さらなる引数のバリエーションについては上のチュートリアルを見てください。
+
+=head2 plugin
+
+  plugin SomePlugin => {foo => 23};
+
+[[Mojolicious]]のC<plugin>を使ってプラグインをロードしま。
+
+=head2 post
+
+  my $route = post '/:foo' => sub {...};
+  my $route = post '/:foo' => sub {...} => 'name';
+  my $route = post '/:foo' => {foo => 'bar'} => sub {...};
+  my $route = post '/:foo' => [foo => qr/\w+/] => sub {...};
+  my $route = post '/:foo' => (agent => qr/Firefox/) => sub {...};
+
+[[Mojolicious::Routes::Route]]のC<post>によるルーティングを生成し、
+C<POST>リクエストにだけマッチします。
+さらなる引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]を見てください。
+
+=head2 put
+
+  my $route = put '/:foo' => sub {...};
+  my $route = put '/:foo' => sub {...} => 'name';
+  my $route = put '/:foo' => {foo => 'bar'} => sub {...};
+  my $route = put '/:foo' => [foo => qr/\w+/] => sub {...};
+  my $route = put '/:foo' => (agent => qr/Firefox/) => sub {...};
+
+[[Mojolicious::Routes::Route]]のC<put>によるルーティングを生成し、
+C<PUT>リクエストにだけマッチします。
+さらなる引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]を見てください。
+
+=head2 under
+
+  my $route = under sub {...};
+  my $route = under '/:foo' => sub {...};
+  my $route = under '/:foo' => {foo => 'bar'};
+  my $route = under '/:foo' => [foo => qr/\w+/];
+  my $route = under '/:foo' => (agent => qr/Firefox/);
+  my $route = under [format => 0];
+
+[[Mojolicious::Routes::Route]]のC<under>でブリッジを生成し、
+すべての続くルーティングに自動的に処理が追加されます。
+さらなる引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]を見てください。
+
+=head2 websocket
+
+  my $route = websocket '/:foo' => sub {...};
+  my $route = websocket '/:foo' => sub {...} => 'name';
+  my $route = websocket '/:foo' => {foo => 'bar'} => sub {...};
+  my $route = websocket '/:foo' => [foo => qr/\w+/] => sub {...};
+  my $route = websocket '/:foo' => (agent => qr/Firefox/) => sub {...};
+
+[[Mojolicious::Routes::Route]]のC<websocket>でルーティングを生成し、
+C<WebSocket>ハンドシェイクにだけマッチします。
+さらなる引数のバリエーションについては[[Mojolicious::Guides::Tutorial]]を見てください。
+
+=head2 属性
+
+[[Mojolicious::Lite]]は[[Mojolicious]]からすべての属性を継承しています。
+
+=head2 メソッド
+
+[[Mojolicious::Lite]]は[[Mojolicious]]からすべてのメソッドを継承しています。
+
+(Mojolicious 8.12を反映。2019年6月11日更新)
+
+=cut

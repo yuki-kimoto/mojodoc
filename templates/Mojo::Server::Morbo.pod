@@ -1,0 +1,83 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Server::Morbo - 開発用サーバー
+
+=head1 使い方
+
+  use Mojo::Server::Morbo;
+
+  my $morbo = Mojo::Server::Morbo->new;
+  $morbo->run('/home/sri/myapp.pl');
+
+=head1 説明
+
+[[Mojo::Server::Morbo]]は完全な機能を備えた自己再起動が可能なノンブロッキングI/Oの
+HTTPとWebSocketのサーバーです。よく試験され信頼できる[[Mojo::Server::Daemon]]
+の上に構築されており、C<IPv6>, C<TLS>, SNI, UNIXドメインソケット、
+コメット(ロングポーリング), キープアライブ、複数のイベントループをサポートしています。
+サーバーはプロセス管理のためにシグナルを使用しているので
+シグナルハンドラーをアプリケーションの中で 修正するのは避けるべきです。
+
+アプリケーションを開始するには、[[morbo]]スクリプトを使用します。
+
+  $ morbo ./myapp.pl
+  Server available at http://127.0.0.1:3000
+
+よりよいスケーラビリティ(epoll, kqueue)、ノンブロッキングの名前解決、
+SOCK5、TLSサポートも以下のモジュールによってサポートされます。
+オプションのモジュールとしてL<EV>(4.0+), L<Net::DNS::Native> (0.15+)
+L<IO::Socket::SSL>(2.009+),L<IO::Socket::Socks> (0.64+)、L<IO::Socket::SSL> (1.94+)が
+透過的にサポートされ、インストールされていれば利用されます。
+個々の機能はC<MOJO_NO_NDN>、C<MOJO_NO_IPV6>とC<MOJO_NO_TLS>環境変数で無効にすることもできます。
+
+[[Mojolicious::Guides::Cookbook]]のC<デプロイメント>の項目も見てください。
+
+=head1 シグナル
+
+[[Mojo::Server::Morbo]]は次のシグナルで、
+実行時にプロセスをコントロールすることができます。
+
+=head2 INT, TERM
+
+すぐにサーバーをシャットダウンします。
+
+=head1 属性
+
+[[Mojo::Server::Morbo]]は次の属性を実装しています。
+
+=head2 backend
+
+  my $backend = $morbo->backend;
+  $morbo      = $morbo->backend(Mojo::Server::Morbo::Backend::Poll->new);
+
+バックエンド、通常は[[Mojo::Server::Morbo::Backend::Poll]]オブジェクト。
+
+=head2 daemon
+
+  my $daemon = $morbo->daemon;
+  $morbo     = $morbo->daemon(Mojo::Server::Daemon->new);
+
+このサーバーが管理する[[Mojo::Server::Daemon]]オブジェクト。
+
+=head1 メソッド
+
+[[Mojo::Server::Morbo]]は[[Mojo::Base]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $morbo->run('script/my_app');
+
+アプリケーションのためにサーバーを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12。2019年5月28日更新)
+
+=cut

@@ -1,0 +1,272 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Server::Daemon
+
+=head1 名前
+
+Mojo::Server::Daemon - ノンブロッキングI/OのHTTPとWebSocketのサーバー
+
+=head1 使い方
+
+  use Mojo::Server::Daemon;
+
+  my $daemon = Mojo::Server::Daemon->new(listen => ['http://*:8080']);
+  $daemon->unsubscribe('request');
+  $daemon->on(request => sub {
+    my ($daemon, $tx) = @_;
+
+    # リクエスト
+    my $method = $tx->req->method;
+    my $path   = $tx->req->url->path;
+
+    # レスポンス
+    $tx->res->code(200);
+    $tx->res->headers->content_type('text/plain');
+    $tx->res->body("$method request for $path!");
+
+    # トランザクションのレジューム
+    $tx->resume;
+  });
+  $daemon->run;
+
+=head1 説明
+
+[[Mojo::Server::Daemon]]は完全な機能を持つノンブロッキングIOのHTTPとWebSocket
+のサーバーです。C<IPv6>, C<TLS>,
+コメット(ロングポーリング), キープアライブ,
+複数のイベントループをサポートしています。
+
+よりよいスケーラビリティ(epoll, kqueue)、ノンブロッキングの名前解決、
+SOCK5、TLSサポートも以下のモジュールによってサポートされます。
+オプションのモジュールとしてL<EV>(4.0+), L<Net::DNS::Native> (0.15+)
+L<IO::Socket::SSL>(2.009+),L<IO::Socket::Socks> (0.64+)が
+透過的にサポートされ、インストールされていれば利用されます。
+個々の機能はC<MOJO_NO_NDN>、C<MOJO_NO_IPV6>とC<MOJO_NO_TLS>環境変数で無効にすることもできます。
+
+デプロイメントのレシピについてはL<Mojolicious::Guides::Cookbook>
+を見てください。
+
+=head1 シグナル
+
+[[Mojo::Server::Daemon]]プロセスは次のシグナルによって実行時にコントロール可能です。
+
+=head2 INT, TERM
+
+すぐにサーバーをシャットダウンする。
+
+=head1 イベント
+
+[[Mojo::Server::Daemon]]は[[Mojo::Server]]のすべてのイベントを継承しています。
+
+=head1 属性
+
+[[Mojo::Server::Daemon]]は[[Mojo::Server]]のすべてのメソッドを
+実装しており、次の新しいメソッドを実装しています。
+
+=head2 acceptors
+
+  my $acceptors = $daemon->acceptors;
+  $daemon       = $daemon->acceptors(['6be0c140ef00a389c5d039536b56d139']);
+
+アクティブなアクセプター。
+
+=head2 backlog
+
+  my $backlog = $daemon->backlog;
+  $daemon     = $daemon->backlog(128);
+
+リッスンバックログサイズ。デフォルトはC<SOMAXCONN>。
+
+=head2 inactivity_timeout
+
+  my $timeout = $daemon->inactivity_timeout;
+  $daemon     = $daemon->inactivity_timeout(5);
+
+接続がドロップする前に非アクティブでいることができる最大の秒数。
+デフォルトはc<MOJO_INACTIVITY_TIMEOUT>環境変数の値かC<15>です。
+この値をC<0>に設定すると無限に非アクティブでいます。
+
+=head2 ioloop
+
+  my $loop = $daemon->ioloop;
+  $daemon  = $daemon->ioloop(Mojo::IOLoop->new);
+
+サーバーのIOのためのイベントループ。
+デフォルトは[[Mojo::IOLoop]]のシングルトン。
+
+=head2 listen
+
+  my $listen = $daemon->listen;
+  $daemon    = $daemon->listen(['https://127.0.0.1:8080']);
+
+ポートのリストとリッスンのためのファイル。
+デフォルトはC<http://*:3000>(C<http://0.0.0.0:3000>のショートカット)。
+
+  # すべてのIPv4インターフェースでリッスン
+  $daemon->listen(['http://*:3000']);
+
+  # すべてのIPv4とIPv6のインターフェースでリッスン
+  $daemon->listen(['http://[::]:3000']);
+
+  # IPv6インターフェースでリッスン
+  $daemon->listen(['http://[::1]:4000']);
+
+  # IPv4とIPv6インターフェースでリッスン
+  $daemon->listen(['http://127.0.0.1:3000', 'http://[::1]:3000']);
+
+  # 同じポート(SO_REUSEPORT)を使うために、複数のサーバーを許可する
+  $daemon->listen(['http://*:8080?reuse=1']);
+
+  # 同時にHTTPとHTTPSの二つのポートでリッスン
+  $daemon->listen(['http://*:3000', 'https://*:4000']);
+
+  # カスタムのサーバー証明書とキーを使う
+  $daemon->listen(['https://*:3000?cert=/x/server.crt&key=/y/server.key']);
+
+  # さらにカスタムの認証局を使う
+  $daemon->listen(
+    ['https://*:3000?cert=/x/server.crt&key=/y/server.key&ca=/z/ca.crt']);
+
+以下のパラメータが現在は利用可能です。
+
+=over 2
+
+=item C<ca>
+
+  ca=/etc/tls/ca.crt
+
+TLS認証局ファイルへのパス。
+
+=item C<cert>
+
+  cert=/etc/tls/server.crt
+
+TLS証明書ファイルへのパス。デフォルトは組み込みの証明書です。
+
+=item ciphers
+
+  ciphers=AES128-GCM-SHA256:RC4:HIGH:!MD5:!aNULL:!EDH
+
+TLSチッパー仕様の文字列。さらなるフォーマットについての情報は以下をみてください。
+
+L<https://www.openssl.org/docs/manmaster/apps/ciphers.html#CIPHER-STRINGS>.
+
+=item fd
+
+  fd=3
+
+すでに準備されているリッスンソケットのファイルディスクリプタ
+
+=item C<key>
+
+  key=/etc/tls/server.key
+
+TLSキーファイルへのパス。デフォルトは組み込みの試験用のキーです。
+
+=item reuse
+
+  reuse=1
+
+C<SO_REUSEPORT>ソケットオプションで同じポートを使うために、複数のサーバーを許可する
+
+=item single_accept
+
+  single_accept=1
+
+一度に一つだけの接続を受け入れる
+
+=item C<verify>
+
+  verify=0x00
+
+TLSバリフィケーションモード。デフォルトはC<0x03>。
+
+=item version
+
+  version=TLSv1_2
+
+TLSプロトコルのバージョン。
+
+=back
+
+=head2 max_clients
+
+  my $max_clients = $daemon->max_clients;
+  $daemon         = $daemon->max_clients(1000);
+
+このサーバーが、新しく来る接続を受け入れを停止する前に。
+扱うことを許可する
+並列のクライアントの接続の最大数。
+一緒に、[[Mojo::IOLoop]]のC<max_connections>が渡されます。
+
+=head2 max_requests
+
+  my $max = $daemon->max_requests;
+  $daemon = $daemon->max_requests(250);
+
+コネクションあたりのキープアライブリクエストの最大数。
+デフォルトはC<25>。
+
+=head2 silent
+
+  my $bool = $daemon->silent;
+  $daemon  = $daemon->silent($bool);
+
+コンソールのメッセージを無効にする。
+
+=head1 メソッド
+
+[[Mojo::Server::Daemon]]は[[Mojo::Server]]のすべてのメソッドを
+継承しとり、次の新しいメソッドを実装しています。
+
+=head2 ports
+
+  my $ports = $daemon->ports;
+
+このサーバーが現在リッスンしているすべてのポートを取得
+
+  # すべてのポート
+  say for @{$daemon->ports};
+
+=head2 run
+
+  $daemon->run;
+
+サーバーを実行します。
+
+=head2 start
+
+  $daemon->start;
+
+接続の受け入れを開始します。
+
+  # ランダムポートでリッスン
+  my $port = $daemon->listen(['http://127.0.0.1'])->start->ports->[0];
+
+  # 並列に複数のWebサーバーを実行する
+  my $daemon1 = Mojo::Server::Daemon->new(listen => ['http://*:3000'])->start;
+  my $daemon2 = Mojo::Server::Daemon->new(listen => ['http://*:4000'])->start;
+  Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
+
+
+=head2 stop
+
+  $daemon = $daemon->stop;
+
+接続の受け入れを停止します。
+
+=head1 デバッグ
+
+C<MOJO_DAEMON_DEBUG>環境変数を設定すると、詳細な情報をC<STDERR>に出力することができます。
+
+  MOJO_DAEMON_DEBUG=1
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月28日更新)
+
+=cut

@@ -1,3 +1,7 @@
+Setup
+
+cpanm Pod::Simple
+
 Create new entry
 
   giblog add

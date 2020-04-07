@@ -1,0 +1,60 @@
+=encoding utf8
+
+B<このモジュールは削除されました。>
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Command::generate::gitignore - Gitignore生成コマンド
+
+=head1 使い方
+
+  use Mojolicious::Command::generate::gitignore;
+
+  my $gitignore = Mojolicious::Command::generate::gitignore->new;
+  $gitignore->run(@ARGV);
+
+=head1 説明
+
+[[Mojolicious::Command::generate::gitignore]]はC<.gitignore>ジェネレーターです。
+
+=head1 属性
+
+[[Mojolicious::Command::generate::gitignore]]は
+[[Mojo::Command]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 description
+
+  my $description = $gitignore->description;
+  $gitignore      = $gitignore->description('Foo!');
+
+このコマンドの短い説明。コマンドの一覧表示に利用されます。
+
+=head2 usage
+
+  my $usage  = $gitignore->usage;
+  $gitignore = $gitignore->usage('Foo!');
+
+このコマンドの使用方法の情報。ヘルプの表示に利用されます。
+
+=head1 メソッド
+
+[[Mojolicious::Command::generate::gitignore]]は
+[[Mojo::Command]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  $gitignore = $gitignore->run(@ARGV);
+
+このコマンドを実行します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(2012/6/5更新)
+
+=cut

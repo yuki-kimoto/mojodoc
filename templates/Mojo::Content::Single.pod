@@ -1,0 +1,117 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Content::Single
+
+=head1 名前
+
+Mojo::Content::Single - HTTPコンテンツのコンテナ
+
+=head1 使い方
+
+  use Mojo::Content::Single;
+
+  my $single = Mojo::Content::Single->new;
+  $single->parse("Content-Length: 12\x0d\x0a\x0d\x0aHello World!");
+  say $single->headers->content_length;
+
+=head1 説明
+
+[[Mojo::Content::Single]]は、
+L<RFC 7230|http://tools.ietf.org/html/rfc7230>、
+L<RFC 7231|http://tools.ietf.org/html/rfc7231>
+で説明されているHTTPコンテンツのコンテナです。 
+
+=head1 イベント
+
+[[Mojo::Content::Single]]は[[Mojo::Content]]からすべてのイベントを継承しており、
+次の新しいイベントを発行します。
+
+=head2 upgrade
+
+  $single->on(upgrade => sub {
+    my ($single, $multi) = @_;
+    ...
+  });
+
+コンテンツが[[Mojo::Content::MultiPart]]オブジェクトにアップグレードしたときに発行されます。
+
+  $single->on(upgrade => sub {
+    my ($single, $multi) = @_;
+    return unless $multi->headers->content_type =~ /multipart\/([^;]+)/i;
+    say "Multipart: $1";
+  });
+
+=head1 属性
+
+[[Mojo::Content::Single]]は[[Mojo::Content]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 asset
+
+  my $asset = $content->asset;
+  $content  = $content->asset(Mojo::Asset::Memory->new);
+
+実際のコンテンツ。
+デフォルトは[[Mojo::Asset::Memory]]のC<auto_upgrade>が有効になった[[Mojo::Asset::Memory]]オブジェクトです。
+
+=head2 auto_upgrade
+
+  my $bool = $single->auto_upgrade;
+  $single  = $single->auto_upgrade($bool);
+
+マルチパートコンテンツを検知し、自動的に[[Mojo::Content::MultiPart]]オブジェクトにアップグレードしようとします。デフォルトは真です。
+
+=head1 メソッド
+
+[[Mojo::Content::Single]]は[[Mojo::Content]]からすべてのメソッドを
+継承しており、次の新しいメソッドを実装しています。
+
+=head2 body_contains
+
+  my $found = $content->body_contains('1234567');
+
+コンテンツが特定の文字列を含んでいるかどうかをチェックします。
+
+=head2 body_size
+
+  my $size = $content->body_size;
+
+バイトでのコンテンツのサイズ。
+
+=head2 clone
+
+  my $clone = $single->clone;
+
+可能であればコンテンツを複製します。
+
+=head2 get_body_chunk
+
+  my $chunk = $content->get_body_chunk(0);
+
+特定の位置から始まるコンテンツの断片を取得します。コンテンツが動的に生成された場合は、同じチャンクを二度取得してしまう可能性があることに注意してください。
+
+=head2 new
+
+  my $single = Mojo::Content::Single->new;
+  my $single = Mojo::Content::Single->new(asset => Mojo::Asset::File->new);
+  my $single = Mojo::Content::Single->new({asset => Mojo::Asset::File->new});
+
+新しい[[Mojo::Content::Single]]オブジェクトを生成し、デフォルトのコンテンツパーサーでC<read>イベントを購読します。
+
+=head2 parse
+
+  $single = $single->parse("Content-Length: 12\x0d\x0a\x0d\x0aHello World!");
+  my $multi
+    = $single->parse("Content-Type: multipart/form-data\x0d\x0a\x0d\x0a");
+
+コンテンツの断片を解析し、必要であれば[[Mojo::Content::MultiPart]]オブジェクトにアップグレードします。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映)
+
+=cut

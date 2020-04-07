@@ -1,0 +1,43 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Plugin::AgentCondition - エージェント条件プラグイン
+
+=head1 使い方
+
+  # Mojolicious
+  $self->plugin('agent_condition');
+  $self->routes->route('/:controller/:action')->over(agent => qr/Firefox/);
+
+  # Mojolicious::Lite
+  plugin 'agent_condition';
+  get '/' => (agent => qr/Firefox/) => sub {...};
+
+=head1 説明
+
+[[Mojolicious::Plugin::AgentCondition]]はルートに基づいた
+ユーザーエージェントのルートの条件です。
+これはコアのプラグインで
+いつでも有効になっており、そのコードは新しいプラグインを構築する
+ことを学ぶための良いサンプルです。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::AgentCondition]]は[[Mojolicious::Plugin]]
+からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 register
+
+  $plugin->register;
+
+[[Mojolicious]]アプリケーションに条件を登録します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+=cut

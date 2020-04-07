@@ -1,0 +1,144 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Asset::File
+
+=head1 名前
+
+Mojo::Asset::File - HTTPコンテンツのファイルストレージ
+
+=head1 使い方
+
+ use Mojo::Asset::File;
+
+  # 一時ファイル
+  my $file = Mojo::Asset::File->new;
+  $file->add_chunk('foo bar baz');
+  say 'File contains "bar"' if $file->contains('bar') >= 0;
+  say $file->slurp;
+
+  # 存在するファイル
+  my $file = Mojo::Asset::File->new(path => '/home/sri/foo.txt');
+  $file->move_to('/yada.txt');
+  say $file->slurp;
+
+=head1 説明
+
+[[Mojo::Asset::File]]はHTTP1.1のためのファイルストレージのバックエンドです。
+
+=head1 イベント
+
+[[Mojo::Asset::File]]は[[Mojo::Asset]]のすべてのイベントを継承しています。
+
+=head1 属性
+
+[[Mojo::Asset::File]]は[[Mojo::Asset]]からすべての属性を継承しており、
+次の新しい属性を実装しています。
+
+=head2 cleanup
+
+  my $bool = $file->cleanup;
+  $file    = $file->cleanup($bool);
+
+ファイルが利用されなくなったときに、パス(path)を自動的に削除します。
+
+=head2 handle
+
+  my $handle = $file->handle;
+  $file     = $file->handle(IO::File->new);
+
+ファイルハンドル。"path"に要求があったときに、生成されます。これは、自動的に生成され、"tmpdir"に基づき安全です。
+
+=head2 path
+
+  my $path = $file->path;
+  $file   = $file->path('/home/sri/foo.txt');
+
+C<handle>を生成するためのファイルパス。
+
+=head2 tmpdir
+
+  my $tmpdir = $file->tmpdir;
+  $file     = $file->tmpdir('/tmp');
+
+C<path>を生成するために使われる一時ディレクトリ。デフォルトは、
+C<MOJO_TMPDIR>環境変数の値か、自動的な検知です。
+
+=head1 メソッド
+
+[[Mojo::Asset::File]]は[[Mojo::Asset]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 add_chunk
+
+  $file = $file->add_chunk('foo bar baz');
+
+データのチャンクを資源に追加します。
+
+=head2 contains
+
+  my $position = $file->contains('bar');
+
+資源が、指定した文字列を含んでいるかをチェックします。
+
+=head2 get_chunk
+
+  my $bytes = $file->get_chunk($offset);
+  my $bytes = $file->get_chunk($offset, $max);
+
+指定した位置から始まる、データのチャンクを取得します。
+最大チャンクサイズのデフォルトはC<131072>バイト(128KB)です。
+
+=head2 is_file
+
+  my $true = $file->is_file;
+
+常に真になります。これは[[Mojo::Asset::File]]オブジェクトです。
+
+=head2 move_to
+
+   $file = $file->move_to('/home/sri/bar.txt');
+
+資源データを指定したファイルに移動し、
+C<cleanup>を無効にします。
+
+=head2 mtime
+
+  my $mtime = $file->mtime;
+
+アセットの修正された時刻。
+
+=head2 new
+
+  my $file = Mojo::Asset::File->new;
+  my $file = Mojo::Asset::File->new(path => '/home/sri/test.txt');
+  my $file = Mojo::Asset::File->new({path => '/home/sri/test.txt'});
+
+新しい[[Mojo::Asset::File]]オブジェクトを構築します。
+
+=head2 size
+
+  my $size = $file->size;
+
+資源データのバイトサイズです。
+
+=head2 slurp
+
+  my $bytes = $file->slurp;
+
+一度にすべての資源データを読み込みます。
+
+=head2 to_file
+
+  $file = $file->to_file;
+
+すでに[[Mojo::Asset::File]]オブジェクトなので、何もしませんが、インボカントを返します。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(2019/03/16 Mojolicious 8.12)
+
+=cut

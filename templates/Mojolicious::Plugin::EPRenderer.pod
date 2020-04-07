@@ -1,0 +1,73 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Plugin::EPRenderer - EPレンダラプラグイン
+
+=head1 使い方
+
+  # Mojolicious
+  $self->plugin('EPRenderer');
+  $self->plugin(EPRenderer => {name => 'foo'});
+  $self->plugin(EPRenderer => {template => {line_start => '.'}});
+
+  # Mojolicious::Lite
+  plugin 'EPRenderer';
+  plugin EPRenderer => {name => 'foo'};
+  plugin EPRenderer => {template => {line_start => '.'}};
+
+=head1 説明
+
+[[Mojolicious::Plugin::EPRenderer]]はC<ep>テンプレートのためのレンダラです。
+
+C<Embedded Perl>は、Perlのコードをドキュメントに
+埋め込むことができるシンプルなテンプレートフォーマットです。
+これは[[Mojo::Template]]を基盤にしていますが、
+特に[[Mojolicious]]のために設計された
+いくつかの便利な簡略な文法を使って拡張されています。
+[[Mojolicious]]のテンプレートヘルパーを
+サポートし、直接Perlの変数としてスタッシュの値を利用することができます。
+これはコアのプラグインで、いつでも有効になっており、
+そのコードは新しいプラグインを構築する
+ことを学ぶための良いサンプルです。
+
+デフォルトで利用可能なプラグインの一覧は[[Mojolicious::Plugins]]のC<プラグイン>の項目を見てください。
+
+=head1 オプション
+
+=head2 name
+
+  # Mojolicious::Lite
+  plugin EPRenderer => {name => 'foo'};
+
+ハンドラの名前。デフォルトはC<ep>です。
+
+=head2 template
+
+  # Mojolicious::Lite
+  plugin EPRenderer => {template => {line_start => '.'}};
+
+テンプレートを描画するときに使われる[[Mojo::Template]]オブジェクトに渡される属性値。
+
+=head1 メソッド
+
+[[Mojolicious::Plugin::EPRenderer]]は
+L<Mojolicious::Plugin>からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 register
+
+  $plugin->register(Mojolicious->new);
+  $plugin->register(Mojolicious->new, {name => 'foo'});
+
+[[Mojolicious]]アプリケーションにレンダラを登録します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月12日)
+
+=cut

@@ -1,0 +1,48 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 NAME
+
+Mojo::Server::Morbo::Backend::Poll - Morbo default backend
+
+=head1 SYNOPSIS
+
+  use Mojo::Server::Morbo::Backend::Poll;
+
+  my $backend = Mojo::Server::Morbo::Backend::Poll->new;
+  if (my $files = $backend->modified_files) {
+    ...
+  }
+
+=head1 説明
+
+[[Mojo::Server::Morbo::Backend::Poll]]は[[Mojo::Server::Morbo]]のデフォルトのバックエンドです。
+
+=head1 属性
+
+[[Mojo::Server::Morbo::Backend::Poll]]は、[[Mojo::Server::Morbo::Backend]]からすべての属性を継承しています。
+
+=head1 メソッド
+
+[[Mojo::Server::Morbo::Backend::Poll]]は[[Mojo::Server::Morbo::Backend]]からすべてのメソッドを継承しており、次の新しいメソッドを実装しています。
+
+=head2 modified_files
+
+  my $files = $backend->modified_files;
+
+Check file size and mtime to determine which files have changed, this is not
+particularly efficient, but very portable.
+
+ファイルサイズとmtimeをチェックしてどのファイルが変更されたかを判断します。
+効率的ではありませんが、非常に移植性があります。
+
+  # 修正されたすべてのファイル
+  say for @{$backend->modified_files};
+
+=head1 SEE ALSO
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<https://mojolicious.org>.
+
+(Mojolicious 8.12対応。2019年5月28日)
+=cut

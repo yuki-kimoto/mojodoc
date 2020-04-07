@@ -1,0 +1,337 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Transaction::WebSocket - WebSocketトランザクション
+
+=head1 使い方
+
+  use Mojo::Transaction::WebSocket;
+
+  my $ws = Mojo::Transaction::WebSocket->new;
+
+=head1 説明
+
+[[Mojo::Transaction::WebSocket]]はRFC 6455
+で説明されているWebSocketのトランザクションのコンテナです。
+64bitフレームは64bit整数をサポートしたPerlが必要で、
+もしもしなければ32bitに制限されることに注意してください。
+
+=head1 イベント
+
+[[Mojo::Transaction::WebSocket]]は[[Mojo::Transaction]]からすべてのイベントを継承しており、
+次の新しいイベントを発生します。
+
+=head2 binary
+
+  $ws->on(binary => sub {
+    my ($ws, $bytes) = @_;
+    ...
+  });
+
+完全なWebSocketバイナリメッセージを受け取ったときに発生します。
+
+  $ws->on(binary => sub {
+    my ($ws, $bytes) = @_;
+    say "Binary: $bytes";
+  });
+
+=head2 drain
+
+  $ws->on(drain => sub {
+    my $ws = shift;
+    ...
+  });
+
+すべてのデータが送信されたときに一度だけ、発生します。
+
+  $ws->on(drain => sub {
+    my $ws = shift;
+    $ws->send(time);
+  });
+
+=head2 finish
+
+  $ws->on(finish => sub {
+    my ($ws, $code, $reason) = @_;
+    ...
+  });
+
+Webソケット接続が閉じられたときに発生します。
+
+=head2 frame
+
+  $ws->on(frame => sub {
+    my ($ws, $frame) = @_;
+    ...
+  });
+
+WebSocketのフレームが到達したときに発生します。
+
+  $ws->on(frame => sub {
+    my ($ws, $frame) = @_;
+    say "FIN: $frame->[0]";
+    say "RSV1: $frame->[1]";
+    say "RSV2: $frame->[2]";
+    say "RSV3: $frame->[3]";
+    say "Opcode: $frame->[4]";
+    say "Payload: $frame->[5]";
+  });
+
+=head2 json
+
+  $ws->on(json => sub {
+    my ($ws, $json) = @_;
+    ...
+  });
+
+完全なWebSocketメッセージを受け取ったときに発生します。
+すべてのテキストとバイナリのメッセージは
+自動的にJSONにデコードされます。
+このイベントは少なくとも一人の購読者が
+いるときだけ発生することに注意してください。
+
+  $ws->on(json => sub {
+    my ($ws, $hash) = @_;
+    say "Message: $hash->{msg}";
+  });
+
+=head2 message
+
+  $ws->on(message => sub {
+    my ($ws, $message) = @_;
+    ...
+  });
+
+WebSocketのメッセージが到達したときに発行されます。
+このイベントは少なくとも一人の購読者が
+いるときだけ発生することに注意してください。
+
+  $ws->on(message => sub {
+    my ($ws, $message) = @_;
+    say "Message: $message";
+  });
+
+=head2 text
+
+  $ws->on(text => sub {
+    my ($ws, $bytes) = @_;
+    ...
+  });
+
+完全なテキストメッセージを受け取ったときに発生します。
+
+  $ws->on(text => sub {
+    my ($ws, $bytes) = @_;
+    say "Text: $bytes";
+  });
+
+=head1 属性
+
+[[Mojo::Transaction::WebSocket]]は[[Mojo::Transaction]]からすべての属性
+を継承しており、次の新しい属性を実装しています。
+
+=head2 compressed
+
+  my $bool = $ws->compressed;
+  $ws      = $ws->compressed($bool);
+
+C<permessage-deflate>拡張でメッセージを圧縮します。
+
+=head2 established
+
+  my $bool = $ws->established;
+  $ws      = $ws->established($bool);
+
+WebSocket接続の確立。
+
+=head2 handshake
+
+  my $handshake = $ws->handshake;
+  $ws           = $ws->handshake(Mojo::Transaction::HTTP->new);
+
+オリジナルのハンドシェイクのトランザクション。デフォルトは[[Mojo::Transaction::HTTP]]オブジェクトです。
+
+=head2 masked
+
+  my $bool = $ws->masked;
+  $ws      = $ws->masked($bool);
+
+XOR暗号文とランダムな32ビットのキーを持った外に出てゆくフレームのマスク。
+
+=head2 max_websocket_size
+
+  my $size = $ws->max_websocket_size;
+  $ws      = $ws->max_websocket_size(1024);
+
+WebSocketメッセージの最大バイトサイズ。
+デフォルトは<MOJO_MAX_WEBSOCKET_SIZE>かC<262144>(256KB)。
+
+=head1 メソッド
+
+[[Mojo::Transaction::WebSocket]]は[[Mojo::Transaction]]
+のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 build_message
+
+  my $bytes = $ws->build_message({binary => $bytes});
+  my $bytes = $ws->build_message({text   => $bytes});
+  my $bytes = $ws->build_message({json   => {test => [1, 2, 3]}});
+  my $bytes = $ws->build_message($chars);z
+
+WebSocketメッセージを構築します。
+
+=head2 client_read
+
+  $ws = $ws->client_read($data);
+
+クライアント側のWebSocketのデータを読み込みます。
+ユーザーエージェントの実装に利用されます。
+
+=head2 client_write
+
+  my $chunk = $ws->client_write;
+
+クライアント側のデータを書き込みます。
+ユーザーエージェントの実装に利用されます。
+
+=head2 closed
+
+  $tx = $tx->closed;
+
+[[Mojo::Transaction]]の"completed"と同じですが、すべてのトランザクションが送信されたことを示します。
+
+=head2 connection
+
+  my $id = $ws->connection;
+
+接続の識別子。
+
+=head2 finish
+
+  $ws = $ws->finish;
+  $ws = $ws->finish(1000);
+  $ws = $ws->finish(1003 => 'Cannot accept data!');
+
+WebSocketの接続を緩やかに終了する。
+
+=head2 is_websocket
+
+  my $is_websocket = $ws->is_websocket;
+
+真。
+
+=head2 kept_alive
+
+  my $kept_alive = $ws->kept_alive;
+
+ケプトアライブされている接続。
+
+=head2 local_address
+
+  my $local_address = $ws->local_address;
+
+ローカルインターフェースのアドレス。
+
+=head2 local_port
+
+  my $local_port = $ws->local_port;
+
+ローカルインターフェースのポート。
+
+=head2 parse_message
+
+  $ws->parse_message([$fin, $rsv1, $rsv2, $rsv3, $op, $payload]);
+
+WebSocketのメッセージを解析。
+
+=head2 remote_address
+
+  my $remote_address = $ws->remote_address;
+
+リモートインターフェースのアドレス。
+
+=head2 remote_port
+
+  my $remote_port = $ws->remote_port;
+
+リモートインターフェースのポート。
+
+=head2 req
+
+  my $req = $ws->req;
+
+ハンドシェイクリクエスト。通常は[[Mojo::Message::Request]]オブジェクト。
+
+=head2 res
+
+  my $req = $ws->res;
+
+ハンドシェイクのレスポンス。通所は[[[Mojo::Message::Response]]オブジェクト。
+
+=head2 resume
+
+  $ws = $ws->resume;
+
+ハンドシェイクトランザクションを再開します。
+
+=head2 send
+
+  $ws = $ws->send({binary => $bytes});
+  $ws = $ws->send({text   => $bytes});
+  $ws = $ws->send({json   => {test => [1, 2, 3]}});
+  $ws = $ws->send([$fin, $rsv1, $rsv2, $rsv3, $op, $payload]);
+  $ws = $ws->send($chars);
+  $ws = $ws->send($chars => sub {...});
+
+WebSocketを通してメッセージあるいはフレームを送信します。
+オプションの排出コールバックはすべてのデータが書き込まれたときに一度だけ実行されます。
+
+  # "Ping"フレームの送信
+  # "Ping"フレームを送信
+  use Mojo::WebSocket 'WS_PING';
+  $ws->send([1, 0, 0, 0, WS_PING, 'Hello World!']);
+
+=head2 server_read
+
+  $ws = $ws->server_read($data);
+
+サーバー側のWebSocketデータを読み込みます。
+Webサーバーの実装に利用されます。
+
+=head2 server_write
+
+  my $chunk = $ws->server_write;
+
+サーバー側でWebSocketデータを書き込みます。
+Webサーバーの実装に利用されます。
+
+=head2 with_compression
+
+  $ws->with_compression;
+
+Negotiate このWebSocket接続のためにC<permessage-deflate>拡張をネゴーシエイトします。
+
+=head2 with_protocols
+
+  my $proto = $ws->with_protocols('v2.proto', 'v1.proto');
+
+このWebSocketの接続のための交渉サブプロトコル
+
+=head1 デバッグ
+
+C<MOJO_WEBSOCKET_DEBUG>環境変数を設定すれば、さらなる詳細な情報をC<STDERR>
+に出力することができます。
+
+  MOJO_WEBSOCKET_DEBUG=1
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月29日更新)
+
+=cut

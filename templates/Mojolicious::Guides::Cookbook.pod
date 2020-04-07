@@ -1,0 +1,1555 @@
+=encoding utf8
+
+[[Mojoliciosuガイド|Home]]
+
+=head1 名前
+
+Mojolicious::Guides::Cookbook - クックブック
+
+=head1 概観
+
+[[Mojolicious]]で料理するための、あらゆる風味のレシピ。
+
+=head1 デプロイメント
+
+[[Mojolicious]] と [[Mojolicious::Lite]] アプリケーションをさまざまな
+プラットフォームで実行させます。
+多くのリアルタイムWebフレームワークは、
+[[Mojo::IOLoop]]のイベントループに基づいているので、
+組み込みWebサーバーのうちのひとつを使わなければ、
+イベントループの機能を完全には引き出せないことに注意してください。
+
+=head2 組み込みサーバ
+
+[[Mojolicious]] は、とてもポータブルな HTTP 1.1 準拠のウェブサーバを
+含んでいます。これは通常、開発時に利用されますが、小から中規模の
+アプリケーションであれば、十分に堅固で速いです。
+
+  $ ./script/my_app daemon
+  Server available at http://127.0.0.1:3000
+
+多くの設定オプションがあり、Perl が実行できるすべてのプラットフォームで
+実行できることが知られています。
+
+[[Mojolicious::Command::daemon]]コマンドを通して、
+すべてのアプリケーションが利用可能です。
+アプリケーションは多くの設定オプションをもち
+Perlが動くシングルプロセスのアーキテクチャを持つ
+すべてのプラットフォームで動くことが知られています。
+
+  $ ./script/my_app daemon -h
+  ...List of available options...
+
+もうひとつの大きな利点は、そのままで TLS と WebSoket をサポートして
+いることです。テスト目的のための開発証明書が適切に組み込まれているので、うまく動きます。
+しかし、[[Mojo::Server::Daemon]]のC<listen>によってサポートされている
+すべてのリッスンの位置を指定することができます。
+
+  $ ./script/my_app daemon -l https://[::]:3000
+  Server available at https://[::]:3000.
+
+UNIXプラットフォームでは、加えて[[Mojo::Server::Prefork]]によるプリフォークサーバーを追加で利用でき、
+[[Mojolicious::Command::prefork]]を使って、複数プロセスアークテクチャに切り替えることができます。
+これは複数CPUコアとコピーオンライトメモリ管理を利用できる利点を持っています。
+
+  $ ./script/my_app prefork
+  Server available at http://127.0.0.1:3000
+  
+組み込みのWebサーバーは[[Mojo::IOLoop]]のイベントループに基づいているので、
+ノンブロッキングの処理をスケールするのに最適です。
+けれども、アプリケーションが多くのブロッキング処理を実行する必要があるならば、
+それぞれのワーカーが処理を行えるように、
+ワーカープロセスを増やして、ひとつのワーカーあたりが同時に処理できる接続数を減らすことができます。
+(C<1>程度に小さく)
+
+  $ ./script/my_app prefork -m production -w 10 -c 1
+  Server available at http://127.0.0.1:3000
+
+スタートアップの間にマネージャプロセスにおいて、
+アプリケーションが事前ロードされます。
+これは、イベントループを開始しないので、
+新しいワーカープロセスがフォークされ、イベントループの開始するときは
+いつでも、
+[[Mojo::IOLoop]]のC<next_tick>を使用することができます。
+
+  use Mojolicious::Lite;
+
+  Mojo::IOLoop->next_tick(sub {
+    app->log->info("Worker $$ star...ALL GLORY TO THE HYPNOTOAD!");
+  });
+
+  get '/' => {text => 'Hello Wor...ALL GLORY TO THE HYPNOTOAD!'};
+
+=head2 Morbo
+
+[[Mojolicious::Guides::Tutorial]]読んだら、
+[[Mojo::Server::Morbo]]に親しんでください。
+
+  Mojo::Server::Morbo
+  +- Mojo::Server::Daemon
+
+基本的には、プロジェクトで変更されたファイルを検知して、
+新しい[[Mojo::Server::Daemon]]をフォークするリスターターです。
+ですので、開発モードだけで利用するようにしてください。
+
+  $ morbo script/my_app
+  Server available at http://127.0.0.1:3000.
+
+=head2 Hypnotoad
+
+より大きなアプリケーションのため、 [[Mojolicious]] は UNIX に最適化された
+プレフォーキングウェブサーバ [[Mojo::Server::Hypnotoad]] を含んでいます。
+これにより、あなたは複数の CPU コアと書き込み時コピー (copy-on-write) 
+を利用でき、数千の並列クライアントの受け入れまでスケールアップすることができます。
+
+  Mojo::Server::Hypnotoad
+  |- Mojo::Server::Daemon [1]
+  |- Mojo::Server::Daemon [2]
+  |- Mojo::Server::Daemon [3]
+  `- Mojo::Server::Daemon [4]
+
+これは[[Mojo::Server::Prefork]] Webサーバーを基礎にしていおり、
+[[Mojo::Server::Daemon]]にプリフォーク機能を追加するものですが、
+プロダクション環境において、特別に最適化されています。
+アプリケーションを開始するには、[[hypnotoad]]スクリプトを使用します。
+これは、ポートC<8080>でリッスンし、サーバープロセスを
+自動的にデーモン化し、for [[Mojolicious]]と
+[[Mojolicious::Lite]]アプリケーション
+のモードをC<production>にします。
+
+  $ hypnotoad ./script/my_app
+
+書かれたアプリケーションから、[[Mojo]]のC<config>を使って、多くのコンフィグの設定をすることができます。
+すべての設定のリストは[[Mojo::Server::Hypnotoad]]の設定の項目をみてください.
+
+  use Mojolicious::Lite;
+
+  app->config(hypnotoad => {listen => ['http://*:3000']});
+
+  get '/' => {text => 'ALL GLORY TO THE HYPNOTOAD!'};
+
+  app->start;
+
+[[Mojolicious::Plugin::Config]]か[[Mojolicious::Plugin::JSONConfig]]の設定ファイルにC<hypnotoad>セクションを追加することもできます。
+
+  # myapp.conf
+  {
+    hypnotoad => {
+      listen  => ['https://*:443?cert=/etc/server.crt&key=/etc/server.key'],
+      workers => 10
+    }
+  };
+
+しかし、最も大きい利点の一つは、ダウンタイムがないソフトウェア更新(ホットデプロイメント)を
+サポートしていることです。
+これは、実行時にサーバを止めたり、ただ一つの接続要求も失ったり
+することなく、ただコマンドを再実行するだけで [[Mojolicious]] や 
+Perl、システムライブラリでさえ更新できることを意味しています。
+
+  $ hypnotoad script/my_app
+  Starting hot deployment for Hypnotoad server 31841.
+
+リバースプロキシーの後ろでC<Hypnotoad>を使っている場合は、プロキシのサーポートを有効にしたい
+かもしれません。[[Mojolicious]]はC<X-Forwarded-For>, C<X-Forwarded-Proto>
+を自動的に検知します。
+
+  # myapp.conf
+  {hypnotoad => {proxy => 1}};
+
+スタートアップの間に、マネージャープロセスの中でアプリケーションのプリロードが行われます。
+新しいワーカープロセスがフォークされたときに必ずコードを実行するために、
+[[Mojo::IOLoop]]のタイマーを使うことができます。
+
+  use Mojolicious::Lite;
+
+  Mojo::IOLoop->timer(0 => sub {
+    app->log->info("Worker $$ star...ALL GLORY TO THE HYPNOTOAD!");
+  });
+
+  get '/' => {text => 'Hello Wor...ALL GLORY TO THE HYPNOTOAD!'};
+
+  app->start;
+
+=head2 ゼロダウンタイムソフトウェアアップグレード
+ 
+上で見たように、Hypnotoadはゼロダウンタイムソフトウェアアップグレードのとても簡単な方法を提供します。
+また、C<SO_REUSEPORT>をサポートしているモダンなオペレーティングシステム上では、
+組み込みのすべてのWebサーバーで機能する他の利用可能な方法もあります。
+ 
+  $ ./script/my_app prefork -P /tmp/first.pid -l http://*:8080?reuse=1
+  Server available at http://127.0.0.1:8080
+ 
+しなければならないことは、二つ目のWebサーバーを同じポートで起動して、
+その後に、最初のWebサーバーを緩やかに停止することだけです。
+ 
+  $ ./script/my_app prefork -P /tmp/second.pid -l http://*:8080?reuse=1
+  Server available at http://127.0.0.1:8080
+  $ kill -s TERM `cat /tmp/first.pid`
+
+両方のWebサーバーはC<reuse>パラメーターで起動する必要があることを
+覚えておいてください。
+
+=head2 Nginx
+
+最近の最も人気のある構成の一つは、 Nginx のリバースプロキシの後ろに
+組み込みプリフォークサーバを置くことです。
+新しいバージョンではWebSocketもサポートしています。
+
+  upstream myapp {
+    server 127.0.0.1:8080;
+  }
+  server {
+    listen 80;
+    server_name localhost;
+    location / {
+      proxy_pass http://myapp;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $host;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+    }
+  }
+
+=head2 Apache/mod_proxy
+
+もうひとつのよいリバースプロキシはApacheのC<mod_proxy>でしょう。
+設定は上記のNginxにとてもよく似ています。
+
+  <VirtualHost *:80>
+    ServerName localhost
+    <Proxy *>
+      Order deny,allow
+      Allow from all
+    </Proxy>
+    ProxyRequests Off
+    ProxyPreserveHost On
+    ProxyPass / http://localhost:8080/ keepalive=On
+    ProxyPassReverse / http://localhost:8080/
+    RequestHeader set X-Forwarded-Proto "http"
+  </VirtualHost>
+
+=head2 Apache/CGI
+
+C<CGI>がサポートされており、あなたの [[Mojolicious]] 
+アプリケーションは C<CGI> スクリプトとして実行されていることを
+自動的に検知します。
+
+  ScriptAlias / /home/sri/myapp/script/my_app
+
+=head2 PSGI/Plack
+
+L<PSGI> は Perl ウェブフレームワークとサーバの間のインターフェースです。
+L<Plack> は PSGI ミドルウェア、ヘルパ、ウェブサーバへのアダプタを含む
+Perl モジュールとツールキットです。
+L<PSGI> と L<Plack> は Python の WSGI と Ruby の Rack に触発されています。
+[[Mojolicious]] アプリケーションは、 L<Plack> でデプロイするのが
+とてつもなく簡単です。
+
+  $ plackup ./script/my_app
+
+L<Plack> は、あなたが C<FCGI>, C<SCGI>, C<mod_perl> などから
+選択できるように、多くのサーバやプロトコルへのアダプタを提供します。
+必ずアプリケーションのホームディレクトリから C<plackup> を実行してください。
+そうでないとライブラリが見つからないかもしれません。
+
+  $ plackup ./script/my_app -s FCGI -l /tmp/myapp.sock
+
+C<plackup> はスクリプトをロードするのに奇妙なトリックを使っているため、
+[[Mojolicious]] がアプリケーションのホームディレクトリを常に検知できるとは
+限りません。そのような場合は、単に C<MOJO_HOME> 環境変数を使いましょう。
+同じ理由で、C<app-E<gt>start> はアプリケーションのスクリプトの中の
+最後の Perl の文である必要があります。
+
+C<MOJO_REVERSE_PROXY>環境変数はプロキシのサポートのために
+利用することができます。
+これは[[Mojolicious]]が自動的に、
+C<X-Forwarded-For>とC<X-Forwarded-Proto>
+を見ることによって自動的に行います。
+
+  $ MOJO_REVERSE_PROXY=1 plackup ./script/my_app
+
+古いサーバーのアダプタで、アプリケーションのホームディレクトリが、
+正しく検地されなかった場合は、
+C<MOJO_HOME>環境変数を使用することができます。
+
+  $ MOJO_HOME=/home/sri/my_app plackup ./script/my_app
+
+いくつかのサーバのアダプタは C<.psgi> ファイルを要求するかもしれません。
+そのような場合は、それらにアプリケーションのスクリプトを指定すれば
+よいだけです。なぜならスクリプトは C<PLACK_ENV> 環境変数の存在を検知すると
+自動的にそのように振舞うからです。
+
+=head2 Plackミドルウェア
+
+C<myapp.fcgi>などのラッパースクリプトは、デプロイメントとアプリケーションロジックを
+分離するのにとてもよい方法です。
+
+  #!/usr/bin/env plackup -s FCGI
+  use Plack::Builder;
+
+  builder {
+    enable 'Deflater';
+    require './script/my_app';
+  };
+
+[[Mojo::Server::PSGI]]は、ラップされたスクリプトにおいて、
+アプリケーションをロードし、カスタマイズするために、直接利用できます。
+
+  #!/usr/bin/env plackup -s FCGI
+  use Mojo::Server::PSGI;
+  use Plack::Builder;
+
+  builder {
+    enable 'Deflater';
+    my $server = Mojo::Server::PSGI->new;
+    $server->load_app('./script/my_app');
+    $server->app->config(foo => 'bar');
+    $server->to_psgi_app;
+  };
+
+けれども、アプリケーションの中でミドルウェアを使うこともできます。
+
+  use Mojolicious::Lite;
+  use Plack::Builder;
+
+  get '/welcome' => sub {
+    my $c = shift;
+    $c->render(text => 'Hello Mojo!');
+  };
+
+  builder {
+    enable 'Deflater';
+    app->start;
+  };
+
+=head2 書き換え
+
+時には、あなたは、自分でサーバの設定を変えることができない
+ブラックボックス環境、または、 C<X-*> ヘッダーで補助情報を伝える
+リバースプロキシの背後でアプリケーションをデプロイしなければ
+ならないかもしれません。
+そのような場合、あなたは入ってくるリクエストを書き換えるのに
+[[Mojolicious]]のC<before_dispatch> フックを使用できます。
+
+  # "X-Forwarded-HTTPS"ヘッダーが"https"に設定されていた場合にスキーマを変更
+  $app->hook(before_dispatch => sub {
+    my $c = shift;
+    $c->req->url->base->scheme('https')
+      if $c->req->headers->header('X-Forwarded-HTTPS');
+  });
+
+リバースプロキシは、通常はアプリケーションはデプロイされたパスの情報渡さないので、
+やってくるリクエストのベースパスを書き換えることが一般的です。
+
+  # productionモードではパスの最初の部分とスラッシュをベースパスに移動
+  $app->hook(before_dispatch => sub {
+    my $c = shift;
+    push @{$c->req->url->base->path->trailing_slash(1)},
+      shift @{$c->req->url->path->leading_slash(0)};
+  }) if $app->mode eq 'production';
+
+[[Mojo::URL]]オブジェクトは扱いやすいです。
+ルーティングの行き先を表現したURL (foo/bar?baz=yada)がいつでもベースURL(http://example.com/myapp/)からの相対的なものになるからです。このURLはは開発環境においての表現です。
+
+=head2 アプリケーションの埋め込み
+
+次から次へ、設定ファイル、データベース接続、他のスクリプトの中のヘルパーなどの[[Mojolicious]]アプリケーションのパーツを再利用したくなるかもしれません。
+次のような[[Mojo::Server]]をベースにしたモックサーバーで、それらを埋め込むことができます。
+
+  use Mojo::Server;
+
+  # モックサーバーでアプリケーションをロード
+  my $server = Mojo::Server->new;
+  my $app = $server->load_app('./myapp.pl');
+
+  # 完全に初期化されたアプリケーションにアクセス
+  say $app->static->root;
+  say $app->config->{secret_identity};
+  say $app->dumper(just => 'a helper test');
+  say $app->build_controller->render_to_string(template => 'foo');
+
+[[Mojolicious::Plugin::Mount]]プラグインを使えば、
+複数のアプリケーションをひとつに結合して、一緒にデプロイすることができます。
+
+  use Mojolicious::Lite;
+
+  plugin Mount => {'test1.example.com' => '/home/sri/myapp1.pl'};
+  plugin Mount => {'test2.example.com' => '/home/sri/myapp2.pl'};
+
+  app->start;
+
+=head2 Webサーバーの埋め込み
+
+組み込みのWebサーバー[[Mojo::Server::Daemon]]を、
+なんらの理由で新しいリアクターのバックエンドに統合できない外部のイベントループのような外部の環境に埋め込むために、
+[[Mojo::IOLoop]]のC<one_tick>を使用することもできます。
+
+  use Mojolicious::Lite;
+  use Mojo::IOLoop;
+  use Mojo::Server::Daemon;
+  
+  # 通常のアクション
+  get '/' => {text => 'Hello World!'};
+
+  # カスタムのdaemonでアプリケーションに接続
+  my $daemon =
+    Mojo::Server::Daemon->new(app => app, listen => ['http://*:8080']);
+  $daemon->prepare_ioloop;
+
+  # 外部の環境から"one_tick"を繰り返し呼び出す
+  Mojo::IOLoop->one_tick while 1;
+
+=head1 リアルタイムWeb
+
+リアルタイムWebはComet(ロングポーリング), イベントソース、WebSocketを含むテクノロジーの集合のことです。
+伝統的なプルモデルを頼りにする代わりに、コンテンツを生成してすぐに、消費者にプッシュすることができます。
+すべての組み込みサーバーはノンブロッキングI/Oを使っていて、
+[[Mojo::IOLoop]]のリアクターをベースにしています。
+多くの強力な機能によって、リアルタイムWebアプリケーションを
+数千の並列のクライアントにスケールアップすることができるでしょう。
+
+=head2 Webサービスのバックエンド
+
+Since [[Mojo::UserAgent]]は[[Mojo::IOLoop]]のリアクターをベースに作られているので、
+ノンブロッキングで利用されるとき、たとえば高いレイテンシのバックエンドWebサーバーであっても、
+組み込みのWebサーバーをブロックしません。
+
+  use Mojolicious::Lite;
+
+  # MetaCPANで「mojolicious」を検索
+  get '/' => sub {
+    my $c = shift;
+    $c->ua->get('api.metacpan.org/v0/module/_search?q=mojolicious' => sub {
+      my ($ua, $tx) = @_;
+      $c->render('metacpan', hits => $tx->res->json->{hits}{hits});
+    });
+  };
+
+  app->start;
+  __DATA__
+
+  @@ metacpan.html.ep
+  <!DOCTYPE html>
+  <html>
+    <head><title>MetaCPAN results for "mojolicious"</title></head>
+    <body>
+      % for my $hit (@$hits) {
+        <p><%= $hit->{_source}{release} %></p>
+      % }
+    </body>
+  </html>
+
+=head2 同期イベント
+
+並列リクエストのような複数のイベントは[[Mojo::IOLoop]]のC<delay>で簡単に同期させることができます。
+これは、継続パススタイルを使って、ネストされた深いクロージャーを避けるのに役立ちます。
+
+  use Mojolicious::Lite;
+  use Mojo::URL;
+
+  # MetaCPANで"mojo"と"mango"を検索
+  get '/' => sub {
+    my $c = shift;
+
+    # ふたつのステップででレスポンスを準備
+    $c->delay(
+
+      # 並列リクエスト
+      sub {
+        my $delay = shift;
+        my $url   = Mojo::URL->new('api.metacpan.org/v0/module/_search');
+        $url->query({sort => 'date:desc'});
+        $c->ua->get($url->clone->query({q => 'mojo'})   => $delay->begin);
+        $c->ua->get($url->clone->query({q => 'minion'}) => $delay->begin);
+      },
+
+      # 遅らせた描画
+      sub {
+        my ($delay, $mojo, $minion) = @_;
+        $c->render(json => {
+          mojo   => $mojo->res->json('/hits/hits/0/_source/release'),
+          minion => $minion->res->json('/hits/hits/0/_source/release')
+      }
+    );
+  };
+
+  app->start;
+
+=head2 タイマー
+
+[[Mojo::IOLoop]]イベントループの主要なもうひとつの機能はタイマーです。
+このタイマーは、[[Mojo::IOLoop]]のC<timer>によって生成することができ、
+たとえば、レスポンスの遅らせた描画に利用することができます。
+C<sleep>とことなって、並列に処理される他のリクエストがブロックされることはありません。
+
+  use Mojolicious::Lite;
+  use Mojo::IOLoop;
+
+  # レスポンスを描画する前に3秒待つ
+  get '/' => sub {
+    my $c = shift;
+    Mojo::IOLoop->timer(3 => sub {
+      $c->render(text => 'Delayed by 3 seconds!');
+    });
+  };
+
+  app->start;
+
+[[Mojo::IOLoop]]のC<recurring>によって生成された、
+再燃タイマーはとても強力ですが、
+手動で停止させる必要があります。
+そうでなければ、それらはイベントを発行し続けます。
+
+  use Mojolicious::Lite;
+  use Mojo::IOLoop;
+
+  # ふたつめのステップで、5から1まで数える
+  get '/' => sub {
+    my $c = shift;
+
+    # 再燃タイマーを開始
+    my $i = 1;
+    my $id = Mojo::IOLoop->recurring(1 => sub {
+      $c->write_chunk($i);
+      $c->finish if $i++ == 5;
+    });
+
+    # 再燃タイマーを停止
+    $c->on(finish => sub { Mojo::IOLoop->remove($id) });
+  };
+
+  app->start;
+
+タイマーは特定のリクエストに紐づけられていないので、
+スタートアップ時に生成することもできます。
+
+  use Mojolicious::Lite;
+  use Mojo::IOLoop;
+
+  # 10秒ごとにバックグラウンドでタイトルをチェック
+  my $title = 'Got no title yet.';
+  Mojo::IOLoop->recurring(10 => sub {
+    app->ua->get('http://mojolicio.us' => sub {
+      my ($ua, $tx) = @_;
+      $title = $tx->res->dom->at('title')->text;
+    });
+  });
+ 
+  # 現在のタイトルを表示
+  get '/' => sub {
+    my $c = shift;
+    $c->render(json => {title => $title});
+  };
+
+  app->start;
+
+すべてのイベントは、協調的に処理されることを覚えておいてください。
+ですので、コールバックで長くブロックしてはいけません。
+
+=head2 イベントの中での例外
+
+タイマーと他のノンブロッキング処理は、単一のイベントループの中で
+実行されているので、
+アプリケーションの外側において、
+コールバックの中で投げられた例外は、
+自動的にキャッチすることができません。
+けれども、[[Mojo::Reactor]]のC<error>イベントを購読することによって、
+手動で処理することができます。また、コールバックの中では、キャッチすることができます。
+
+  use Mojolicious::Lite;
+  use Mojo::IOLoop;
+
+  # アプリケーションのログにエラーメッセージをフォワードする
+  Mojo::IOLoop->singleton->reactor->on(error => sub {
+    my ($reactor, $err) = @_;
+    app->log->error($err);
+  });
+
+  # 例外だけをロギング (と、接続のタイムアウト)
+  get '/connection_times_out' => sub {
+    my $c = shift;
+    Mojo::IOLoop->timer(2 => sub {
+      die 'This request will not be getting a response';
+    });
+  };
+
+  # 例外が捕らえられ、処理される
+  get '/catch_exception' => sub {
+    my $c = shift;
+    Mojo::IOLoop->timer(2 => sub {
+      eval { die 'This request will be getting a response' };
+      $c->reply->exception($@) if $@;
+    });
+  };
+
+  app->start;
+
+すべてのエラーは、警告に変換される、デフォルトのサブスクライバーが、
+通常、フォールバックとして[[Mojo::IOLoop]]に追加されます。
+
+  Mojo::IOLoop->singleton->reactor->unsubscribe('error');
+
+開発中、あるいは、クラッシュが単に好ましいアプリケーションにおいては、
+すべてのサブスクライバーを取り除くことによって、
+コールバックの中で投げられる、すべての例外を、致命的なものにすることができます。
+
+=head2 WebSocketによるWebサービス
+
+WebSocketプロトコルは、サーバーとクライアントの間での、双方向でレイテンシーの低いコミュニケーションチャンネルです。
+メッセージの受け取りは、トランザクションの[[Mojo::Transaction::WebSocket]]の
+C<message>イベントを[[Mojolicious::Controller]]のC<on>で購読するだけなのでとても簡単です。
+
+  use Mojolicious::Lite;
+
+  # ブラウザ側のコードによるテンプレート
+  get '/' => 'index';
+
+  # WebSocketのエコーサービス
+  websocket '/echo' => sub {
+    my $c = shift;
+
+    # 接続された
+    $c->app->log->debug('WebSocket opened');
+
+    # 接続のために少しだけインアクティビティタイムアウトを増やす
+    $c->inactivity_timeout(300);
+
+    # やってきたメッセージ
+    $c->on(message => sub {
+      my ($c, $msg) = @_;
+      $c->send("echo: $msg");
+    });
+
+    # 接続が閉じられた
+    $c->on(finish => sub {
+      my ($c, $code, $reason) = @_;
+      $c->app->log->debug("WebSocket closed with status $code");
+    });
+  };
+
+  app->start;
+  __DATA__
+
+  @@ index.html.ep
+  <!DOCTYPE html>
+  <html>
+    <head><title>Echo</title></head>
+    <body>
+      <script>
+        var ws = new WebSocket('<%= url_for('echo')->to_abs %>');
+
+        // やってきたメッセージ
+        ws.onmessage = function(event) {
+          document.body.innerHTML += event.data + '<br/>';
+        };
+
+        // でていくメッセージ
+        window.setInterval(function () { ws.send('Hello Mojo!') }, 1000);
+      </script>
+    </body>
+  </html>
+
+[[Mojo::Transaction::WebSocket]]のC<finish>イベントはWebSocketの接続が閉じられた直後に発行されます。
+
+  $c->tx->with_compression;
+
+You can activate C<permessage-deflate> compression with
+[[Mojo::Transaction::WebSocket]]のC<with_compression>を使って、
+C<permessage-deflate>圧縮を有効にすることができます。
+これはパフォーマンスを改善しますが、接続あたりのメモリ少量が300KB増えます。
+
+=head2 WebSocketの試験
+
+WebSocketの接続の上でのメッセージのやり取りは動的なものですが、
+しばしば予測可能なものです。
+これはむしろうれしいことで、[[Test::Mojo]]のAPIが利用できます。
+
+  use Test::More;
+  use Test::Mojo;
+
+  # アプリケーションを含む
+  use FindBin;
+  require "$FindBin::Bin/../echo.pl";
+
+  # エコーWebサービスの試験
+  my $t = Test::Mojo->new;
+  $t->websocket_ok('/echo')
+    ->send_ok('Hello Mojo!')
+    ->message_ok
+    ->message_is('echo: Hello Mojo!')
+    ->finish_ok;
+
+  # JSON Webサービスの試験
+  $t->websocket_ok('/echo.json')
+    ->send_ok({json => {test => [1, 2, 3]}})
+    ->message_ok
+    ->json_message_is('/test', [1, 2, 3])
+    ->finish_ok;
+
+  done_testing();
+
+=head2 イベントソースによるWebサービス
+
+HTML5のイベントソースはロングポーリング([[Mojolicious::Controller]]のC<write>を使うなど)の特別な形式で、
+サーバーからクライアントへDOMイベントを直接送信することができます。
+これは一方行なので、クライアントからサーバーへのデータの送信は、
+Ajaxリクエストを使う必要があります。
+しかしながら、利点は、HTTPプロトコルを透過的に再利用しているので、
+低レベルのインフラしか必要としないことです。
+
+  use Mojolicious::Lite;
+  
+  # ブラウザサイドのコードによるテンプレート
+  get '/' => 'index';
+
+  # ログメッセージのためのイベントソース
+  get '/events' => sub {
+    my $c = shift;
+
+    # 接続のタイムアウトを少し増加させる
+    $c->inactivity_timeout(300);
+
+    # コンテンツタイプを変更して、レスポンスヘッダをファイナライズ
+    $c->res->headers->content_type('text/event-stream');
+    $c->write;
+
+    # "message"イベントを購読紙、"log"イベントをブラウザに送る
+    my $cb = $c->app->log->on(message => sub {
+      my ($log, $level, $message) = @_;
+       $c->write("event:log\ndata: [$level] @lines\n\n");
+    });
+
+    # 終わったら、"message"イベントを購読するのを再びやめる
+     $c->on(finish => sub {
+      my $c = shift;
+      $c->app->log->unsubscribe(message => $cb);
+    });
+  };
+
+  app->start;
+  __DATA__
+
+  @@ index.html.ep
+  <!DOCTYPE html>
+  <html>
+    <head><title>LiveLog</title></head>
+    <body>
+      <script>
+        var events = new EventSource('<%= url_for 'events' %>');
+
+        // Subscribe to "log" event
+        events.addEventListener('log', function(event) {
+          document.body.innerHTML += event.data + '<br/>';
+        }, false);
+      </script>
+    </body>
+  </html>
+
+[[Mojo::Log]]のC<message>イベントは、新しいログメッセージ毎に放出され、
+[[Mojo::Transaction]]のC<finish>イベントはトランザクションが終了したときに放出されます。
+
+=head2 マルチパートアップロードのストリーミング
+
+[[Mojolicious]]は[[Mojo::EventEmitter]]をベースにしたとても洗練されたイベントシステムで、
+ほとんどすべての層でイベントをすぐに使えます。
+協力してWeb開発におけるもっとも難しい部類に入る問題を解決することができるでしょう。
+
+  use Mojolicious::Lite;
+  use Scalar::Util 'weaken';
+
+  # マルチパートアップロードの間に入って、
+  # チャンクを受け取るするごとにログを出力する
+  hook after_build_tx => sub {
+    my $tx = shift;
+
+    # マルチパートアップロードを識別して「upgrade」イベントを購読
+    weaken $tx;
+    $tx->req->content->on(upgrade => sub {
+      my ($single, $multi) = @_;
+      return unless $tx->req->url->path->contains('/upload');
+
+      # 正しいものを発見するために「part」イベントを購読
+      $multi->on(part => sub {
+        my ($multi, $single) = @_;
+
+        # すべてのヘッダの存在を確実なものにするために、「body」イベントを購読
+        $single->on(body => sub {
+          my $single = shift;
+
+          # 正しいパーツを持っていることを確実にし、「read」イベントを購読
+          return unless $single->headers->content_disposition =~ /example/;
+          $single->unsubscribe('read')->on(read => sub {
+            my ($single, $bytes) = @_;
+
+            # 受け取ったすべてのチャンクのサイズをログに出力
+            app->log->debug(length($bytes) . ' bytes uploaded');
+          });
+        });
+      });
+    });
+  };
+
+  # DATAセクションのフォームをアップロード
+  get '/' => 'index';
+
+  # マルチパートアップロードをストリーミング
+  post '/upload' => {text => 'Upload was successful.'};
+
+  app->start;
+  __DATA__
+
+  @@ index.html.ep
+  <!DOCTYPE html>
+  <html>
+    <head><title>Streaming multipart upload</title></head>
+    <body>
+      %= form_for upload => (enctype => 'multipart/form-data') => begin
+        %= file_field 'example'
+        %= submit_button 'Upload'
+      % end
+    </body>
+  </html>
+
+=head2 イベントループ
+
+内部的に[[Mojo::IOLoop]]リアクターは複数のイベントループのバックエンドを利用できます。
+たとえばL<EV>はインストールされていれば自動的に利用されます。
+L<AnyEvent>のようなイベントループも正しく動かすことができます。
+
+だれがイベントループのバックエンドをコントロールするかは重要ではありません。
+
+  use Mojo::UserAgent;
+  use EV;
+  use AnyEvent;
+
+  # MetaCPANで"mojolicious"を検索
+  my $cv = AE::cv;
+  my $ua = Mojo::UserAgent->new;
+  $ua->get('api.metacpan.org/v0/module/_search?q=mojolicious' => sub {
+    my ($ua, $tx) = @_;
+    $cv->send($tx->res->json('/hits/hits/0/_source/release'));
+  });
+  say $cv->recv;
+
+たとえば、組み込みのWebサーバーを[[AnyEvent]]アプリケーションに組み込むこともできます。
+
+  use Mojolicious::Lite;
+  use Mojo::Server::Daemon;
+  use EV;
+  use AnyEvent;
+
+  # 通常のアクション
+  get '/' => {text => 'Hello World!'};
+
+  # アプリケーションをWebサーバーで接続して、接続の受付を開始
+  my $daemon
+    = Mojo::Server::Daemon->new(app => app, listen => ['http://*:8080']);
+  $daemon->start;
+
+  # AnyEventにコントロールさせる
+  AE::cv->recv;
+
+=head1 ユーザーエージェント
+
+我々が [[Mojolicious]] はウェブフレームワークであると言うとき、
+我々は本当にそう言っています。
+[[Mojo::UserAgent]]は完全の機能を持ったHTTPとWebSocketのユーザーエージェントです。
+
+=head2 ウェブスクレイピング
+
+ウェブサイトから情報をスクレイピングするのが以前にこれほど面白かったことは
+ありません。
+組込みの XML/HTML5 パーサ [[Mojo::DOM]] は[[Mojo::Message]のC<dom>を
+通して利用可能で、
+スタンドアロンパーサに理解できる
+全ての CSS3 セレクタをサポートします。
+特にWebアプリケーションをテストするための強力とツールとなります。
+
+  use Mojo::UserAgent;
+
+  # Webサイトをフェッチ
+  my $ua = Mojo::UserAgent->new;
+  my $tx = $ua->get('mojolicio.us/perldoc');
+
+  # ファイルを抽出
+  say 'Title: ', $tx->res->dom->at('head > title')->text;
+
+  # ヘッドを抽出
+  $tx->res->dom('h1, h2, h3')->each(sub { say 'Heading: ', shift->all_text });
+
+  # テキストより多くの者を抽出するためにすべてのノードを再帰的に訪れる
+    for my $n ($tx->res->dom->descendant_nodes->each) {
+    # テキストかCDATAノード
+    print $n->content if $n->type eq 'text' || $n->type eq 'cdata';
+
+    # 画像のための代わりのテキストをインクルード
+    print $n->{alt} if $n->type eq 'tag' && $n->tag eq 'img';
+  }
+
+特に、あなたの [[Mojolicious]] アプリケーションの単体テストでは、
+これは非常に強力なツールとなり得ます。
+
+=head2 JSON ウェブサービス
+
+最近のほとんどのウェブサービスは、 JSON データ交換フォーマットを
+ベースにしています。
+それで、[[Mojolicious]] には、おそらく最速の pure-Perl 実装である
+[[Mojo::JSON]] が組み込まれています。
+
+  use Mojo::UserAgent;
+  use Mojo::URL;
+
+  # 新しいユーザーエージェント
+  my $ua = Mojo::UserAgent->new;
+
+  # MetaCPANで"mojolicious"を検索して、最新のリリースをリストする
+  my $url = Mojo::URL->new('http://api.metacpan.org/v0/release/_search');
+  $url->query({q => 'mojolicious', sort => 'date:desc'});
+  for my $hit (@{$ua->get($url)->res->json->{hits}{hits}}) {
+    say "$hit->{_source}{name} ($hit->{_source}{author})";
+  }
+
+=head2 ベーシック認証
+
+ユーザ名とパスワードを URL に追加するだけです。
+C<Authorization>ヘッダーは、自動的に生成されます。
+
+  my $ua = Mojo::UserAgent->new;
+  say $ua->get('https://sri:secret@mojolicio.us/hideout')->res->body;
+
+=head2 追加リクエストを装飾
+
+[[Mojo::UserAgent]] は自動的にリダイレクトを辿ることができ、
+C<start>イベントによって、トランザクションが初期化された後、
+接続がそれらに関連づけられる前に、それぞれのトランザクションへの
+直接アクセスを可能にします。
+
+  # 10 までのリダイレクトを追跡するユーザーエージェント
+  my $ua = Mojo::UserAgent->new(max_redirects => 10);
+
+  # 各リクエストに気の利いたヘッダを追加
+  $ua->on(start => sub {
+    my ($ua, $tx) = @_;
+    $tx->req->headers->header('X-Bender' => 'Bite my shiny metal ass!');
+    say 'Request: ', $tx->req->url->clone->to_abs;
+  });
+
+  # リダイレクトされるであろうリクエスト
+  say 'Title: ', $ua->get('google.com')->res->dom->at('head > title')->text;
+
+これはプロキシへの C<CONNECT> リクエストに対してでさえも動作します。
+
+=head2 コンテンツジェネレーター
+
+複数のリクエストに対して、繰り返し同じ種類のコンテンツを生成できます。
+
+  use Mojo::UserAgent;
+  use Mojo::Asset::File;
+
+  # "stream"ジェネレーターを生成
+  my $ua = Mojo::UserAgent->new;
+  $ua->transactor->add_generator(stream => sub {
+    my ($transactor, $tx, $path) = @_;
+    $tx->req->content->asset(Mojo::Asset::File->new(path => $path));
+  });
+
+  # PUTとPOSTを通して複数のファイルのストリーミングを送信
+  $ua->put('http://example.com/upload'  => stream => '/home/sri/mojo.png');
+  $ua->post('http://example.com/upload' => stream => '/home/sri/minion.png');
+  
+C<json>とC<form>コンテンツジェネレーターがいつでも利用可能です。
+
+  use Mojo::UserAgent;
+
+  # PATCHを使って"application/json"コンテンツを送信
+  my $ua = Mojo::UserAgent->new;
+  my $tx = $ua->patch('http://api.example.com' => json => {foo => 'bar'});
+
+  # GETを通してクエリパラメーターを送信
+  my $tx2 = $ua->get('http://search.example.com' => form => {q => 'test'});
+
+  # POSTを通して"application/x-www-form-urlencoded"コンテンツを送信
+  my $tx3 = $ua->post('http://search.example.com' => form => {q => 'test'});
+
+  # PUTを通して"multipart/form-data"コンテンツを送信
+  my $tx4 = $ua->put('http://upload.example.com' =>
+    form => {test => {content => 'Hello World!'}});
+    
+コンテンツジェネレーターのより多くの情報については、
+[[Mojo::UserAgent::Transactor]]のC<tx>を見てください。
+
+=head2 大きなファイルのダウンロード
+
+[[Mojo::UserAgent]] で大きなファイルをダウンロードするときは、
+C<250KB> を越えるものすべてを自動的に一時ファイルに流すので、
+メモリ使用量を心配する必要は全くありません。
+ファイルを永続的に移動させるのに[[Mojo::Asset::File]]のC<move_to>
+を利用することができます。
+
+  # 最新の Mojolicious tarball を取得しよう
+  my $ua = Mojo::UserAgent->new(max_redirects => 5);
+  my $tx = $ua->get('https://www.github.com/kraih/mojo/tarball/master');
+  $tx->res->content->asset->move_to('mojo.tar.gz');
+
+また、極端に大きなファイルからの保護のため、デフォルトで C<16MB> の
+大域的な限界があります。これは
+[[Mojo::Message]]のC<max_message_size>か
+C<MOJO_MAX_MESSAGE_SIZE> 環境変数で
+調整することができます。
+
+  # 1GBに制限を増やす
+  $ENV{MOJO_MAX_MESSAGE_SIZE} = 1073741824;
+
+=head2 大きなファイルのアップロード
+
+大きなファイルのアップロードはさらに簡単です。
+
+  use Mojo::UserAgent;
+
+  # POST と "multipart/form-data" 経由でファイルをアップロード
+  my $ua = Mojo::UserAgent->new;
+  $ua->post('example.com/upload' =>
+    form => {image => {file => '/home/sri/hello.png'}});
+
+メモリ使用量を心配する必要はなく、すべてのデータが
+ファイルから直接ストリーミングされるでしょう。
+
+=head2 ストリーミングレスポンス
+
+ほとんどの HTTP クライアントにおいて、ストリーミングレスポンスを
+受け取るのは実に扱いにくい場合がありますが、
+[[Mojo::UserAgent]] はそれを本当に簡単にします。
+
+  # 通常のトランザクションを構築
+  my $ua = Mojo::UserAgent->new;
+  my $tx = $ua->build_tx(GET => 'http://mojolicio.us');
+
+  # 無限サイズのレスポンスを受け入れる
+  $tx->res->max_message_size(0);
+
+  # デフォルトのコンテントパーサーを無効にするために「read」イベントを置き換える
+  $tx->res->content->unsubscribe('read')->on(read => sub {
+    my ($content, $chunk) = @_;
+    say "Streaming: $chunk";
+  });
+
+  # トランザクションの処理
+  $tx = $ua->start($tx);
+
+[[Mojo::Content]]のC<read>イベントはデータの断片の到着毎に放出されます。
+必要であればチャンクドエンコーディングは透過的に扱われるでしょう。
+
+=head2 ストリーミングリクエスト
+
+ストリーミングリクエストを送るのもほとんど同じくらい簡単です。
+
+  # 通常のトランザクションを構築
+  my $ua = Mojo::UserAgent->new;
+  my $tx = $ua->build_tx(GET => 'http://mojolicio.us');
+
+  # ボディの準備
+  my $body = 'Hello world!';
+  $tx->req->headers->content_length(length $body);
+
+  # 排出コールバックで直接書き込みを開始
+  my $drain;
+  $drain = sub {
+    my $content = shift;
+    my $chunk   = substr $body, 0, 1, '';
+    $drain      = undef unless length $body;
+    $content->write($chunk, $drain);
+  };
+  $tx->req->content->$drain;
+
+  # トランザクションの処理
+  $tx = $ua->start($tx);
+
+[[Mojo::Content]]のC<write>に渡された排出コールバックは、
+前のチャンクの全部が実際に書き込まれるたびに、
+呼び出されます。
+
+=head2 ノンブロッキング
+
+[[Mojo::UserAgent]] は根底からノンブロッキングになるように設計されており、
+全てのノンブロッキングAPI はただの簡単で便利なラッパーです。
+特に、ウェブクローリングのような待ち時間が大きな処理では、
+同時に多くの並列接続をアクティブに保つことができるので、
+これは非常に便利です。
+
+  use Mojo::UserAgent;
+  use Mojo::IOLoop;
+
+  # 並列のノンブロッキングリクエスト
+  my $ua = Mojo::UserAgent->new;
+  $ua->get('http://metacpan.org/search?q=mojo' => sub {
+    my ($ua, $mojo) = @_;
+     ...
+    say $mojo->res->dom->at('title')->text;
+  });
+  $ua->get('http://metacpan.org/search?q=minion' => sub {
+    my ($ua, $minion) = @_;
+    say $minion->res->dom->at('title')->text;
+  });
+
+  # 必要であればイベントループを開始
+  Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
+
+あなたは [[Mojo::IOLoop]] イベントループを完全に制御できます。
+
+=head2 並列のブロッキングリクエスト
+
+複数のノンブロッキングリクエストを同期させるために、
+[[Mojo::IOLoop]]のC<delay>を使うことによって、
+ブロッキングの振る舞いをエミュレートすることができます。
+結果のトランザクションは、ランダムな順であることに注目してください。
+
+  # 同期のノンブロッキングリクエストと結果のキャプチャ
+  my $ua    = Mojo::UserAgent->new;
+  my $delay = Mojo::IOLoop->delay;
+  $ua->get('http://mojolicio.us'         => $delay->begin);
+  $ua->get('http://mojolicio.us/perldoc' => $delay->begin);
+  my ($tx, $tx2) = $delay->wait;
+
+[[Mojo::IOLoop::Delay]]のC<finish>は、
+[[Mojolicious]]アプリケーションの内部と同様にスタンドアロンで動かすことができなければならない
+コードのために利用されます。
+
+  use Mojo::UserAgent;
+  use Mojo::IOLoop;
+
+  # ノンブロッキングリクエストを同期させる
+  my $ua    = Mojo::UserAgent->new;
+  my $delay = Mojo::IOLoop->delay(sub {
+    my ($delay, $mojo, $minion) = @_;
+    say $mojo->res->dom->at('title')->text;
+    say $minion->res->dom->at('title')->text;
+  });
+  $ua->get('http://metacpan.org/search?q=mojo'   => $delay->begin);
+  $ua->get('http://metacpan.org/search?q=minion' => $delay->begin);
+  $delay->wait;
+
+[[Mojo::IOLoop::Delay]]のC<wait>はこのコードをポータブルにします。
+すでに実行されているイベントループの中、あるいは、
+要求に応じて開始して、働きます。
+
+=head2 WebSockets
+
+WebSocketはサーバーサイドだけではなく、
+新しいコネクションを開くために
+[[Mojo::UserAgent]]のC<websocket>を使用することができます。
+これはいつでもノンブロッキングです。
+
+ハンドシェイクは、いくらかの追加のヘッダーのついて、通常のHTTPリクエストです。
+これは、クッキーを含むこともできます。
+サーバーからC<101>レスポンスの通知がユーザーエージェントに続いて送られます。
+ユーザーエージェントの接続は確立され、
+WebSocketプロトコルを使った通信が開始します。
+ 
+  use Mojo::UserAgent;
+  use Mojo::IOLoop;
+ 
+  # エコーサービスのためにWebSocketを開く
+  my $ua = Mojo::UserAgent->new;
+  $ua->websocket('ws://echo.websocket.org' => sub {
+    my ($ua, $tx) = @_;
+
+    # WebSocketハンドシェイクが成功したかチェック
+    say 'WebSocket handshake failed!' and return unless $tx->is_websocket;
+
+    # WebSocketが閉じられるのを待つ
+    $tx->on(finish => sub {
+      my ($tx, $code, $reason) = @_;
+      say "WebSocket closed with status $code.";
+    });
+
+    # ひとつのメッセージを受け取った後にWebSocketを閉じる
+    $tx->on(message => sub {
+      my ($tx, $msg) = @_;
+      say "WebSocket message: $msg";
+      $tx->finish;
+    });
+
+    # サーバーにメッセージを送信
+    $tx->send('Hi!');
+  });
+
+  # 必要であればイベントループを開始
+  Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
+
+=head2 コマンドライン
+
+コマンド行から膨大な HTML ファイルをチェックするのが嫌ではありませんか?
+ありがたいことに[[Mojolicious::Command::get]]はこの状況を一変させます。
+[[Mojo::DOM]] のCSS3 セレクタと[[Mojo::JSON::Pointer]]のJSONポインター
+で実際に重要な部分だけを選ぶことができます。
+
+  $ mojo get http://mojolicio.us 'head > title'
+
+全ての id 属性のリストについてはどうですか?
+
+  $ mojo get http://mojolicio.us '*' attr id
+
+または、全ての見出しタグのテキスト内容については?
+
+  $ mojo get http://mojolicio.us 'h1, h2, h3' text
+
+おそらく三番目の見出しのテキストは?
+
+  $ mojo get http://mojolicio.us 'h1, h2, h3' 3 text
+
+入れ子の子要素からも全てのテキストを抽出できます。
+
+  $ mojo get http://mojolicio.us '#mojobar' all
+
+リクエストをカスタマイズすることもできます。
+
+  $ mojo get -M POST -c 'Hello!' http://mojolicio.us
+  $ mojo get -H 'X-Bender: Bite my shiny metal ass!' http://google.com
+
+リダイレクトを辿り、全ての (HTTP) ヘッダメッセージを見ることができます。
+
+  $ mojo get -r -v http://google.com 'head > title'
+
+JSONデータ構造から本当に必要な情報を抽出できます。
+
+  $ mojo get https://api.metacpan.org/v0/author/SRI /name
+
+これはあなたのアプリケーションをテストするための非常に貴重な
+ツールかもしれません。
+
+  $ ./myapp.pl get /welcome 'head > title'
+
+=head2 ワンライナー
+
+試験のためのすばやいハックのために、[[ojo]]ワンライナーはすぐれた選択です。
+
+  $ perl -Mojo -E 'say g("mojolicio.us")->dom->at("title")->text'
+
+=head1 アプリケーション
+
+いつでもアプリケーションのハックを
+お楽しみ下さい。
+
+=head2 ベーシック認証
+
+ベーシック認証のデータは、C<Authorization>ヘッダから、
+自動的に抽出されます。
+
+  use Mojolicious::Lite;
+
+  get '/' => sub {
+    my $c = shift;
+
+    # ユーザー名"Bender"とパスワード"rocks"をチェック
+    return $c->render(text => 'Hello Bender!')
+      if $c->req->url->to_abs->userinfo eq 'Bender:rocks';
+
+    # 認証を要求
+    $c->res->headers->www_authenticate('Basic');
+    $c->render(text => 'Authentication required!', status => 401);
+  };
+
+  app->start;
+
+これは、安全な認証メカニズムのために、TLSを一緒に使うこともできます。
+
+  $ ./myapp.pl daemon -l 'https://*:3000?cert=./server.crt&key=./server.key'
+
+=head2 設定ファイルを追加
+
+アプリケーションに設定ファイルを追加するには
+ホームディレクトリに追加し、
+[[Mojolicious::Plugin::Config]]プラグインを読み込むだけです。
+デフォルトの設定ファイル名は[[Mojolicious]]のC<moniker>の
+値(C<myapp>)に基づき、それにC<.conf>を追加したもの(myapp.conf)になります。
+プラグイン
+
+  $ mkdir myapp
+  $ cd myapp
+  $ touch myapp.pl
+  $ chmod 744 myapp.pl
+  $ echo '{name => "my Mojolicious application"};' > myapp.conf
+
+設定ファイル単なるPerlのスクリプトです。
+ハッシュリファレンスを返してください。
+[[Mojo]]のC<config>メソッドを使って、
+すべての設定が利用できます。
+これは[[Mojolicious::Plugin::DefaultHelpers]]のC<config>ヘルパーです。
+
+  use Mojolicious::Lite;
+
+  plugin 'Config';
+ 
+  my $name = app->config('name');
+  app->log->debug("Welcome to $name");
+
+  get '/' => 'with_config';
+
+  app->start;
+  __DATA__
+  @@ with_config.html.ep
+  <!DOCTYPE html>
+  <html>
+    <head><title><%= config 'name' %></title></head>
+    <body>Welcome to <%= config 'name' %></body>
+  </html>
+
+Alternatively you can also use configuration files in the JSON format with
+L<Mojolicious::Plugin::JSONConfig>.
+
+=head2 アプリケーションにプラグインを追加
+
+コードをよりよくまとめ、アプリケーションの早口からヘルパーを守るために、
+プラグインを作成することができます。
+
+  $ mkdir -p lib/MyApp/Plugin
+  $ touch lib/MyApp/Plugin/MyHelpers.pm
+
+これは、通常のプラグイン、または、[[Mojolicious::Plugin]]
+のサブクラスとして、動作します。
+プラグイン名にプレフィックスを使うことによって、ネストしたヘルパーを使って、
+衝突を避けることができます。
+
+  package MyApp::Plugin::MyHelpers;
+  use Mojo::Base 'Mojolicious::Plugin';
+
+  sub register {
+    my ($self, $app) = @_;
+    $app->helper('my_helpers.render_with_header' => sub {
+      my ($c, @args) = @_;
+      $c->res->headers->header('X-Mojo' => 'I <3 Mojolicious!');
+      $c->render(@args);
+    });
+  }
+
+  1;
+
+多くのアプリケーション限定のプラグインを持つことができませす。
+通常のプラグインと異なる部分は、完全なクラス名を使って
+ロードする必要があることです。
+
+  use Mojolicious::Lite;
+
+  use lib 'lib';
+
+  plugin 'MyApp::Plugin::MyHelpers';
+
+  get '/' => sub {
+    my $c = shift;
+    $c->my_helpers->render_with_header(text => 'I ♥ Mojolicious!');
+  };
+
+  app->start;
+
+もちろん、
+これらのプラグインは、
+ひとつ以上のヘルパーを
+含むことができます。
+より多くのアイデアは、
+[[Mojolicious::Plugins]]にあります。
+
+
+=head2 Mojoliciousにコマンドを追加
+
+おそらくこれまで、[[Mojolicious::Commands]]で説明されている組み込みの多くのコマンドを使って
+きたのではないでしょうか。
+でも、新しいコマンドを追加して、自動的にコマンドラインインターフェースに
+加えることができるんです。
+
+  package Mojolicious::Command::spy;
+  use Mojo::Base 'Mojo::Command';
+
+  has description => 'Spy on application';
+  has usage       => "Usage: APPLICATION spy [TARGET]\n";
+
+  sub run {
+    my ($self, @args) = @_;
+
+    # シークレットパスフレーズを出力
+    say for @{$self->app->secrets} if $args[0] eq 'secrets';
+
+    # モードの出力
+    say $self->app->mode if $args[0] eq 'mode';
+  }
+
+  1;
+
+[[Mojo::Command]]における多くの便利なメソッドと属性は
+オーバーライドすることが可能です。
+
+  $ mojo spy secret
+  The secret of this application is "Mojolicious::Lite".
+
+  $ ./myapp.pl spy secret
+  The secret of this application is "secret".
+
+コマンドライン引数はすぐに渡され、すぐに使ってオーバーロードできる
+[[Mojolicious::Command]]の便利な属性とメソッドがあります。
+ 
+  $ mojo spy secrets
+  HelloWorld
+ 
+  $ ./myapp.pl spy secrets
+  secr3t
+ 
+コマンドアプリケーションを特別なものにするために
+カスタム名前空間を[[Mojolicious::Commands]]のC<namespaces>
+を使って追加できます。
+
+  # アプリケーション
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  sub startup {
+    my $self = shift;
+
+    # コマンドが読み込まれる別の名前空間を追加
+    push @{$self->commands->namespaces}, 'MyApp::Command';
+  }
+
+  1;
+
+C<-h>/C<--help>, C<--home>、C<-m>/C<--mode>コマンドは、
+[[Mojolicious::Commands]]によって、
+自動的に処理され、
+すべてのコマンドで共有されます。
+
+  $ ./myapp.pl spy -m production mode
+  production
+
+すべての共有されるオプションの完全なリストは、
+[[Mojolicious::Commands]]のC<使い方>をみてください。
+
+=head2 アプリケーションの上でコードを実行する
+
+[[Mojolicious]]アプリケーションの上で、すばやいワンライナーを実行することについて考えたことがありますか。
+[[Mojolicious::Command::eval]]コマンドでそれを実行することができ、アプリケーションのインスタンス自体には
+C<app>でアクセスできます。
+
+  $ mojo generate lite_app myapp.pl
+  $ ./myapp.pl eval 'say for @{app->static->paths}'
+
+C<verbose>オプションで、自動的に戻り値あるいはPerlのデータ構造をC<STDOUT>に出力させることができます。
+
+  $ ./myapp.pl eval -v 'app->static->paths->[0]'
+  $ ./myapp.pl eval -V 'app->static->paths'
+
+=head2 あなたのアプリケーションをインストール可能に
+
+あなたの [[Mojolicious]] アプリケーションを CPAN にリリースすることを
+これまで考えたことはありますか? 
+それは実際、あなたが考えるよりはるかに簡単です。
+
+  $ mojo generate app MyApp
+  $ cd my_app
+  $ mv public lib/MyApp/
+  $ mv templates lib/MyApp/
+
+トリックは、モジュールを自動的にインストールできるように、
+C<public>, C<templates> ディレクトリを移動することにあります。
+
+  package MyApp;
+  use Mojo::Base 'Mojolicious';
+
+  use File::Basename 'dirname';
+  use File::Spec::Functions 'catdir';
+
+  # 全ての CPAN モジュールはバージョンを必要とします。
+  our $VERSION = '1.0';
+
+  sub startup {
+    my $self = shift;
+
+    # インストール可能なホームディレクトリへ切替
+    $self->home->parse(catdir(dirname(__FILE__), 'MyApp'));
+
+    # インストール可能な "public" ディレクトリへ切替
+    $self->static->paths->[0] = $self->home->rel_dir('public');
+
+    # インストール可能な "templates" ディレクトリへ切替
+    $self->renderer->paths->[0] = $self->home->rel_dir('templates');
+
+    $self->plugin('PODRenderer');
+
+    my $r = $self->routes;
+    $r->route('/welcome')->to('example#welcome');
+  }
+
+  1;
+
+ついに、少しの小さな変更が、アプリケーションスクリプト
+になされました。
+シェバングは、推奨されるC<#!perl>になりました。
+これは、ツールチェーンが、
+インストール中に適切なシェバングに書き換えるでしょう。
+また、
+インストール可能なスクリプトはアップデートされたデュアルライフモジュールを
+壊さないように、
+L<lib>よりも、L<FindBin>を使いましょう。
+
+  #!perl
+
+  use strict;
+  use warnings;
+
+  use FindBin;
+  BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
+
+  # アプリケーションのコマンドラインインターフェースを開始
+  require Mojolicious::Commands;
+  Mojolicious::Commands->start_app('MyApp');
+
+これが本当にすべてであり、今、あなたのアプリケーションは、他のいかなる
+CPAN モジュールのようにもパッケージすることができます。
+
+  $ ./script/my_app generate makefile
+  $ perl Makefile.PL
+  $ make test
+  $ make manifest
+  $ make dist
+
+もしPAUSEアカウント(http://pause.perl.org)を持っていれば、
+アップロードすることもできます。
+
+  $ mojo cpanify -u USER -p PASS MyApp-0.01.tar.gz
+
+=head2 Hello World
+
+データ量を問題とするなら、これが [[Mojolicious::Lite]] で書ける最小の
+C<Hello World> アプリケーションです。
+
+  use Mojolicious::Lite;
+  any {text => 'Hello World!'};
+  app->start;
+
+パターンのない全てのルートはデフォルトで C</> となり、ルータによって
+実際のコードが実行されなくとも自動レンダリングが始まるため、
+これは動作します。
+レンダラは、スタッシュから C<text> の値を拾い、レスポンスを生成します。
+
+=head2 Hello World ワンライナー
+
+上記の C<Hello World> の例は、 [[ojo]] ワンライナーでさらに少しだけ
+短くすることができます。
+
+  $ perl -Mojo -E 'a({text => "Hello World!"})->start' daemon
+
+そして、 [[Mojolicious::Commands]] からの全てのコマンドを使うことができます。
+
+  $ perl -Mojo -E 'a({text => "Hello World!"})->start' get -v /
+
+=head2 より学ぶには
+
+[[Mojolicious::Guides]]を学び続けてください。またL<Mojolicious wiki|http://github.com/kraih/mojo/wiki>を見ることもできます。wikiには多くのユーザーによる多くのドキュメントやサンプルがあります。
+
+=head1 サポート
+
+ドキュメントに答えが見つからなくって質問があるときは、
+L<メーリングリスト|http://groups.google.com/group/mojolicious>か
+公式のIRCチャンネルであるirc.perl.orgの#mojoでためらわずに質問してください。
+
+(Mojolicious 6.05を反映)
+
+=cut

@@ -1,0 +1,72 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Server::PSGI
+
+=head1 名前
+
+Mojo::Server::PSGI - PSGIサーバー
+
+=head1 使い方
+
+  use Mojo::Server::PSGI;
+
+  my $psgi = Mojo::Server::PSGI->new;
+  $psgi->unsubscribe('request')->on(request => sub {
+    my ($psgi, $tx) = @_;
+
+    # リクエスト
+    my $method = $tx->req->method;
+    my $path   = $tx->req->url->path;
+
+    # レスポンス
+    $tx->res->code(200);
+    $tx->res->headers->content_type('text/plain');
+    $tx->res->body("$method request for $path!");
+
+    # トランザクションをレジューム
+    $tx->resume;
+  });
+  my $app = $psgi->to_psgi_app;
+
+=head1 説明
+
+[[Mojo::Server::PSGI]]は[[Mojolicious]]アプリケーションが
+すべてのPSGI互換サーバーで実行できるようにします。
+
+デフォルトで利用可能なコマンドの一覧については[[Mojolicious::Commands]]のC<コマンド>の項目をみてください。
+
+=head1 イベント
+
+[[Mojo::Server::PSGI]]は[[Mojo::Server]]のすべてのイベントを実装しています。
+
+=head1 属性
+
+[[Mojo::Server::PSGI]]は、[[Mojo::Server]]からすべての属性を継承しています。
+
+=head1 メソッド
+
+[[Mojo::Server::PSGI]]は[[Mojo::Server]]からすべての
+メソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 run
+
+  my $res = $psgi->run($env);
+
+L<PSGI>を開始します。
+
+=head2 to_psgi_app
+
+  my $app = $psgi->to_psgi_app;
+
+[[Mojo]]アプリケーションをL<PSGI>アプリケーションに変換します。
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolcious 8.12を反映。2019年5月29日)
+
+=cut

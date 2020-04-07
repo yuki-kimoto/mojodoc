@@ -1,0 +1,137 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojolicious::Validator - パラメーターの検証
+
+=head1 使い方
+
+  use Mojolicious::Validator;
+
+  my $validator = Mojolicious::Validator->new;
+  my $v = $validator->validation;
+  $v->input({foo => 'bar'});
+  $v->required('foo')->like(qr/ar$/);
+  say $v->param('foo');
+
+=head1 説明
+
+[[Mojolicious::Validator]]は[[Mojolicious]]のためにパラメーターを検証します。
+
+=head1 チェック
+
+これらの検証チェックがデフォルトで利用可能です。
+
+=head2 equal_to
+
+  $validation->equal_to('foo');
+
+値がもうひとつのフィールドの値に等しいことを必要とする。
+
+=head2 in
+
+  $v = $v->in('foo', 'bar', 'baz');
+
+値が、リストにある複数の値のひとつにマッチすることを必要とする。
+
+=head2 like
+
+  $validation->like(qr/^[A-Z]/);
+
+値が、正規表現にマッチすることを必要とする。
+
+=head2 num
+
+  $v = $v->num;
+  $v = $v->num(2, 5);
+  $v = $v->num(2, undef);
+  $v = $v->num(undef, 5);
+
+String value needs to be a non-fractional number and if provided in the given
+range.
+
+文字列値が小数でない数であることを必要とし、与えられた範囲があれば、それに収まる必要がある。
+
+=head2 size
+
+  $validation->size(2, 5);
+
+文字列の値の長さか、L<Mojo::Upload>のサイズが、これらの二つの値の間にあることを必要とする。
+
+=head1 フィルター
+
+以下のフィルターをデフォルトで使用できます。
+
+=head2 trim
+
+  $v = $v->optional('foo', 'trim');
+
+[[Mojo::Util]]の「trim」を使って、空白文字を文字列の両端から取り除きます。
+
+=head1 属性
+
+[[Mojolicious::Validator]]は次の属性を実装しています。
+
+=head2 checks
+
+  my $checks = $validator->checks;
+  $validator = $validator->checks({size => sub {...}});
+
+検証チェックを登録します。デフォルトでC<equal_to>, C<in>,
+C<like>とC<size>が利用できます。
+
+=head1 メソッド
+
+[[Mojolicious::Validator]]は[[Mojo::Base]]を継承しており、
+次の新しいものを実装しています。
+
+=head2 add_check
+
+  $validator = $validator->add_check(size => sub {...});
+
+新しい検証チェックを登録します。
+
+  $validator->add_check(foo => sub {
+    my ($v, $name, $value, @args) = @_;
+    ...
+    return undef;
+  });
+
+=head2 add_filter
+
+  $validator = $validator->add_filter(trim => sub {...});
+
+新しいフィルターを登録する。
+
+  $validator->add_filter(foo => sub {
+    my ($v, $name, $value) = @_;
+    ...
+    return $value;
+  });
+
+=head2 new
+
+  my $validator = Mojolicious::Validator->new;
+
+新しいL<Mojolicious::Validator>オブジェクトを構築する。
+
+=head2 validation
+
+  my $validation = $validator->validation;
+
+検証を実行するための[[Mojolicious::Validator::Validation]]オブジェクトを生成します。
+
+  my $v = $validator->validation;
+  $v->input({foo => 'bar'});
+  $v->required('foo')->size(1, 5);
+  say $v->param('foo');
+
+=head1 参考
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年6月14日更新)
+
+=cut

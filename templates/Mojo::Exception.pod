@@ -1,0 +1,148 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 Mojo::Exception
+
+=head1 名前
+
+Mojo::Exception - 状況つきの例外
+
+=head1 使い方
+
+  use Mojo::Exception;
+
+  # 例外を投げて、スタックトレースを表示
+  eval { Mojo::Exception->throw('Something went wrong!') };
+  say "$_->[1]:$_->[2]" for @{$@->frames};
+
+  # 例外のカスタマイズ
+  eval {
+    my $e = Mojo::Exception->new('Died at test.pl line 3.');
+    die $e->trace(2)->inspect->verbose(1);
+  };
+  say $@;
+
+=head1 説明
+
+[[Mojo::Exception]]は状況の情報のついた例外のためのコンテナです。
+
+=head1 属性
+
+[[Mojo::Exception]]は次の属性を実装しています。
+
+=head2 frames
+
+  my $frames = $e->frames;
+  $e         = $e->frames([$frame1, $frame2]);
+
+スタックトレース(もし利用可能であれば)。
+
+  # 最後のフレームからの情報を抽出
+  my ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext,
+      $is_require, $hints, $bitmask, $hinthash) = @{$e->frames->[-1]};
+
+=head2 line
+
+  my $line = $e->line;
+  $e       = $e->line([3, 'foo']);
+
+例外が発生した行(もし利用可能であれば)。
+
+=head2 lines_after
+
+  my $lines = $e->lines_after;
+  $e        = $e->lines_after([ [1, 'bar'], [2, 'baz'] ]);
+
+例外が発生したラインの後の数行(もし利用可能であれば)。
+
+=head2 lines_before
+
+  my $lines = $e->lines_before;
+  $e        = $e->lines_before([ [4, 'bar'], [5, 'baz'] ]);
+
+例外が発生した行の前の数行。
+
+=head2 message
+
+  my $message = $e->message;
+  $e          = $e->message('Oops!');
+
+例外メッセージ。
+
+=head2 verbose
+
+  my $bool = $e->verbose;
+  $e       = $e->verbose($bool);
+
+詳細な描画を有効にします。デフォルトはC<MOJO_EXCEPTION_VERBOSE>の値かC<0>です。
+
+=head1 メソッド
+
+[[Mojo::Exception]]は[[Mojo::Base]]のすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 inspect
+
+  $e = $e->inspect;
+  $e = $e->inspect($source1, $source2);
+
+「lines_before」と「line」と「lines_after」をコンテキスト情報で満たすために、
+「message」と「frames」とオプショナルな追加のソースを検査します。
+
+=head2 new
+
+  my $e = Mojo::Exception->new;
+  my $e = Mojo::Exception->new('Died at test.pl line 3.');
+
+新しい[[Mojo::Exception]]オブジェクトを生成し、必要であれば、メッセージを設定します。
+
+=head2 to_string
+
+  my $string = $e->to_string;
+
+例外を描画します。
+
+=head2 throw
+
+  Mojo::Exception->throw('Oops!');
+  Mojo::Exception->throw('Oops!', $files);
+
+スタックトレースつきの例外を発生させます。
+
+=head2 trace
+
+  $e = $e->trace;
+  $e = $e->trace($skip);
+
+スタックトレースを保存します。デフォルトでは、1コールフレームをスキップします。
+
+  # 3コールフレームをスキップ
+  $e->trace(3);
+
+  # コールフレームをスキップしない
+  $e->trace(0);
+
+=head1 演算子
+
+[[Mojo::Exception]]は次の演算子をオーバーロードしています。
+
+=head2 ブール
+
+  my $bool = !!$e;
+
+いつでも真。
+
+=head2 文字列化
+
+  my $str = "$e";
+
+C<to_string>のエイリアス。
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月14日)
+
+=cut

@@ -1,0 +1,153 @@
+=encoding utf8
+
+[[Mojolicious API リファレンス]]
+
+=head1 名前
+
+Mojo::Reactor::Poll - pollをサポートした低レベルのイベントリアクター
+
+=head1 使い方
+
+  use Mojo::Reactor::Poll;
+
+  # ハンドルが読み込み可能になるか書き込み可能になれば監視する
+  my $reactor = Mojo::Reactor::Poll->new;
+  $reactor->io($handle => sub {
+    my ($reactor, $writable) = @_;
+    say $writable ? 'Handle is writable' : 'Handle is readable';
+  });
+
+  # ハンドルが書き込み可能になったときだけ、監視する
+  $reactor->watch($handle, 0, 1);
+
+  # タイマーを追加
+  $reactor->timer(15 => sub {
+    my $reactor = shift;
+    $reactor->remove($handle);
+    say 'Timeout!';
+  });
+
+  # 必要であればリアクターを開始
+  $reactor->start unless $reactor->is_running;
+
+=head1 説明
+
+[[Mojo::Reactor::Poll]]はL<IO::Poll>をベースにした低レベルのイベント装置です。
+このリアクターは最大限のポータビリティを目指してデザインされているので、
+モノトニッククロックを使ってタイムジャンプを処理できません。
+
+=head1 イベント
+
+[[Mojo::Reactor::Poll]]は[[Mojo::Reactor]]のすべてのイベントを継承しています。
+
+=head1 メソッド
+
+[[Mojo::Reactor::Poll]]は[[Mojo::Reactor]]からすべてのメソッドを継承しており、
+次の新しいメソッドを実装しています。
+
+=head2 again
+
+  $reactor->again($id);
+
+アクティブなタイマーを再開始します。
+
+=head2 io
+
+  $reactor = $reactor->io($handle => sub {...});
+
+I/Oイベントのためのハンドルを監視します。
+ハンドルが読み込み可能、あるいは書き込み可能になったときはいつでも
+コールバックが実行されます。
+
+  # ハンドルが読み込み可能、書き込み可能であれば、コールバックは2回呼び出されるでしょう。
+  $reactor->io($handle => sub {
+    my ($reactor, $writable) = @_;
+    say $writable ? 'Handle is writable' : 'Handle is readable';
+  });
+
+=head2 is_running
+
+  my $bool = $reactor->is_running;
+
+リアクターが実行されているかどうかをチェックします。
+
+=head2 one_tick
+
+  $reactor->one_tick;
+
+イベントが起こるか、どのイベントももはや監視されなくなるまでリアクターを実行します。
+このメソッドはリアクターに制御を戻すので、注意して利用する必要があります。
+
+
+  # 0.5秒以上ブロックしない
+  my $id = $reactor->timer(0.5 => sub {});
+  $reactor->one_tick;
+  $reactor->remove($id);
+
+=head2 recurring
+
+  my $id = $watcher->recurring(3 => sub {...});
+
+新しい再燃タイマーを生成します。
+与えられた秒数の後に、繰り返しコールバックが実行されます。
+
+=head2 remove
+
+  my $bool = $reactor->remove($handle);
+  my $bool = $reactor->remove($id);
+
+ハンドル、あるいはタイマーを取り除きます。
+
+=head2 reset
+
+  $reactor->reset;
+
+すべてのハンドルとタイマーを取り除きます。
+
+=head2 start
+
+  $watcher->start;
+
+I/Oとタイマーのイベントの監視を開始します。
+
+  # すでに実行されていないときだけ、リアクターを開始する。
+  $reactor->start unless $reactor->is_running;
+
+=head2 stop
+
+  $watcher->stop;
+
+I/Oとタイマーイベントの監視を停止します。
+
+=head2 timer
+
+  my $id = $reactor->timer(0.5 => sub {...});
+
+新しいタイマーを生成します。
+与えられた秒数の後にコールバックが呼び出されます。
+
+=head2 watch
+
+  $reactor = $reactor->watch($handle, $readable, $writable);
+
+真か偽の値でハンドルを監視するために、IOイベントを変更します。
+
+  # 読み込み可能なイベントだけを監視する
+  $reactor->watch($handle, 1, 0);
+
+  # 書き込み可能なイベントだけを監視する
+  $reactor->watch($handle, 0, 1);
+
+  # 読み込み可能、書き込み可能なイベントを監視する
+  $reactor->watch($handle, 1, 1);
+
+  # イベントの監視を停止する
+  $reactor->watch($handle, 0, 0);
+
+=head1 参考
+
+[[Mojolicious]], L<Mojolicious::Guides>, L<http://mojolicio.us>.
+
+(Mojolicious 8.12を反映。2019年5月27日更新)
+
+=cut
