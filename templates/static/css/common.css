@@ -21,14 +21,38 @@
   
   /* footer */
   .footer {
-    background:#1A1A1A;
-    margin-top:15px;
-    text-align:center;
-    padding:15px 0;
-    border-top:1px solid #ccc;
+    margin-top:30px;
+  }
+  .footer img {
+    width:105px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+    margin-bottom:20px;
   }
   .footer a, .footer a:visited {
     color:white;
+    display:block;
+    height:100%;
+    padding:28px 0 25px 0;
+    font-size:18px;
+    font-weight:bold;
+    color:white;
+    text-align:center;
+    background:#2E75B6;
+    letter-spacing:1px;
+    font-size:18px;
+    cursor:pointer;
+  }
+  .footer a:hover {
+    opacity:0.8;
+  }
+  .footer .copyright {
+    background:white;
+    color:#333;
+    padding:9px 0 8px 0;
+    font-size:14px;
+    text-align:center;
   }
   
   /* container */
@@ -79,7 +103,7 @@
     width:100%;
     font-size:28px;
     padding:19px 10px 15px 73px;
-    background:url(/images/giblog-logo.png) no-repeat 10px 15px;
+    background:url(/images/mojodoc-logo.png) no-repeat 10px 15px;
     background-size:48px;
   }
   h1 a, h1 a:visited {
@@ -180,6 +204,7 @@
   }
   .side-list ul {
     border:1px solid #ccc;
+    margin-bottom:20px;
   }
   .side-list li {
     list-style:none;
