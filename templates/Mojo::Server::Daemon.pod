@@ -2,7 +2,7 @@
 
 [[Mojolicious API リファレンス]]
 
-=head1 Mojo::Server::Daemon
+
 
 =head1 名前
 

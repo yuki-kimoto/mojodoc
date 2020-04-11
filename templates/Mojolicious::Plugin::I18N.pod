@@ -4,7 +4,7 @@ B<このプラグインはコアのディストリビューションから削除
 
 [[Mojolicious API リファレンス]]
 
-=head1 Mojolicious::Plugin::I18N
+
 
 =head1 名前
 

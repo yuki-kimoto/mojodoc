@@ -4,7 +4,7 @@ B<解説がドキュメントの各部に移動されたため、チートシー
 
 [[Mojoliciosuガイド|Home]]
 
-=head1 Mojolicious::Guides::Cheatsheet
+
 
 =head1 名前
 

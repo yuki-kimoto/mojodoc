@@ -2,7 +2,7 @@
 
 [[Mojolicious API リファレンス]]
 
-=head1 Mojo::Home
+
 
 =head1 名前
 

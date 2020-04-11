@@ -6,7 +6,7 @@ CPANにあるL<Mojo::Server::FastCGI>を代わりに利用してください。
 
 [[Mojolicious API リファレンス]]
 
-=head1 Mojo::Server::FastCGI
+
 
 =head1 NAME
 

@@ -2,7 +2,7 @@
 
 [[Mojolicious API リファレンス]]
 
-=head1 Mojo::Message::Request
+
 
 =head1 名前
 

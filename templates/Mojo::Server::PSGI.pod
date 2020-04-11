@@ -2,7 +2,7 @@
 
 [[Mojolicious API リファレンス]]
 
-=head1 Mojo::Server::PSGI
+
 
 =head1 名前
 

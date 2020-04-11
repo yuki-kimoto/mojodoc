@@ -4,7 +4,7 @@ B<このプラグインは削除されました>
 
 [[Mojolicious API リファレンス]]
 
-=head1 Mojolicious::Plugin::RequestTimer
+
 
 =head1 名前
 

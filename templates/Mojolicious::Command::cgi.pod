@@ -2,7 +2,7 @@
 
 [[Mojolicious API リファレンス]]
 
-=head1 Mojolicious::Command::cgi
+
 
 =head1 名前
 

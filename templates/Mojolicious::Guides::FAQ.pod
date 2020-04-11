@@ -2,7 +2,7 @@
 
 [[Mojoliciosuガイド|Home]]
 
-=head1 Mojolicious::Guides::FAQ
+
 
 =head1 名前
 
