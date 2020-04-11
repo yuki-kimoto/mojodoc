@@ -78,6 +78,20 @@ sub run {
     
     # 数値文字参照を内部文字列へ変換
     $data->{content} =~ s/&#([0-9]+);/chr($1)/ge;
+    
+    # 見出しを二つしたの見出しにずらす(サイトタイトルをh1、ページタイトルをh2にするため)
+    $data->{content} =~ s|<h4>|<h6>|g;
+    $data->{content} =~ s|</h4>|</h6>|g;
+    $data->{content} =~ s|<h3>|<h5>|g;
+    $data->{content} =~ s|</h3>|</h5>|g;
+    $data->{content} =~ s|<h2>|<h4>|g;
+    $data->{content} =~ s|</h2>|</h4>|g;
+    $data->{content} =~ s|<h1>|<h3>|g;
+    $data->{content} =~ s|</h1>|</h3>|g;
+    
+    # 最初のh3をh2にする
+    $data->{content} =~ s|<h3>|<h2>|;
+    $data->{content} =~ s|</h3>|</h2>|;
 
     # WikiリンクをHTMLのリンクへ
     # \[\[([^\]]+)(|([^\]+))?\]\]

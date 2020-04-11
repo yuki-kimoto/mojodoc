@@ -113,23 +113,26 @@
   }
   h2 {
     font-size:24px;
-    margin:10px 0;
-    padding-left:20px;
-    letter-spacing:0.5px;
-    border-left:8px solid #00A78C;
+    padding:15px 0 20px 0;
+    letter-spacing:2px;
   }
   h2 a, h2 a:visited {
     text-decoration:none;
     color:#000;
+    font-size:25px;
   }
   h3 {
     font-size:20px;
-    border-top:4px solid #ddd;
-    padding:16px 0px 15px 18px;
+    border-top:4px solid #2a9dbf;
+    padding:15px 0px 14px 18px;
     letter-spacing:0.5px;
     margin:15px 0 10px 0;
     background:#F5F5F5;
     margin-top:30px;
+    margin-bottom:20px;
+  }
+  h3 a, h3 a:visited {
+    color:#000;
   }
   h4 {
     font-size:20px;
@@ -194,7 +197,7 @@
     box-shadow: 0 0 3px rgba(0,0,0,.1);
   }
   .side-list-title {
-    background:#009D82;
+    background:#2a9dbf;
     color:white;
     font-weight:bold;
     padding: 12px 0px 10px 0px;
