@@ -230,7 +230,7 @@ MojoliciousのAPIリファレンスです。
 
 =over 2
 
-=item * [[mojo|mojo(スクリプト)]] - Mojoliciousコマンドシステム
+=item * [[mojo|mojo-script]] - Mojoliciousコマンドシステム
 
 =item * [[hypnotoad]] - Hypnotoad HTTP and WebSocketサーバー
 
