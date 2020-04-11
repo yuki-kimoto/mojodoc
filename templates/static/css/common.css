@@ -16,7 +16,7 @@
     margin:0 auto;
     background:#fff;
     margin-bottom:15px;
-    border-bottom:5px solid #D9D9D9;
+    border-bottom:1px solid #D9D9D9;
   }
   
   /* footer */
@@ -102,8 +102,8 @@
     max-width:1020px;
     width:100%;
     font-size:28px;
-    padding:19px 10px 15px 73px;
-    background:url(/images/mojodoc-logo.png) no-repeat 10px 15px;
+    padding:19px 10px 15px 63px;
+    background:url(/images/mojodoc-logo.png) no-repeat 10px 19px;
     background-size:48px;
   }
   h1 a, h1 a:visited {
