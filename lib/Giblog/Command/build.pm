@@ -93,6 +93,17 @@ sub run {
     $data->{content} =~ s|<h3>|<h2>|;
     $data->{content} =~ s|</h3>|</h2>|;
 
+    # h2に入るのを「名前」ではなく、その次の説明にする
+    $data->{content} =~ s|<h2>.*?名前.*?</h2>.*?<p>(.+)</p>|<h2>$1</h2>|s;
+
+=pod
+<h2><a href="/Mojolicious::Guides::Routing.html"></a><a class='u'
+name="_"
+>名前</a></h2>
+
+<p>Mojolicious::Guides::Routing - ルーティングリクエスト</p>
+=cut
+
     # WikiリンクをHTMLのリンクへ
     # \[\[([^\]]+)(|([^\]+))?\]\]
     # $3 ? qq(<a href="$3">$1</a>) : qq(<a href="/$1">$1</a>)

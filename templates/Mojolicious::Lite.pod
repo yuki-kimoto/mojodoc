@@ -2,8 +2,6 @@
 
 [[Mojolicious API リファレンス]]
 
-=head1 Mojolicious::Lite
-
 =head1 名前
 
 Mojolicious::Lite - 小さなリアルタイムWebフレームワーク
