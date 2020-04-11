@@ -99,34 +99,37 @@ Mojolicious でウェブアプリケーションの開発を始める本当に�
 
 =over 2
 
-=item * [[ルーティング(Mojolicious::Guides::Routing)|Mojolicious::Guides::Routing]]
+=item * [[Mojoliciousガイド - Mojolicious::Guides|Mojolicious::Guides]]
+
+Mojoliciousのガイド。
+
+=item * [[ルーティング - Mojolicious::Guides::Routing|Mojolicious::Guides::Routing]]
 
 簡単で楽しいMojoliciousルーティングの入門。
 
-=item * [[テンプレートの描画(Mojolicious::Guides::Rendering)|Mojolicious::Guides::Rendering]]
+=item * [[テンプレートの描画 - Mojolicious::Guides::Rendering|Mojolicious::Guides::Rendering]]
 
 Mojoliciousレンダラでの内容生成。
 
-=item * [[Mojoliciousへの成長(Mojolicious::Guides::Growing)|Mojolicious::Guides::Growing]]
+=item * [[Mojoliciousへの成長 - Mojolicious::Guides::Growing|Mojolicious::Guides::Growing]]
 
 ゼロからのMojolicious::Liteの原型の開始して、それを
 良く構造化されたMojoliciousアプリケーションへ育てる方法。
 
-=item * [[クックブック(Mojolicious::Guides::Cookbook)|Mojolicious::Guides::Cookbook]]
+=item * [[クックブック - Mojolicious::Guides::Cookbook|Mojolicious::Guides::Cookbook]]
 
 Mojoliciousでの料理、あらゆる風味のためのレシピ。
 
-=item * [[Mojoliciousへの貢献(Mojolicious::Guides::Contributing)|Mojolicious::Guides::Contributing]]
+=item * [[Mojoliciousへの貢献 - Mojolicious::Guides::Contributing|Mojolicious::Guides::Contributing]]
 
 進行中のMojolicious開発へ参加しよう。
 
-=item * [[FQA(Mojolicious::Guides::FAQ)|Mojolicious::Guides::FAQ]]
+=item * [[FQA - Mojolicious::Guides::FAQ|Mojolicious::Guides::FAQ]]
 
 よくある質問と正しい回答。
 
 =back
 
-([[Mojolicious::Guides]]より)
 
 =head2 Mojolicious API リファレンス
 
