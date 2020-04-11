@@ -137,12 +137,6 @@ Mojoliciousでの料理、あらゆる風味のためのレシピ。
 
 [[Github|http://github.com/kraih/mojo]] - Mojoliciousの開発リポジトリ
 
-=head2 Mojoliciousの最近の主な変更点
-
-[[最近の主な変更点]] - 機能追加や変更点などの情報
-
-=cut
-
 =head2 Mojoliciousの情報など
 
 [[Mojolicious入門 - Perlプログラミング入門ゼミ|https://tutorial.perlzemi.com/blog/20140319139520.html]]
