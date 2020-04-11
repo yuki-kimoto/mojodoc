@@ -148,14 +148,14 @@ Mojoliciousでの料理、あらゆる風味のためのレシピ。
 
 =head2 Mojoliciousの情報など
 
-[[Mojolicious入門 - サンプルコードによるPerl入門|https://tutorial.perlzemi.com/blog/20140319139520.html]]
+[[Mojolicious入門 - Perlプログラミング入門ゼミ|https://tutorial.perlzemi.com/blog/20140319139520.html]]
 
-[[Mojoliciousスタートアップ - Perlによる新規Web開発|https://web.perlzemi.com/]]
+[[Webシステム開発入門 Perl+Mojolicious|https://web.perlzemi.com/]]
 
 [[mojo-legacy|https://github.com/jamadam/mojo-legacy]] - MojoliciousをPerl5.8で動かすためののバックポート
 
 =head2 翻訳者
 
-Perlゼミ(木本裕紀)
+木本裕紀
 
 前山将人
