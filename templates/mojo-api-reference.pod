@@ -237,23 +237,3 @@ MojoliciousのAPIリファレンスです。
 =item * [[morbo]] - Morbo HTTP and WebSocket開発サーバー
 
 =back
-
-=head2 ガイド
-
-=over 2
-
-=item * [[Mojolicious::Guides::Tutorial]] - チュートリアル。
-
-=item * [[Mojolicious::Guides::Routing]] - ルーティング。
-
-=item * [[Mojolicious::Guides::Rendering]] - 描画とテンプレート。
-
-=item * [[Mojolicious::Guides::Growing]] - アプリケーションの成長
-
-=item * [[Mojolicious::Guides::Cookbook]] - クックブック
-
-=item * [[Mojolicious::Guides::FAQ]] - FAQ
-
-=item * [[Mojolicious::Guides::CodingGuidelines]] - コーディングガイドライン
-
-=back

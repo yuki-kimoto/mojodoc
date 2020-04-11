@@ -1,6 +1,6 @@
 =encoding utf8
 
-[[Mojolicious API リファレンス]]
+[[Mojolicious API リファレンス|mojo-api-reference]]
 
 =head1 NAME
 

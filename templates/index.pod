@@ -127,7 +127,7 @@ Mojoliciousでの料理、あらゆる風味のためのレシピ。
 
 =head2 Mojolicious API リファレンス
 
-[[Mojolicious API リファレンス]] - Mojoliciousのメソッドの一覧
+[[Mojolicious API リファレンス|mojo-api-reference]] - Mojoliciousのメソッドの一覧
 
 =head2 Mojolicious Wiki
 

@@ -4,7 +4,7 @@ B<Mojo::Server::FastCGIはデフォルトでサポートされなくなりまし
 
 CPANにあるL<Mojo::Server::FastCGI>を代わりに利用してください。
 
-[[Mojolicious API リファレンス]]
+[[Mojolicious API リファレンス|mojo-api-reference]]
 
 
 

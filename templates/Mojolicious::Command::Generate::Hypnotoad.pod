@@ -2,7 +2,7 @@
 
 B<このモジュールは削除されました。>
 
-[[Mojolicious API リファレンス]]
+[[Mojolicious API リファレンス|mojo-api-reference]]
 
 =head1 名前
 

@@ -1,6 +1,6 @@
 =encoding utf8
 
-B<このドキュメントは[[Mojolicious::Guides::Contributing]]に統合されました。
+このドキュメントは[[Mojolicious::Guides::Contributing]]に統合されました。
 
 [[Mojoliciosuガイド|Home]]
 
