@@ -4,7 +4,7 @@
 
 =head1 名前
 
-Mojo::IOLoop::Subprocess - Subprocesses
+Mojo::IOLoop::Subprocess - サブプロセス
 
 =head1 使い方
 

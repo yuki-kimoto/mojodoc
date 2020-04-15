@@ -2,9 +2,7 @@
 
 [[Mojolicious API リファレンス|mojo-api-reference]]
 
-
-
-=head1 NAME
+=head1 名前
 
 Mojo::Cookie::Response - HTTPレスポンスのクッキーのコンテナ
 

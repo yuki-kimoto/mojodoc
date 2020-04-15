@@ -2,7 +2,7 @@
 
 [[Mojolicious API リファレンス|mojo-api-reference]]
 
-=head1 NAME
+=head1 名前
 
 Mojo::Server::Morbo::Backend - Morboのバックエンドの基底クラス
 

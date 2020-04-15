@@ -1,12 +1,10 @@
 =encoding utf8
 
-[[Mojoliciousガイド|Home]]
+=head1 名前
 
-=head1 Mojolicious API リファレンス 日本語訳
+Mojolicious API リファレンス
 
-MojoliciousのAPIリファレンスです。
-
-=head2 クラス
+=head1 クラス
 
 =over 2
 
@@ -226,7 +224,7 @@ MojoliciousのAPIリファレンスです。
 
 =back
 
-=head2 スクリプト
+=head1 スクリプト
 
 =over 2
 

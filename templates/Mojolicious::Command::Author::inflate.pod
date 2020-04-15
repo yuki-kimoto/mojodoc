@@ -4,6 +4,10 @@
 
 =head1 名前
 
+Mojolicious::Command::Author::inflate - 埋め込みテンプレートデータのファイル化
+
+=head1 使い方
+
   Usage: APPLICATION inflate [OPTIONS]
 
     ./myapp.pl inflate
@@ -15,9 +19,6 @@
     -m, --mode <name>   Operating mode for your application, defaults to the
                         value of MOJO_MODE/PLACK_ENV or "development"
 
-=head1 使い方
-
-  Usage: APPLICATION inflate
 
 =head1 説明
 

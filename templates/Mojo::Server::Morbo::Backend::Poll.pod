@@ -2,11 +2,11 @@
 
 [[Mojolicious API リファレンス|mojo-api-reference]]
 
-=head1 NAME
+=head1 名前
 
-Mojo::Server::Morbo::Backend::Poll - Morbo default backend
+Mojo::Server::Morbo::Backend::Poll - Morboのデフォルトのバックエンド
 
-=head1 SYNOPSIS
+=head1 使い方
 
   use Mojo::Server::Morbo::Backend::Poll;
 
