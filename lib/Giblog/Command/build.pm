@@ -42,13 +42,8 @@ sub run {
     # Parse POD
     if ($data->{file} =~ /(\.pm|\.pod)$/) {
       my $content = $data->{content};
-
-      # Parse title
-      parse_title($api, $data);
-
-      # Parse description
-      parse_description($api, $data);
-
+      
+      # PODを解析
       my $pod = $content;
       my $parser = Pod::Simple::HTML->new;
       $parser->parse_characters(1);
@@ -61,11 +56,15 @@ sub run {
       });
       $parser->parse_string_document("$pod");
       
-      $content = $output;
-      
-      $content =~ s|\Qhttp://search.cpan.org/perldoc?\E([^"]+)|my $name = $1; $name =~ s!::!/!g; $name .= ".html"; "/$name";|ge;
-      
-      $data->{content} = $content;
+      $data->{content} = $output;
+
+      $data->{content} =~ s|\Qhttp://search.cpan.org/perldoc?\E([^"]+)|my $name = $1; $name =~ s!::!/!g; $name .= ".html"; "/$name";|ge;
+
+      # Parse title
+      parse_title($api, $data);
+
+      # Parse description
+      parse_description($api, $data);
 
       # Fix extension
       $data->{file} =~ s/\.pm$/.html/;
