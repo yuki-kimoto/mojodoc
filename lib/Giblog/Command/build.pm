@@ -55,17 +55,11 @@ sub run {
         return undef;
       });
       $parser->parse_string_document("$pod");
-      
       $data->{content} = $output;
-
+      
+      # Wikiリンクを解析
       $data->{content} =~ s|\Qhttp://search.cpan.org/perldoc?\E([^"]+)|my $name = $1; $name =~ s!::!/!g; $name .= ".html"; "/$name";|ge;
-
-      # Parse title
-      parse_title($api, $data);
-
-      # Parse description
-      parse_description($api, $data);
-
+      
       # Fix extension
       $data->{file} =~ s/\.pm$/.html/;
       $data->{file} =~ s/\.pod$/.html/;
@@ -98,15 +92,25 @@ sub run {
     $data->{content} =~ s|</h3>|</h2>|;
 
     # h2に入るのを「名前」ではなく、その次の説明にする
-    $data->{content} =~ s|<h2>.*?名前.*?</h2>.*?<p>(.+)</p>|<h2>$1</h2>|s;
+    $data->{content} =~ s|<h2>.*?名前.*?</h2>.*?<p>(.+?)</p>|<h2>$1</h2>|s;
 
 =pod
-<h2><a href="/Mojolicious::Guides::Routing.html"></a><a class='u'
+<h3><a class='u'
 name="_"
->名前</a></h2>
-
-<p>Mojolicious::Guides::Routing - ルーティングリクエスト</p>
+>説明</a></h3>
 =cut
+
+    # 説明の場所を先頭へ移動
+    if ($data->{content} =~ s|<h3><[^>]*?>説明</a></h3>(.*?)<h3>|<h3>|s) {
+      my $description = $1;
+      $data->{content} =~ s|</h2>|</h2>\n$description\n|;
+    }
+
+    # Parse title
+    parse_title($api, $data);
+
+    # Parse description
+    parse_description($api, $data);
 
     # WikiリンクをHTMLのリンクへ
     # \[\[([^\]]+)(|([^\]+))?\]\]

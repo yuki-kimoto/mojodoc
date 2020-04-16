@@ -1,7 +1,5 @@
 =encoding utf8
 
-[[Mojolicious API リファレンス|mojo-api-reference]]
-
 =head1 名前
 
 Mojo::Template - Perlで書けるテンプレート!
