@@ -100,18 +100,6 @@ name="_"
 >説明</a></h3>
 =cut
 
-    # 説明の場所を先頭へ移動
-    if ($data->{content} =~ s|<h3><[^>]*?>説明</a></h3>(.*?)<h3>|<h3>|s) {
-      my $description = $1;
-      $data->{content} =~ s|</h2>|</h2>\n$description\n|;
-    }
-
-    # Parse title
-    parse_title($api, $data);
-
-    # Parse description
-    parse_description($api, $data);
-
     # WikiリンクをHTMLのリンクへ
     # \[\[([^\]]+)(|([^\]+))?\]\]
     # $3 ? qq(<a href="$3">$1</a>) : qq(<a href="/$1">$1</a>)
@@ -133,6 +121,15 @@ name="_"
     };
     
     $data->{content} =~ s#\[\[([^\]\|]+)(?:\|([^\]]+))?\]\]#$wiki_to_html_link_cb->($1, $2);#ge;
+
+    # 説明の場所を先頭へ移動
+    if ($data->{content} =~ s|<h3><[^>]*?>説明</a></h3>(.*?)<h3>|<h3>|s) {
+      my $description = $1;
+      $data->{content} =~ s|</h2>|</h2>\n$description\n|;
+    }
+    
+    # APIリファレンスのpをdivへ
+    $data->{content} =~ s|<p><a href="/mojo-api-reference.html">([^<]*?)</a></p>|<div><a href="/mojo-api-reference.html">$1</a></div>|;
 
     # Parse title
     $api->parse_title_from_first_h_tag($data);
