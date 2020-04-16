@@ -1,14 +1,12 @@
 =encoding utf8
 
-[[Mojoliciosuガイド|Home]]
-
 =head1 名前
 
 Mojolicious::Guides::Contributing - Mojoliciousへの貢献
 
-=head1 概要
+=head1 説明
 
-[[Mojolicious]]に貢献する方法は
+Mojoliciousに貢献する方法は
 たくさんあります。このガイドはそのうちの少しを紹介します。
 
 =head2 バグのレポート

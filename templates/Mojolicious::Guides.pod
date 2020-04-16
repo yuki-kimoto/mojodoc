@@ -1,7 +1,5 @@
 =encoding utf8
 
-[[Mojoliciousガイド|Home]]
-
 =head1 名前
 
 Mojolicious::Guides - 銀河 Mojolicious ガイド
@@ -28,7 +26,7 @@ L<learn.perl.org|http://learn.perl.org/>
 =head1 チュートリアル
 
 Mojolicious でウェブアプリケーションの開発を始める本当に早く楽しい方法は
-[[Mojolicious::Lite]] のチュートリアルにあります。
+[[Mojolicious::Guides::Tutorial]] のチュートリアルにあります。
 このチュートリアルで学ぶほとんどすべてのことは、普通の[[Mojolicious]]アプリケーション
 で利用することができ、ガイドを読む前に学習するためのものになっています。
 絶対に見るべきです。
@@ -54,7 +52,7 @@ Mojolicious でウェブアプリケーションの開発を始める本当に�
 
 [[Mojolicious]] での料理、あらゆる風味のためのレシピ。
 
-=item * [[Mojolicious::Guides::CodingGuidelines]]
+=item * [[Mojolicious::Guides::Contributing]]
 
 進行中の[[Mojolicious]]開発に参加しよう。
 

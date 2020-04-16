@@ -8,7 +8,7 @@
 
 Mojolicious::Guides::CodingGuidelines - コーディングガイドライン
 
-=head1 概観
+=head1 説明
 
 このドキュメントはMojoとMojoliciousの開発の基盤となる、コーディングガイドラインを表しています。
 

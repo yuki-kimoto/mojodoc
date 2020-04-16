@@ -4,7 +4,7 @@
 
 Mojolicious::Guides::Routing - ルーティングリクエスト
 
-=head1 概要
+=head1 説明
 
 このドキュメントはMojoliciousのルータ(router)のシンプルで楽しい入門と基本的なコンセプトを含んでいます。
 

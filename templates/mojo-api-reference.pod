@@ -4,6 +4,10 @@
 
 Mojolicious API リファレンス
 
+=head1 説明
+
+MojoliciousのAPIリファレンスです。
+
 =head1 クラス
 
 =over 2

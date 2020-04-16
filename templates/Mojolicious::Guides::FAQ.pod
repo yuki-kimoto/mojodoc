@@ -1,14 +1,10 @@
 =encoding utf8
 
-[[Mojoliciosuガイド|Home]]
-
-
-
 =head1 名前
 
 Mojolicious::Guides::FAQ - 頻繁に尋ねられる質問
 
-=head1 概観
+=head1 説明
 
 このドキュメントはMojoliciousに関してもっとも頻繁に尋ねられる質問と答えをふくんでいます。
 
@@ -29,7 +25,7 @@ LWPのように一般的に利用されてきたモジュールが設計され�
 =head2 なぜMojoliciousはまったく依存を持たないのですか
 
 私たちは妥協することなく使いやすさと開発スピードに焦点をあてて[[Mojolicious]]を最適化しています。
-[[Mojolicious::Guides::CodingGuidelines]]には依存を禁止するルールはありませんが、
+[[Mojolicious::Guides::Contributing]]には依存を禁止するルールはありませんが、
 すばやい苦労のないインストール処理を好むので、今のところオプショナルなものではないものを
 追加する気持ちは起きません。
 実際はすでに、高度な機能を提供するために、もしインストールされているのであれば、

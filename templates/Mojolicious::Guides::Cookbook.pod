@@ -4,9 +4,9 @@
 
 Mojolicious::Guides::Cookbook - Mojoliciousのクックブック
 
-=head1 概要
+=head1 説明
 
-[[Mojolicious]]で料理できる楽しいレシピが満載。
+Mojoliciousで料理できる楽しいレシピが満載。
 
 =head1 概念
 

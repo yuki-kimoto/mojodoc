@@ -4,9 +4,9 @@
 
 Mojolicious::Guides::Rendering - コンテンツのレンダリング
 
-=head1 概要
+=head1 説明
 
-本書は、[[Mojolicious]]レンダラを使ったコンテンツ生成について説明します。
+本書は、Mojoliciousレンダラを使ったコンテンツ生成について説明します。
 
 =head1 概念
 

@@ -4,9 +4,9 @@
 
 Mojolicious::Guides::Growing - Mojoliciousアプリケーションを育てる
 
-=head1 概要
+=head1 説明
 
-スクラッチから[[Mojolicious::Lite]]のプロトタイピングをはじめて、よく構成された[[Mojolicious]]アプリケーションに育てる手順を説明します。
+スクラッチからMojolicious::Liteのプロトタイピングをはじめて、よく構成されたMojoliciousアプリケーションに育てる手順を説明します。
 
 =head1 概念
 
