@@ -261,7 +261,6 @@ C<ep>のようないくつかのレンダラは、テンプレートをインラ
   $c->stash(frameworks  => ['Catalyst', 'Mojolicious']);
   $c->stash(spinoffs    => {minion => 'job queue'});
 
-  =head1 説明
   %= $frameworks->[1]
   %= $spinoffs->{minion}
 
@@ -285,7 +284,6 @@ C<ep>のようないくつかのレンダラは、テンプレートをインラ
 
 ヘルパーは、アプリケーション、コントローラー、テンプレートのどこででも使える小さな関数の集まりです。
 
-  =head2 テンプレート
   %= dumper [1, 2, 3]
 
   # アプリケーション

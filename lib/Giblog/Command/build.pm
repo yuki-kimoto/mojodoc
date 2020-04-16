@@ -54,6 +54,11 @@ sub run {
       $parser->parse_characters(1);
       $parser->strip_verbatim_indent(\&_indentation);
       $parser->output_string(\(my $output));
+      $parser->strip_verbatim_indent(sub {
+        my $lines = shift;
+        s/^\s+//, s/</&lt;/g, s/>/&gt;/g for @$lines;
+        return undef;
+      });
       $parser->parse_string_document("$pod");
       
       $content = $output;
