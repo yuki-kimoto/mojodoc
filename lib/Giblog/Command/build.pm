@@ -51,7 +51,7 @@ sub run {
       $parser->output_string(\(my $output));
       $parser->strip_verbatim_indent(sub {
         my $lines = shift;
-        s/^\s+//, s/</&lt;/g, s/>/&gt;/g for @$lines;
+        s/^  //, s/</&lt;/g, s/>/&gt;/g for @$lines;
         return undef;
       });
       $parser->parse_string_document("$pod");
