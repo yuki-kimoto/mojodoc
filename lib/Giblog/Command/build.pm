@@ -123,9 +123,13 @@ name="_"
     $data->{content} =~ s#\[\[([^\]\|]+)(?:\|([^\]]+))?\]\]#$wiki_to_html_link_cb->($1, $2);#ge;
 
     # 説明の場所を先頭へ移動
-    if ($data->{content} =~ s|<h3><[^>]*?>説明</a></h3>(.*?)<h3>|<h3>|s) {
+    if ($data->{content} =~ m|<h3><[^>]*?>説明</a></h3>(.*?)<h3>|) {
       my $description = $1;
-      $data->{content} =~ s|</h2>|</h2>\n$description\n|;
+      
+      # タグを削除
+      $description =~ s/<[^<]*?>//g;
+      
+      $data->{content} = "<!-- <h2>$description</h2> -->\n$data->{content}";
     }
     
     # APIリファレンスのpをdivへ
