@@ -76,7 +76,7 @@
   /* content */
   .content {
     float:right;
-    width:calc(100% - 280px - 30px);
+    width:calc(100% - 250px - 30px);
   }
   
   /* entry */
