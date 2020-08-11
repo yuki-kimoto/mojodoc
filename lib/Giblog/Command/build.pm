@@ -125,12 +125,15 @@ name="_"
     # 説明の場所を先頭へ移動
     if ($data->{content} =~ m|<h3><[^>]*?>説明</a></h3>(.*?)<h3>|s) {
       my $description = $1;
-      $data->{content} = "<!-- <h2>$description</h2> -->\n$data->{content}";
+      $data->{content} = "<!-- $description -->\n$data->{content}";
     }
     
     # APIリファレンスのpをdivへ
     $data->{content} =~ s|<p><a href="/mojo-api-reference.html">([^<]*?)</a></p>|<div><a href="/mojo-api-reference.html">$1</a></div>|;
-
+    
+    #warn "$data->{content}";
+    #die;
+    
     # Parse title
     $api->parse_title_from_first_h_tag($data);
 
