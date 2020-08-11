@@ -131,8 +131,8 @@ name="_"
     # APIリファレンスのpをdivへ
     $data->{content} =~ s|<p><a href="/mojo-api-reference.html">([^<]*?)</a></p>|<div><a href="/mojo-api-reference.html">$1</a></div>|;
     
-    #warn "$data->{content}";
-    #die;
+    # warn "$data->{content}";
+    # die;
     
     # Parse title
     $api->parse_title_from_first_h_tag($data);
