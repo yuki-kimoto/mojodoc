@@ -4,11 +4,7 @@
 
 Mojolicious API リファレンス
 
-=head1 説明
-
 MojoliciousのAPIリファレンスです。
-
-=head1 クラス
 
 =over 2
 
@@ -225,12 +221,6 @@ MojoliciousのAPIリファレンスです。
 =item * [[Test::Mojo]] - Mojoの試験
 
 =item * [[ojo]] - Mojoを使った楽しいワンライナー
-
-=back
-
-=head1 スクリプト
-
-=over 2
 
 =item * [[mojo|mojo-script]] - Mojoliciousコマンドシステム
 
