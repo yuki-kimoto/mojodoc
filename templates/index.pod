@@ -4,6 +4,12 @@
 
 Perl製の素晴らしいWebフレームワーク[[Mojolicious|http://mojolicious.org]]のドキュメントの日本語です。最終のドキュメントの更新は2020年4月11日でMojolicious 8.12の変更を反映しています。このトップページはREADMEの翻訳と参考情報です。
 
+=begin html
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/eqa5TzoauWQ" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+=end html
+
 =head1 Mojoliciousとは
 
 ウェブの初期にはCGIと呼ばれるPerlの素晴らしいライブラリがありました。そのためだけにPerlを学んだ人も多くいます。言語について多くのことを知らずに始めるには十分簡単でしたし、あなたを前進させるには十分強力で、やりながら学習するにはとても面白いものでした。使われていた技術は今では時代遅れのものとなっていますが、その背後にある考え方はそうではありません。Mojoliciousは最先端技術を使って、この考え方を実装する新しい試みです。
