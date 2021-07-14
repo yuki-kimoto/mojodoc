@@ -120,7 +120,7 @@
   
   /* content */
   .content {
-    float:right;
+    float:left;
     width:calc(100% - 250px - 30px);
   }
   
@@ -138,7 +138,7 @@
   .side {
     float:left;
     width:250px;
-    margin-right:30px;
+    margin-left:30px;
     padding-top:16px;
   }
   

@@ -4,16 +4,6 @@
 
 Perl製の素晴らしいWebフレームワーク[[Mojolicious|http://mojolicious.org]]のドキュメントの日本語です。最終のドキュメントの更新は2020年4月11日でMojolicious 8.12の変更を反映しています。このトップページはREADMEの翻訳と参考情報です。
 
-=begin html
-
-<div class="youtube_block">
-  <div class="youtube">
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/eqa5TzoauWQ" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-  </div>
-</div>
-
-=end html
-
 =head1 Mojoliciousとは
 
 ウェブの初期にはCGIと呼ばれるPerlの素晴らしいライブラリがありました。そのためだけにPerlを学んだ人も多くいます。言語について多くのことを知らずに始めるには十分簡単でしたし、あなたを前進させるには十分強力で、やりながら学習するにはとても面白いものでした。使われていた技術は今では時代遅れのものとなっていますが、その背後にある考え方はそうではありません。Mojoliciousは最先端技術を使って、この考え方を実装する新しい試みです。
@@ -143,17 +133,19 @@ Mojoliciousでの料理、あらゆる風味のためのレシピ。
 
 [[Mojolicious Wiki|https://github.com/kraih/mojo/wiki]] - ユーザーによるさらに多くの情報
 
+=head2 Mojoliciousフォーラム
+
+[[Mojoliciousフォーラム|https://github.com/mojolicious/mojo/discussions]] - Mojoliciousの質問
+
 =head2 Mojoliciousの開発場所
 
 [[Github|http://github.com/kraih/mojo]] - Mojoliciousの開発リポジトリ
 
 =head2 Mojoliciousの情報など
 
-[[Mojolicious入門 - Perlプログラミング入門ゼミ|https://tutorial.perlzemi.com/blog/20140319139520.html]]
+[[Mojolicious入門 - Perl Webフレームワーク|https://mojolicious.perlzemi.com/]]
 
-[[Webシステム開発入門 Perl+Mojolicious|https://web.perlzemi.com/]]
-
-[[mojo-legacy|https://github.com/jamadam/mojo-legacy]] - MojoliciousをPerl5.8で動かすためののバックポート
+[[Webアプリケーション開発入門 Perl+Mojolicious|https://web.perlzemi.com/]]
 
 =head2 翻訳者
 
