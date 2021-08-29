@@ -152,3 +152,9 @@ Mojoliciousでの料理、あらゆる風味のためのレシピ。
 木本裕紀
 
 前山将人
+
+=head2 関連講座
+
+<a target="_blank" href="http://www.perlri.com/">プロのWeb開発の技術を身に着けるならPerl元気塾</a>
+
+<a target="_blank" href="http://www.perlri.com/job">プロのWeb開発者になるための仕事の探し方・選び方</a>
