@@ -141,20 +141,14 @@ Mojoliciousでの料理、あらゆる風味のためのレシピ。
 
 [[Github|http://github.com/kraih/mojo]] - Mojoliciousの開発リポジトリ
 
-=head2 Mojoliciousの情報など
+=head2 Mojolicious関連情報など
 
-[[Mojolicious入門 - Perl Webフレームワーク|https://mojolicious.perlzemi.com/]]
+[[Mojolicious入門|https://mojolicious.perlzemi.com/]]
 
-[[Webアプリケーション開発入門 Perl+Mojolicious|https://web.perlzemi.com/]]
+[[Webアプリ開発入門 Perl+Mojolicious|https://webapp.perlzemi.com/]]
 
 =head2 翻訳者
 
 木本裕紀
 
 前山将人
-
-=head2 関連講座
-
-<a target="_blank" href="http://www.perlri.com/">プロのWeb開発の技術を身に着けるならPerl元気塾</a>
-
-<a target="_blank" href="http://www.perlri.com/job">プロのWeb開発者になるための仕事の探し方・選び方</a>
