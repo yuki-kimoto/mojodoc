@@ -150,7 +150,7 @@ name="_"
     # Parse description
     $api->parse_description_from_first_p_tag($data);
 
-    # 最初の段落下に広告を追加
+    # 最初のヘッダ下に広告を追加
     {
       my $ad = <<'EOS';
 <div style="width:calc(100% - 30px);margin:10px auto;">
@@ -168,7 +168,7 @@ name="_"
   </script>
 </div>
 EOS
-      $data->{content} =~ s|</p>|</p>\n$ad\n|;
+      $data->{content} =~ s|</h2>|</h2>\n$ad\n|;
     }
 
     # Read common templates
